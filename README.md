@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 2026 Dutchie Cybersecurity Awareness Month
 
-## Getting Started
+The central hub for Security Awareness Month 2026: a gamified security-clearance
+progression system with a leaderboard, employee profiles, and in-app challenge
+forms that award XP automatically.
 
-First, run the development server:
+Built with Next.js (App Router) + TypeScript + Tailwind + Prisma/Postgres.
+
+## Why a live app, not the old static leaderboard?
+
+`BUILD_PROMPT.md`-style leaderboards (a prior iteration of this idea) were
+fully static and fed by CSV drops — great for read-only display, but this app
+also needs to **accept submissions live, grade them, award XP automatically,
+and prevent double-claiming**. That requires real persistence, so this is a
+Postgres-backed app instead. The tier model, badge-card anatomy, deterministic
+codename system, and visual language are carried over from that spec.
+
+## Core mechanics
+
+- **XP → Clearance tiers**: UNCLASSIFIED (0–200) → SECRET (201–400) → TOP_SECRET
+  (401+). ROGUE is a hidden, admin-only manual override tier — never reachable
+  via XP. See `src/lib/tiers.ts`.
+- **Challenges**: admins create challenges with an XP value and one of four
+  grading modes (exact match, case-insensitive match, multiple choice, or
+  free-text manual review). Employees submit via `/challenges/[slug]`.
+- **Dedup**: enforced both in the UI (shows "already completed") and via a
+  hard Postgres `@@unique([employeeId, challengeId])` constraint — no one can
+  double-claim XP for the same challenge, even under a race.
+- **Clearance issued date**: computed by walking a person's XP chronologically
+  and recording the exact moment their running total first crossed into each
+  tier — not a decorative placeholder. See `computeClearanceIssuedDates` in
+  `src/lib/tiers.ts`.
+- **Badge flare**: admins can add achievements, custom colors/effects, ribbons,
+  icon overrides, pin-to-top, name suffixes, and expiring flare per employee.
+  Any invalid/unrecognized flare value is logged as a warning and silently
+  ignored — it never breaks rendering. See `src/lib/flare.ts`.
+- **Deterministic flavor text**: codenames, agent IDs, fun facts, and barcodes
+  are derived from each person's lowercased email via a stable hash, with
+  guaranteed-unique codenames across the current roster. See
+  `src/lib/identity.ts`.
+
+## Identity model
+
+Employees "identify" with just a name + `@dutchie.com` email (no SSO/password) —
+stored in a signed cookie. This is an internal engagement tool, not a real
+security boundary, per the team's decision. The lowercased email is the stable
+identity key used everywhere (profile URLs, dedup, flavor generation).
+
+Admins get a separate passphrase-gated `/admin` area (`ADMIN_PASSPHRASE` env
+var) since they can grant XP and edit flare.
+
+The ROGUE tier is hidden from the leaderboard by default and only appears
+after unlocking it with `ROGUE_PASSPHRASE` (a small "⋯" button reveals the
+unlock form). This is a fun deterrent, not real access control — the roster is
+genuinely not sent to the browser until unlocked, since (unlike a fully
+static build) this app has a real backend to gate on.
+
+## Local development
+
+Postgres must be running and reachable at `DATABASE_URL` (see `.env.example`).
+In this VAPE environment, Postgres was installed locally and is managed via
+`service postgresql start` (no sidecar was provisioned for this empty
+constellation) — the `security_awareness_2026` database and `postgres/postgres`
+credentials are already set up.
 
 ```bash
+cp .env.example .env   # then fill in real secrets
+npm install
+npx prisma migrate dev   # apply schema
+npm run db:seed          # optional: demo employees/challenges/flare
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app is also registered as a supervised VAPE proc named
+`security-awareness-2026` (see `get_proc_status`/`get_proc_logs`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Admin workflow
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Go to `/admin`, enter `ADMIN_PASSPHRASE`.
+2. **Challenges**: create/edit challenges, set XP value, grading mode, and an
+   optional open/close window.
+3. **Submissions**: approve/reject free-text (`FREE_TEXT_REVIEW`) submissions —
+   XP posts only once approved.
+4. **Badge Flare**: pick an employee, set achievements/colors/effects/ribbons/
+   etc. Invalid values are ignored with a warning (visible in proc logs).
+5. **Employees**: flip the manual ROGUE override, or grant ad-hoc bonus XP
+   (recorded as an auditable synthetic "Manual Bonus" challenge submission,
+   not an untracked side channel).
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+  app/                 Next.js App Router pages
+    leaderboard/        Public tier-grouped badge wall
+    challenges/         Challenge list + submission forms
+    profile/[email]/    Read-only profile pages
+    identify/           Name + email entry gate
+    admin/              Passphrase-gated admin panel
+  components/          BadgeCard, LeaderboardClient, Nav, Icon, confetti, etc.
+  lib/
+    tiers.ts            Tier definitions, progress math, clearance-issued dates
+    identity.ts          Deterministic codename/agent-id/fun-fact generation
+    flare.ts             Badge flare validation/resolution (never crashes)
+    leaderboard.ts        Roster building, grouping, ranking
+    session.ts            Signed cookie helpers (agent/admin/rogue)
+    actions/              Server actions (identify, submit, admin, rogue unlock)
+  proxy.ts               Middleware-equivalent: gates all pages behind /identify
+prisma/
+  schema.prisma          Employee / Challenge / Submission / BadgeFlare models
+  seed.ts                Demo data across all tiers, including one ROGUE + flare
+```

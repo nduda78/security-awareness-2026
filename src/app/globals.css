@@ -1,26 +1,290 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand-dark-green: #042017;
+  --brand-medium-green: #003d29;
+  --brand-sand: #f1e8d6;
+  --brand-purple: #5e324e;
+  --brand-light-green: #6aba48;
+  --brand-yellow: #ffc02a;
+  --brand-red: #e5484d;
+
+  --background: var(--brand-dark-green);
+  --foreground: var(--brand-sand);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand-dark-green: var(--brand-dark-green);
+  --color-brand-medium-green: var(--brand-medium-green);
+  --color-brand-sand: var(--brand-sand);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-light-green: var(--brand-light-green);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-red: var(--brand-red);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: radial-gradient(circle at 20% -10%, var(--brand-medium-green) 0%, var(--brand-dark-green) 55%);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+.font-terminal {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* Scanline overlay used across "classified terminal" surfaces */
+.scanlines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.025) 0px,
+    rgba(255, 255, 255, 0.025) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* --- ROGUE tier effects --- */
+@keyframes rogue-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  8% {
+    opacity: 0.75;
+  }
+  9% {
+    opacity: 1;
+  }
+  52% {
+    opacity: 0.85;
+  }
+  53% {
+    opacity: 1;
+  }
+  77% {
+    opacity: 0.6;
+  }
+  78% {
+    opacity: 1;
+  }
+}
+.rogue-flicker {
+  animation: rogue-flicker 4.2s infinite;
+}
+
+@keyframes glitch-rgb {
+  0%,
+  100% {
+    text-shadow: -1px 0 var(--brand-red), 1px 0 #2ad8ff;
+    transform: translate(0, 0);
+  }
+  20% {
+    text-shadow: 1.5px 0 var(--brand-red), -1.5px 0 #2ad8ff;
+    transform: translate(-0.5px, 0.5px);
+  }
+  40% {
+    text-shadow: -1px 0 var(--brand-red), 1px 0 #2ad8ff;
+    transform: translate(0.5px, -0.5px);
+  }
+  60% {
+    text-shadow: 1px 0 var(--brand-red), -1px 0 #2ad8ff;
+    transform: translate(0, 0);
+  }
+}
+.glitch-text {
+  animation: glitch-rgb 2.4s infinite;
+}
+
+.process420-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.06;
+  font-family: var(--font-mono);
+  font-size: 4rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--brand-red);
+  transform: rotate(-8deg) scale(1.4);
+  white-space: nowrap;
+}
+
+/* full-page chaos triggered by typing "process420" */
+@keyframes chaos-shake {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    filter: hue-rotate(0deg);
+  }
+  20% {
+    transform: translate(-6px, 4px) rotate(-0.3deg);
+    filter: hue-rotate(60deg);
+  }
+  40% {
+    transform: translate(5px, -5px) rotate(0.3deg);
+    filter: hue-rotate(180deg);
+  }
+  60% {
+    transform: translate(-4px, -3px) rotate(-0.2deg);
+    filter: hue-rotate(270deg);
+  }
+  80% {
+    transform: translate(6px, 3px) rotate(0.2deg);
+    filter: hue-rotate(320deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+    filter: hue-rotate(360deg);
+  }
+}
+body.chaos-mode {
+  animation: chaos-shake 0.35s infinite;
+}
+
+/* --- Badge background effects --- */
+@keyframes holo-sweep {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+.fx-holo {
+  background: linear-gradient(
+    120deg,
+    #ff6ad5,
+    #c774e8,
+    #ad8cff,
+    #8795e8,
+    #94d0ff,
+    #ff6ad5
+  );
+  background-size: 300% 300%;
+  animation: holo-sweep 6s linear infinite;
+  opacity: 0.35;
+}
+
+@keyframes crt-flicker {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+.fx-crt {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.12) 0px,
+    rgba(255, 255, 255, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation: crt-flicker 0.6s infinite;
+}
+
+@keyframes gradient-sweep-move {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+.fx-gradient-sweep {
+  background: linear-gradient(135deg, var(--brand-light-green), var(--brand-yellow), var(--brand-purple));
+  background-size: 220% 220%;
+  animation: gradient-sweep-move 5s ease-in-out infinite alternate;
+  opacity: 0.5;
+}
+
+.fx-starfield {
+  background-image: radial-gradient(circle, white 1px, transparent 1.5px);
+  background-size: 22px 22px;
+  opacity: 0.25;
+  animation: starfield-twinkle 3s ease-in-out infinite;
+}
+@keyframes starfield-twinkle {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 0.32;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* --- Border styles --- */
+@keyframes border-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 6px 0 var(--pulse-color, var(--brand-light-green));
+  }
+  50% {
+    box-shadow: 0 0 18px 4px var(--pulse-color, var(--brand-light-green));
+  }
+}
+.border-fx-pulse {
+  animation: border-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes shimmer-move {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.border-fx-shimmer {
+  position: relative;
+}
+.border-fx-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  background-size: 200% 100%;
+  animation: shimmer-move 2.2s linear infinite;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+@keyframes marching-ants {
+  to {
+    background-position: 40px 0, 40px 40px, 0 40px, 0 0;
+  }
+}
+.border-fx-marching-ants {
+  border-style: dashed !important;
+  animation: marching-ants 1.5s linear infinite;
+}
+
+/* --- XP progress ring --- */
+.xp-ring {
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- Card tilt --- */
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
 }

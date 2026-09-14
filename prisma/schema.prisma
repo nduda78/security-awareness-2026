@@ -1,0 +1,97 @@
+// Prisma schema for Dutchie Security Awareness Month 2026
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AnswerType {
+  EXACT
+  CASE_INSENSITIVE
+  MULTIPLE_CHOICE
+  FREE_TEXT_REVIEW
+}
+
+enum SubmissionStatus {
+  CORRECT
+  INCORRECT
+  PENDING_REVIEW
+}
+
+model Employee {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  displayName   String
+  rogueOverride Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  submissions Submission[]
+  flare       BadgeFlare?
+}
+
+model Challenge {
+  id            String     @id @default(cuid())
+  slug          String     @unique
+  title         String
+  description   String
+  answerType    AnswerType
+  correctAnswer String? // null for FREE_TEXT_REVIEW
+  choices       Json? // string[] for MULTIPLE_CHOICE
+  xpValue       Int
+  isActive      Boolean    @default(true)
+  opensAt       DateTime?
+  closesAt      DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  submissions Submission[]
+}
+
+model Submission {
+  id           String           @id @default(cuid())
+  employeeId   String
+  challengeId  String
+  answerRaw    String
+  status       SubmissionStatus
+  xpAwarded    Int              @default(0)
+  submittedAt  DateTime         @default(now())
+  reviewedBy   String?
+  reviewedAt   DateTime?
+
+  employee  Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, challengeId])
+  @@index([employeeId])
+  @@index([challengeId])
+}
+
+model BadgeFlare {
+  employeeId       String    @id
+  achievements     String[]  @default([])
+  outlineColor     String?
+  backgroundColor  String?
+  backgroundEffect String?
+  codenameOverride String?
+  motto            String?
+  iconOverride     String?
+  borderStyle      String?
+  ribbonText       String?
+  pinned           Boolean   @default(false)
+  nameSuffix       String?
+  expiresAt        DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model AdminAudit {
+  id        String   @id @default(cuid())
+  action    String
+  detail    String
+  createdAt DateTime @default(now())
+}
