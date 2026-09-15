@@ -169,6 +169,11 @@ body {
   border-color: var(--brand-light-green);
   box-shadow: 0 0 0 3px rgba(106, 186, 72, 0.18);
 }
+/* .input-modern's padding shorthand otherwise clobbers Tailwind's pl-9
+   utility — same specificity, later in the cascade wins. */
+.input-modern.input-with-icon {
+  padding-left: 2.5rem;
+}
 
 .pill {
   display: inline-flex;

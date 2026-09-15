@@ -43,7 +43,7 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
       </div>
 
       {/* body */}
-      <div className="flex flex-1 gap-3">
+      <div className="flex min-h-0 flex-1 gap-3">
         {/* photo box */}
         <div className="flex w-[82px] shrink-0 flex-col items-center gap-1.5">
           <div
@@ -71,7 +71,7 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
         </div>
 
         {/* details */}
-        <div className="flex min-w-0 flex-1 flex-col justify-between">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-between">
           <div className="min-w-0">
             <div className={`truncate font-display text-[19px] font-semibold leading-tight text-brand-sand ${isRogue ? "glitch-text" : ""}`}>
               {card.renderedName}
@@ -84,6 +84,7 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
                 Issued {card.clearanceIssuedLabel}
               </div>
             )}
+            <div className="mt-1.5 line-clamp-2 text-[10.5px] leading-snug text-brand-sand/45">{card.funFact}</div>
           </div>
 
           <div>
@@ -110,7 +111,7 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
         </div>
 
         {/* side strip: achievements + barcode */}
-        <div className="flex w-6 shrink-0 flex-col items-center justify-between rounded-xl bg-black/20 py-1.5 ring-1 ring-white/5">
+        <div className="flex w-6 shrink-0 flex-col items-center justify-between gap-1.5 rounded-xl bg-black/20 py-1.5 ring-1 ring-white/5">
           {card.achievements.length > 0 && (
             <div className="flex flex-col items-center gap-1">
               {card.achievements.slice(0, 3).map((a, i) => (
@@ -118,14 +119,18 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
               ))}
             </div>
           )}
-          <div className="font-terminal text-[9px] leading-[0.55rem] tracking-[0.15em] text-brand-sand/35 [writing-mode:vertical-rl]">
-            {card.barcode}
+          {/* Decorative only — sliced short. Vertical writing-mode text has a
+              surprisingly large intrinsic block-size (a full barcode string
+              here measured ~210px tall), which was silently overflowing the
+              fixed-height card and clipping the footer below it. */}
+          <div className="max-h-[72px] overflow-hidden font-terminal text-[9px] leading-[0.55rem] tracking-[0.15em] text-brand-sand/35 [writing-mode:vertical-rl]">
+            {card.barcode.slice(0, 9)}
           </div>
         </div>
       </div>
 
       {/* holo footer strip */}
-      <div className="relative mt-3 h-2 overflow-hidden rounded-full ring-1 ring-white/10">
+      <div className="relative mt-3 h-2 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
         <div className="fx-holo absolute inset-0 opacity-60" />
       </div>
     </div>
@@ -202,7 +207,7 @@ function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnable
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      className="flip-scene tilt-card relative aspect-[1.6/1] w-full cursor-pointer"
+      className="flip-scene tilt-card relative aspect-[1.42/1] w-full cursor-pointer"
       style={{
         // @ts-expect-error custom property for pulse animation color
         "--pulse-color": outline,
@@ -343,15 +348,12 @@ export function BadgeCard({ card, dimmed = false }: { card: ClientAgentCard; dim
         onClick={() => setSpotlightOpen(true)}
       />
 
-      <div className="mt-2 flex items-center justify-between text-[11px] italic text-brand-sand/40">
-        <span>{card.funFact}</span>
-      </div>
       <Link
         href={`/profile/${encodeURIComponent(card.email)}`}
         onClick={(e) => e.stopPropagation()}
-        className="mt-0.5 block font-terminal text-[10px] uppercase tracking-wide text-brand-sand/35 hover:text-brand-sand"
+        className="mt-2 block font-terminal text-[10px] uppercase tracking-wide text-brand-sand/35 hover:text-brand-sand"
       >
-        view full profile →
+        View Agents Profile →
       </Link>
 
       {spotlightOpen && (

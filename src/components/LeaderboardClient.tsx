@@ -122,7 +122,7 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
             placeholder="Find your badge..."
-            className="input-modern w-full pl-9"
+            className="input-modern input-with-icon w-full"
           />
         </div>
         <select
