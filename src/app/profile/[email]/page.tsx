@@ -113,8 +113,6 @@ export default async function ProfilePage({
             defaultCodename={defaultCodename}
             passthrough={{
               achievements: card.flare?.achievements ?? [],
-              outlineColor: card.flare?.outlineColor ?? null,
-              backgroundColor: card.flare?.backgroundColor ?? null,
               motto: card.flare?.motto ?? null,
               codenameOverride: card.flare?.codenameOverride ?? null,
             }}
@@ -124,6 +122,8 @@ export default async function ProfilePage({
               iconOverride: card.flare?.iconOverride ?? "",
               ribbonText: card.flare?.ribbonText ?? "",
               nameSuffix: card.flare?.nameSuffix ?? "",
+              outlineColor: card.flare?.outlineColor ?? "",
+              backgroundColor: card.flare?.backgroundColor ?? "",
             }}
             unlocked={unlockedFlare}
             status={{ saved: flareSaved === "1", rejectedFields: flareRejected ? flareRejected.split(",") : [] }}

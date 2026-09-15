@@ -6,6 +6,8 @@ export interface UnlockedFlareOptions {
   icon: string[];
   ribbonText: string[];
   nameSuffix: string[];
+  outlineColor: string[];
+  backgroundColor: string[];
 }
 
 const EMPTY: UnlockedFlareOptions = {
@@ -14,6 +16,8 @@ const EMPTY: UnlockedFlareOptions = {
   icon: [],
   ribbonText: [],
   nameSuffix: [],
+  outlineColor: [],
+  backgroundColor: [],
 };
 
 /**
@@ -35,6 +39,8 @@ export async function getUnlockedFlareOptions(employeeId: string): Promise<Unloc
     icon: [],
     ribbonText: [],
     nameSuffix: [],
+    outlineColor: [],
+    backgroundColor: [],
   };
   const seen = {
     backgroundEffect: new Set<string>(),
@@ -42,6 +48,8 @@ export async function getUnlockedFlareOptions(employeeId: string): Promise<Unloc
     icon: new Set<string>(),
     ribbonText: new Set<string>(),
     nameSuffix: new Set<string>(),
+    outlineColor: new Set<string>(),
+    backgroundColor: new Set<string>(),
   };
 
   for (const { challenge: c } of correct) {
@@ -64,6 +72,14 @@ export async function getUnlockedFlareOptions(employeeId: string): Promise<Unloc
     if (c.rewardNameSuffix && !seen.nameSuffix.has(c.rewardNameSuffix)) {
       seen.nameSuffix.add(c.rewardNameSuffix);
       result.nameSuffix.push(c.rewardNameSuffix);
+    }
+    if (c.rewardOutlineColor && !seen.outlineColor.has(c.rewardOutlineColor)) {
+      seen.outlineColor.add(c.rewardOutlineColor);
+      result.outlineColor.push(c.rewardOutlineColor);
+    }
+    if (c.rewardBackgroundColor && !seen.backgroundColor.has(c.rewardBackgroundColor)) {
+      seen.backgroundColor.add(c.rewardBackgroundColor);
+      result.backgroundColor.push(c.rewardBackgroundColor);
     }
   }
 

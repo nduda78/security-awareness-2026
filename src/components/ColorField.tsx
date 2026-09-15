@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 /**
@@ -50,4 +52,26 @@ export function ColorField({
       </div>
     </div>
   );
+}
+
+/**
+ * Self-contained version of ColorField for forms that don't otherwise need
+ * to lift this field's state up (e.g. no live preview watching it) — just
+ * holds its own useState internally. Still submits fine in a plain
+ * <form action={...}> since the underlying <input name=...> is present in
+ * the DOM regardless of who owns the React state.
+ */
+export function StandaloneColorField({
+  label,
+  name,
+  defaultValue,
+  placeholder,
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+  placeholder?: string;
+}) {
+  const [value, setValue] = useState(defaultValue ?? "");
+  return <ColorField label={label} name={name} value={value} onChange={setValue} placeholder={placeholder} />;
 }

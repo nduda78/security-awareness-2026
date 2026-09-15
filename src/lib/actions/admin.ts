@@ -116,6 +116,8 @@ export async function upsertChallengeAction(formData: FormData) {
   const rewardIcon = String(formData.get("rewardIcon") ?? "").trim() || null;
   const rewardRibbonText = String(formData.get("rewardRibbonText") ?? "").trim() || null;
   const rewardNameSuffix = String(formData.get("rewardNameSuffix") ?? "").trim() || null;
+  const rewardOutlineColor = String(formData.get("rewardOutlineColor") ?? "").trim() || null;
+  const rewardBackgroundColor = String(formData.get("rewardBackgroundColor") ?? "").trim() || null;
   const rewardPrize = String(formData.get("rewardPrize") ?? "").trim() || null;
   const isActive = formData.get("isActive") === "on";
   const opensAtRaw = String(formData.get("opensAt") ?? "");
@@ -139,6 +141,8 @@ export async function upsertChallengeAction(formData: FormData) {
     rewardIcon,
     rewardRibbonText,
     rewardNameSuffix,
+    rewardOutlineColor,
+    rewardBackgroundColor,
     rewardPrize,
     isActive,
     opensAt: opensAtRaw ? new Date(opensAtRaw) : null,

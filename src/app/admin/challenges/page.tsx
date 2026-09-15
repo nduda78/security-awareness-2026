@@ -5,6 +5,7 @@ import { AdminNav } from "@/components/AdminNav";
 import { upsertChallengeAction, deleteChallengeAction } from "@/lib/actions/admin";
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
+import { StandaloneColorField } from "@/components/ColorField";
 import { TIER_BY_KEY } from "@/lib/tiers";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,8 @@ function rewardTags(c: {
   rewardIcon: string | null;
   rewardRibbonText: string | null;
   rewardNameSuffix: string | null;
+  rewardOutlineColor: string | null;
+  rewardBackgroundColor: string | null;
   rewardPrize: string | null;
 }): string[] {
   const tags: string[] = [];
@@ -23,6 +26,8 @@ function rewardTags(c: {
   if (c.rewardIcon) tags.push(`${c.rewardIcon} icon`);
   if (c.rewardRibbonText) tags.push(`"${c.rewardRibbonText}" ribbon`);
   if (c.rewardNameSuffix) tags.push(`"${c.rewardNameSuffix}" suffix`);
+  if (c.rewardOutlineColor) tags.push(`${c.rewardOutlineColor} outline`);
+  if (c.rewardBackgroundColor) tags.push(`${c.rewardBackgroundColor} bg color`);
   if (c.rewardPrize) tags.push(c.rewardPrize);
   return tags;
 }
@@ -164,6 +169,8 @@ function ChallengeForm({
     rewardIcon: string | null;
     rewardRibbonText: string | null;
     rewardNameSuffix: string | null;
+    rewardOutlineColor?: string | null;
+    rewardBackgroundColor?: string | null;
     rewardPrize: string | null;
     rewardMode?: string;
     questionImageMimeType?: string | null;
@@ -303,8 +310,9 @@ function ChallengeForm({
       <div className="rounded-lg border border-brand-purple/25 bg-brand-purple/[0.04] p-3">
         <div className="mb-3 font-terminal text-xs uppercase text-brand-purple">Badge flare reward</div>
         <p className="mb-3 text-[11px] text-brand-sand/35">
-          Advertised on the challenge — the same fields as Badge Flare. Still granted by hand via
-          /admin/flare once someone actually completes it; this just describes what&apos;s on offer.
+          Advertised on the challenge — the same fields as Badge Flare. Whatever&apos;s set here unlocks
+          automatically for anyone who completes this challenge; they still choose whether to actually
+          equip it themselves, on their own profile.
         </p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <SelectField
@@ -336,6 +344,16 @@ function ChallengeForm({
             name="rewardNameSuffix"
             defaultValue={challenge?.rewardNameSuffix ?? ""}
             placeholder="the Vigilant"
+          />
+          <StandaloneColorField
+            label="Outline color"
+            name="rewardOutlineColor"
+            defaultValue={challenge?.rewardOutlineColor ?? ""}
+          />
+          <StandaloneColorField
+            label="Background color"
+            name="rewardBackgroundColor"
+            defaultValue={challenge?.rewardBackgroundColor ?? ""}
           />
           <Field
             label="Other prize"
@@ -416,6 +434,8 @@ export default async function AdminChallengesPage() {
       rewardIcon: true,
       rewardRibbonText: true,
       rewardNameSuffix: true,
+      rewardOutlineColor: true,
+      rewardBackgroundColor: true,
       rewardPrize: true,
       isActive: true,
       opensAt: true,

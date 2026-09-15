@@ -92,6 +92,8 @@ model Challenge {
   rewardIcon             String?
   rewardRibbonText       String?
   rewardNameSuffix       String?
+  rewardOutlineColor     String? // free-ish color text — same resolution rules as BadgeFlare.outlineColor
+  rewardBackgroundColor  String? // free-ish color text — same resolution rules as BadgeFlare.backgroundColor
   rewardPrize            String? // freeform other prize, e.g. "Company hoodie", "Extra PTO day"
   minClearance  ClearanceLevel @default(UNCLASSIFIED)
   isActive      Boolean    @default(true)

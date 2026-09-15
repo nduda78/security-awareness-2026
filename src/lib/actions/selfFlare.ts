@@ -9,14 +9,14 @@ import { getUnlockedFlareOptions } from "@/lib/rewards";
 /**
  * Self-service equivalent of the admin flare editor, but heavily
  * restricted: an employee may only set backgroundEffect / borderStyle /
- * iconOverride / ribbonText / nameSuffix, and only to values they've
- * actually unlocked by completing a challenge that rewards them (see
- * lib/rewards.ts). Everything else on BadgeFlare (achievements, colors,
- * motto, codenameOverride, expiresAt) stays admin-only and is left
- * untouched by this action.
+ * iconOverride / ribbonText / nameSuffix / outlineColor / backgroundColor,
+ * and only to values they've actually unlocked by completing a challenge
+ * that rewards them (see lib/rewards.ts). Everything else on BadgeFlare
+ * (achievements, motto, codenameOverride, expiresAt) stays admin-only and
+ * is left untouched by this action.
  *
  * Submitted values are re-validated server-side against a fresh query of
- * the employee's own completed challenges \u2014 the unlocked list rendered
+ * the employee's own completed challenges — the unlocked list rendered
  * client-side is only a display convenience, never trusted on its own.
  */
 export async function selfUpdateFlareAction(formData: FormData) {
@@ -36,6 +36,8 @@ export async function selfUpdateFlareAction(formData: FormData) {
     iconOverride: String(formData.get("iconOverride") ?? "").trim(),
     ribbonText: String(formData.get("ribbonText") ?? "").trim(),
     nameSuffix: String(formData.get("nameSuffix") ?? "").trim(),
+    outlineColor: String(formData.get("outlineColor") ?? "").trim(),
+    backgroundColor: String(formData.get("backgroundColor") ?? "").trim(),
   };
 
   const rejected: string[] = [];
@@ -53,6 +55,8 @@ export async function selfUpdateFlareAction(formData: FormData) {
     iconOverride: pickValidated(requested.iconOverride, unlocked.icon, "iconOverride"),
     ribbonText: pickValidated(requested.ribbonText, unlocked.ribbonText, "ribbonText"),
     nameSuffix: pickValidated(requested.nameSuffix, unlocked.nameSuffix, "nameSuffix"),
+    outlineColor: pickValidated(requested.outlineColor, unlocked.outlineColor, "outlineColor"),
+    backgroundColor: pickValidated(requested.backgroundColor, unlocked.backgroundColor, "backgroundColor"),
   };
 
   await prisma.badgeFlare.upsert({

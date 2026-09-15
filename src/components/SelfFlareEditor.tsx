@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { selfUpdateFlareAction } from "@/lib/actions/selfFlare";
 import { applyFlareToCard, type ClientAgentCard } from "@/lib/client-types";
 import type { UnlockedFlareOptions } from "@/lib/rewards";
+import { resolveColor } from "@/lib/flare";
 import { BadgeCard } from "./BadgeCard";
 
 const FIELD_LABELS: Record<string, string> = {
@@ -12,6 +13,8 @@ const FIELD_LABELS: Record<string, string> = {
   iconOverride: "Icon",
   ribbonText: "Ribbon text",
   nameSuffix: "Name suffix",
+  outlineColor: "Outline color",
+  backgroundColor: "Background color",
 };
 
 export function SelfFlareEditor({
@@ -26,8 +29,6 @@ export function SelfFlareEditor({
   defaultCodename: string;
   passthrough: {
     achievements: string[];
-    outlineColor: string | null;
-    backgroundColor: string | null;
     motto: string | null;
     codenameOverride: string | null;
   };
@@ -37,6 +38,8 @@ export function SelfFlareEditor({
     iconOverride: string;
     ribbonText: string;
     nameSuffix: string;
+    outlineColor: string;
+    backgroundColor: string;
   };
   unlocked: UnlockedFlareOptions;
   status: { saved: boolean; rejectedFields: string[] };
@@ -46,13 +49,15 @@ export function SelfFlareEditor({
   const [iconOverride, setIconOverride] = useState(initial.iconOverride);
   const [ribbonText, setRibbonText] = useState(initial.ribbonText);
   const [nameSuffix, setNameSuffix] = useState(initial.nameSuffix);
+  const [outlineColor, setOutlineColor] = useState(initial.outlineColor);
+  const [backgroundColor, setBackgroundColor] = useState(initial.backgroundColor);
 
   const previewCard = useMemo(
     () =>
       applyFlareToCard(baseCard, defaultCodename, {
         achievements: passthrough.achievements,
-        outlineColor: passthrough.outlineColor,
-        backgroundColor: passthrough.backgroundColor,
+        outlineColor,
+        backgroundColor,
         backgroundEffect,
         codenameOverride: passthrough.codenameOverride,
         motto: passthrough.motto,
@@ -62,7 +67,18 @@ export function SelfFlareEditor({
         nameSuffix,
         expiresAt: null,
       }),
-    [baseCard, defaultCodename, passthrough, backgroundEffect, borderStyle, iconOverride, ribbonText, nameSuffix]
+    [
+      baseCard,
+      defaultCodename,
+      passthrough,
+      backgroundEffect,
+      borderStyle,
+      iconOverride,
+      ribbonText,
+      nameSuffix,
+      outlineColor,
+      backgroundColor,
+    ]
   );
 
   const totalUnlocked =
@@ -70,7 +86,9 @@ export function SelfFlareEditor({
     unlocked.borderStyle.length +
     unlocked.icon.length +
     unlocked.ribbonText.length +
-    unlocked.nameSuffix.length;
+    unlocked.nameSuffix.length +
+    unlocked.outlineColor.length +
+    unlocked.backgroundColor.length;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
@@ -137,6 +155,20 @@ export function SelfFlareEditor({
           onChange={setNameSuffix}
           options={unlocked.nameSuffix}
         />
+        <UnlockedColorSelect
+          label="Outline color"
+          name="outlineColor"
+          value={outlineColor}
+          onChange={setOutlineColor}
+          options={unlocked.outlineColor}
+        />
+        <UnlockedColorSelect
+          label="Background color"
+          name="backgroundColor"
+          value={backgroundColor}
+          onChange={setBackgroundColor}
+          options={unlocked.backgroundColor}
+        />
 
         <button
           className="btn-primary"
@@ -188,6 +220,60 @@ function UnlockedSelect({
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+/**
+ * Same unlocked-pool-only dropdown as UnlockedSelect, but for the two color
+ * reward fields — adds a small resolved-color swatch next to the select so
+ * picking between e.g. "royal purple" and "#39ff14" is visual, not just
+ * text. The swatch is display-only; the select itself is what submits.
+ */
+function UnlockedColorSelect({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  const allOptions = value && !options.includes(value) ? [value, ...options] : options;
+  const locked = allOptions.length === 0;
+  const swatch = value ? resolveColor(value, name, []) : null;
+
+  return (
+    <div>
+      <label className="mb-1.5 flex items-center gap-1.5 font-terminal text-xs uppercase text-brand-sand/45">
+        {label}
+        {locked && <span className="text-brand-sand/25">(nothing unlocked yet)</span>}
+      </label>
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className="h-9 w-9 shrink-0 rounded-lg border border-brand-sand/15"
+          style={{ background: swatch ?? "transparent" }}
+        />
+        <select
+          name={name}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={locked}
+          className="input-modern w-full disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <option value="">(none)</option>
+          {allOptions.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }
