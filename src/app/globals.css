@@ -500,6 +500,21 @@ body.chaos-mode {
   transform: rotateY(180deg);
 }
 
+/* Auto-height variant used by the badge spotlight: instead of a fixed
+   aspect-ratio box with absolutely-positioned faces (which forces a fixed
+   height regardless of how much text/achievements a given card has), both
+   faces are stacked in the same CSS grid cell. Grid auto-sizes the row to
+   the taller of the two faces, so the card's height tracks its content. */
+.flip-scene-auto .flip-card {
+  height: auto;
+  display: grid;
+}
+.flip-scene-auto .flip-face {
+  position: relative;
+  grid-row: 1;
+  grid-column: 1;
+}
+
 /* --- Badge spotlight modal --- */
 @keyframes spotlight-backdrop-in {
   from {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, JetBrains_Mono, Dancing_Script } from "next/font/google";
+import { Space_Grotesk, Inter, JetBrains_Mono, Homemade_Apple } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
@@ -21,10 +21,10 @@ const monoFont = JetBrains_Mono({
   weight: ["400", "500", "600"],
 });
 
-const scriptFont = Dancing_Script({
+const scriptFont = Homemade_Apple({
   variable: "--font-script-raw",
   subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {

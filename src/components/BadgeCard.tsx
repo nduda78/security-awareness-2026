@@ -21,6 +21,18 @@ function glow(color: string, pct: number) {
   return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 }
 
+// Codenames are stored/displayed in ALL CAPS everywhere else ("SEALED
+// STRAIN") for the terminal/stencil look, but a script signature font
+// relies on lowercase glyphs to join up — forcing it to all-caps renders
+// as disconnected block letters instead of a flowing signature.
+function titleCase(s: string) {
+  return s
+    .toLowerCase()
+    .split(" ")
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
 function CardFront({
   card,
   outline,
@@ -38,17 +50,21 @@ function CardFront({
   return (
     <div className={`relative z-10 flex h-full flex-col ${large ? "p-6" : "p-3.5"}`}>
       {/* header */}
-      <div className={`flex items-center justify-between ${large ? "mb-5" : "mb-3"}`}>
-        <div
-          className={`flex items-center gap-1.5 rounded-full bg-black/25 font-terminal font-semibold uppercase tracking-widest text-brand-sand/70 ring-1 ring-white/10 ${
-            large ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[9px]"
-          }`}
-        >
-          <Icon name="shield" className={large ? "h-4 w-4 opacity-70" : "h-3 w-3 opacity-70"} />
-          Dutchie Security
+      <div className={`flex items-center justify-between gap-2 ${large ? "mb-5" : "mb-3"}`}>
+        <div className="min-w-0 flex-1">
+          {card.ribbonText && (
+            <div
+              title={card.ribbonText}
+              className={`inline-block max-w-full truncate rounded-full font-terminal font-semibold uppercase shadow-lg ${
+                large ? "px-4 py-1.5 text-xs" : "px-2.5 py-1 text-[9px]"
+              } ${card.ribbonRecognized ? "bg-brand-yellow/90 text-brand-dark-green" : "bg-brand-purple/85 text-brand-sand"}`}
+            >
+              {card.ribbonText}
+            </div>
+          )}
         </div>
         <div
-          className={`rounded-full font-terminal font-bold uppercase tracking-wide ring-1 ${
+          className={`shrink-0 rounded-full font-terminal font-bold uppercase tracking-wide ring-1 ${
             large ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[9px]"
           } ${isRogue ? "glitch-text" : ""}`}
           style={{
@@ -216,8 +232,8 @@ function CardBack({ card, large = false }: { card: ClientAgentCard; large?: bool
           <div className={`uppercase tracking-widest text-brand-sand/35 font-terminal ${large ? "text-sm" : "text-[9px]"}`}>
             Authorized Signature
           </div>
-          <div className={`truncate font-script text-brand-sand/90 ${large ? "mt-1 text-6xl" : "mt-0.5 text-3xl"}`}>
-            {card.codename}
+          <div className={`truncate font-script text-brand-sand/90 ${large ? "mt-1 text-7xl" : "mt-0.5 text-4xl"}`}>
+            {titleCase(card.codename)}
           </div>
         </div>
         <div className={`text-brand-sand/60 font-terminal ${large ? "text-lg" : "text-[11px]"}`}>
@@ -280,7 +296,7 @@ function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnable
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      className={`flip-scene tilt-card relative w-full cursor-pointer ${large ? "aspect-[2.05/1]" : "aspect-[1.42/1]"}`}
+      className={`flip-scene tilt-card relative w-full cursor-pointer ${large ? "flip-scene-auto" : "aspect-[1.42/1]"}`}
       style={{
         // @ts-expect-error custom property for pulse animation color
         "--pulse-color": outline,
@@ -303,16 +319,6 @@ function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnable
             <div className={`absolute inset-0 overflow-hidden pointer-events-none fx-${card.backgroundEffect}`} />
           )}
           {isRogue && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
-          {card.ribbonText && (
-            <div
-              title={card.ribbonText}
-              className={`absolute z-20 max-w-[42%] truncate rounded-full font-terminal font-semibold uppercase shadow-lg backdrop-blur-sm ${
-                large ? "right-5 top-5 px-4 py-1.5 text-xs" : "right-3 top-3 px-2.5 py-1 text-[9px]"
-              } ${card.ribbonRecognized ? "bg-brand-yellow/90 text-brand-dark-green" : "bg-brand-purple/85 text-brand-sand"}`}
-            >
-              {card.ribbonText}
-            </div>
-          )}
           <CardFront card={card} outline={outline} icon={icon} isRogue={isRogue} large={large} />
         </div>
 
