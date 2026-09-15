@@ -45,8 +45,15 @@ model Challenge {
   correctAnswer String? // null for FREE_TEXT_REVIEW
   choices       Json? // string[] for MULTIPLE_CHOICE
   xpValue       Int
-  rewardBadgeFlare String? // e.g. "Gold" / "Platinum" / "Diamond" ribbon — advertised reward, granted manually via /admin/flare on completion
-  rewardPrize      String? // freeform other prize, e.g. "Company hoodie", "Extra PTO day"
+  // Advertised badge-flare reward — mirrors the same fields on BadgeFlare (see flare.ts for the
+  // validated value sets). Granted by hand via /admin/flare once someone actually completes the
+  // challenge; these just describe what's on offer.
+  rewardBackgroundEffect String?
+  rewardBorderStyle      String?
+  rewardIcon             String?
+  rewardRibbonText       String?
+  rewardNameSuffix       String?
+  rewardPrize            String? // freeform other prize, e.g. "Company hoodie", "Extra PTO day"
   isActive      Boolean    @default(true)
   opensAt       DateTime?
   closesAt      DateTime?

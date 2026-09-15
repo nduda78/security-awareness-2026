@@ -3,8 +3,27 @@ import { isAdminSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
 import { upsertChallengeAction, deleteChallengeAction } from "@/lib/actions/admin";
+import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 
 export const dynamic = "force-dynamic";
+
+function rewardTags(c: {
+  rewardBackgroundEffect: string | null;
+  rewardBorderStyle: string | null;
+  rewardIcon: string | null;
+  rewardRibbonText: string | null;
+  rewardNameSuffix: string | null;
+  rewardPrize: string | null;
+}): string[] {
+  const tags: string[] = [];
+  if (c.rewardBackgroundEffect) tags.push(`${c.rewardBackgroundEffect} bg`);
+  if (c.rewardBorderStyle) tags.push(`${c.rewardBorderStyle} border`);
+  if (c.rewardIcon) tags.push(`${c.rewardIcon} icon`);
+  if (c.rewardRibbonText) tags.push(`"${c.rewardRibbonText}" ribbon`);
+  if (c.rewardNameSuffix) tags.push(`"${c.rewardNameSuffix}" suffix`);
+  if (c.rewardPrize) tags.push(c.rewardPrize);
+  return tags;
+}
 
 function toInputDate(d: Date | null): string {
   if (!d) return "";
@@ -41,6 +60,32 @@ function Field({
   );
 }
 
+function SelectField({
+  label,
+  name,
+  defaultValue,
+  options,
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+  options: string[];
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
+      <select name={name} defaultValue={defaultValue ?? ""} className="input-modern w-full">
+        <option value="">(none)</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function ChallengeForm({
   challenge,
 }: {
@@ -53,7 +98,11 @@ function ChallengeForm({
     correctAnswer: string | null;
     choices: unknown;
     xpValue: number;
-    rewardBadgeFlare: string | null;
+    rewardBackgroundEffect: string | null;
+    rewardBorderStyle: string | null;
+    rewardIcon: string | null;
+    rewardRibbonText: string | null;
+    rewardNameSuffix: string | null;
     rewardPrize: string | null;
     isActive: boolean;
     opensAt: Date | null;
@@ -68,31 +117,50 @@ function ChallengeForm({
         <Field label="Slug (URL-safe)" name="slug" defaultValue={challenge?.slug} required />
         <Field label="XP value" name="xpValue" type="number" defaultValue={String(challenge?.xpValue ?? 50)} required />
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
-          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
-            Badge flare reward
-          </label>
-          <select
-            name="rewardBadgeFlare"
-            defaultValue={challenge?.rewardBadgeFlare ?? ""}
-            className="input-modern w-full"
-          >
-            <option value="">(none)</option>
-            <option value="Gold">Gold ribbon</option>
-            <option value="Platinum">Platinum ribbon</option>
-            <option value="Diamond">Diamond ribbon</option>
-          </select>
-          <p className="mt-1 text-[11px] text-brand-sand/35">
-            Advertised on the challenge — granted by hand via Badge Flare once someone completes it.
-          </p>
+      <div className="rounded-lg border border-brand-purple/25 bg-brand-purple/[0.04] p-3">
+        <div className="mb-3 font-terminal text-xs uppercase text-brand-purple">Badge flare reward</div>
+        <p className="mb-3 text-[11px] text-brand-sand/35">
+          Advertised on the challenge — the same fields as Badge Flare. Still granted by hand via
+          /admin/flare once someone actually completes it; this just describes what&apos;s on offer.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <SelectField
+            label="Background effect"
+            name="rewardBackgroundEffect"
+            defaultValue={challenge?.rewardBackgroundEffect ?? ""}
+            options={BACKGROUND_EFFECTS}
+          />
+          <SelectField
+            label="Border style"
+            name="rewardBorderStyle"
+            defaultValue={challenge?.rewardBorderStyle ?? ""}
+            options={BORDER_STYLES}
+          />
+          <SelectField
+            label="Icon"
+            name="rewardIcon"
+            defaultValue={challenge?.rewardIcon ?? ""}
+            options={ICONS}
+          />
+          <Field
+            label="Ribbon text"
+            name="rewardRibbonText"
+            defaultValue={challenge?.rewardRibbonText ?? ""}
+            placeholder="Gold, Platinum, Diamond, or your own"
+          />
+          <Field
+            label="Name suffix"
+            name="rewardNameSuffix"
+            defaultValue={challenge?.rewardNameSuffix ?? ""}
+            placeholder="the Vigilant"
+          />
+          <Field
+            label="Other prize"
+            name="rewardPrize"
+            defaultValue={challenge?.rewardPrize ?? ""}
+            placeholder="Company hoodie, gift card, extra PTO day…"
+          />
         </div>
-        <Field
-          label="Other prize (optional)"
-          name="rewardPrize"
-          defaultValue={challenge?.rewardPrize ?? ""}
-          placeholder="Company hoodie, gift card, extra PTO day…"
-        />
       </div>
       <Field label="Title" name="title" defaultValue={challenge?.title} required />
       <div>
@@ -157,10 +225,12 @@ export default async function AdminChallengesPage() {
             <summary className="flex cursor-pointer items-center justify-between font-medium">
               <span>
                 {c.title} <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>{" "}
-                {c.rewardBadgeFlare && (
-                  <span className="font-terminal text-xs text-brand-purple">• {c.rewardBadgeFlare} ribbon</span>
-                )}{" "}
-                {c.rewardPrize && <span className="font-terminal text-xs text-brand-light-green">• {c.rewardPrize}</span>}{" "}
+                {rewardTags(c).map((tag, i) => (
+                  <span key={i} className="font-terminal text-xs text-brand-purple">
+                    {" "}
+                    • {tag}
+                  </span>
+                ))}{" "}
                 {!c.isActive && <span className="font-terminal text-xs text-brand-sand/40">(inactive)</span>}
               </span>
               <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>

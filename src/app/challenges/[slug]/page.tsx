@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
 import { submitAnswerAction } from "@/lib/actions/submit";
-import { Icon } from "@/components/Icon";
+import { ChallengeRewardPills } from "@/components/ChallengeRewardPills";
 
 export const dynamic = "force-dynamic";
 
@@ -39,22 +39,13 @@ export default async function ChallengeDetailPage({
   return (
     <div className="fade-in-up mx-auto max-w-2xl">
       <div className="section-eyebrow mb-2">Mission Briefing</div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <h1 className="font-display text-2xl font-semibold sm:text-3xl">{challenge.title}</h1>
         <div className="flex flex-wrap justify-end gap-1.5">
           <span className="pill !cursor-default !border-brand-yellow/30 !text-brand-yellow">
             +{challenge.xpValue} XP
           </span>
-          {challenge.rewardBadgeFlare && (
-            <span className="pill !cursor-default !border-brand-purple/40 !text-brand-purple">
-              <Icon name="trophy" className="h-3 w-3" /> {challenge.rewardBadgeFlare} ribbon
-            </span>
-          )}
-          {challenge.rewardPrize && (
-            <span className="pill !cursor-default !border-brand-light-green/40 !text-brand-light-green">
-              <Icon name="crown" className="h-3 w-3" /> {challenge.rewardPrize}
-            </span>
-          )}
+          <ChallengeRewardPills reward={challenge} />
         </div>
       </div>
       <p className="surface-card mb-6 whitespace-pre-wrap p-5 text-brand-sand/75">{challenge.description}</p>
