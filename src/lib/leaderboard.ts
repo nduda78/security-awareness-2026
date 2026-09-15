@@ -18,6 +18,7 @@ export interface AgentCard {
   barcode: string;
   challengesCompleted: number;
   flare: ResolvedFlare | null;
+  photoUrl: string | null;
 }
 
 /**
@@ -36,6 +37,14 @@ export async function buildAgentRoster(): Promise<AgentCard[]> {
       },
     },
   });
+  const photoUpdatedAtByEmail = new Map(
+    (
+      await prisma.employee.findMany({
+        where: { photoUpdatedAt: { not: null } },
+        select: { email: true, photoUpdatedAt: true },
+      })
+    ).map((e) => [e.email, e.photoUpdatedAt as Date])
+  );
 
   // Stable order for codename collision resolution: sort by email so
   // results don't reshuffle just because someone's XP changed.
@@ -86,6 +95,9 @@ export async function buildAgentRoster(): Promise<AgentCard[]> {
       barcode: flavor.barcode,
       challengesCompleted: e.submissions.length,
       flare,
+      photoUrl: photoUpdatedAtByEmail.has(e.email)
+        ? `/api/photo/${encodeURIComponent(e.email)}?v=${photoUpdatedAtByEmail.get(e.email)!.getTime()}`
+        : null,
     };
   });
 

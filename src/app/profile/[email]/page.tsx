@@ -2,18 +2,30 @@ import { notFound } from "next/navigation";
 import { buildAgentRoster, overallRank, rankWithinTier } from "@/lib/leaderboard";
 import { toClientCard } from "@/lib/client-types";
 import { prisma } from "@/lib/prisma";
+import { getAgentIdentity } from "@/lib/session";
 import { BadgeCard } from "@/components/BadgeCard";
 import { Icon } from "@/components/Icon";
+import { uploadPhotoAction, removePhotoAction } from "@/lib/actions/photo";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProfilePage({ params }: { params: Promise<{ email: string }> }) {
+export default async function ProfilePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ email: string }>;
+  searchParams: Promise<{ photoError?: string; photoUploaded?: string; photoRemoved?: string }>;
+}) {
   const { email: emailParam } = await params;
   const email = decodeURIComponent(emailParam).toLowerCase();
+  const { photoError, photoUploaded, photoRemoved } = await searchParams;
 
   const roster = await buildAgentRoster();
   const card = roster.find((c) => c.email === email);
   if (!card) notFound();
+
+  const identity = await getAgentIdentity();
+  const isOwnProfile = identity?.email === email;
 
   const { rank: overall, total: overallTotal } = overallRank(roster, email);
   const { rank: tierRank, total: tierTotal } = rankWithinTier(roster, card);
@@ -45,6 +57,45 @@ export default async function ProfilePage({ params }: { params: Promise<{ email:
             <Stat label={`Rank in ${card.tier.shortLabel}`} value={`#${tierRank} / ${tierTotal}`} />
             <Stat label="Challenges Done" value={String(card.challengesCompleted)} />
           </div>
+
+          {isOwnProfile && (
+            <div className="mt-4 rounded-md border border-brand-sand/10 bg-black/20 p-3">
+              <h3 className="mb-2 font-terminal text-xs uppercase text-brand-sand/50">Badge Photo</h3>
+              {photoUploaded === "1" && (
+                <div className="mb-2 rounded bg-brand-light-green/15 p-2 text-xs text-brand-light-green">
+                  Photo updated.
+                </div>
+              )}
+              {photoRemoved === "1" && (
+                <div className="mb-2 rounded bg-brand-sand/10 p-2 text-xs text-brand-sand/60">Photo removed.</div>
+              )}
+              {photoError && (
+                <div className="mb-2 rounded bg-brand-red/15 p-2 text-xs text-brand-red">{photoError}</div>
+              )}
+              <form action={uploadPhotoAction} className="flex flex-wrap items-center gap-2">
+                <input
+                  type="file"
+                  name="photo"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  required
+                  className="text-xs text-brand-sand/70"
+                />
+                <button className="rounded bg-brand-light-green px-3 py-1 font-terminal text-[10px] uppercase text-brand-dark-green">
+                  Upload
+                </button>
+              </form>
+              {clientCard.photoUrl && (
+                <form action={removePhotoAction} className="mt-2">
+                  <button className="font-terminal text-[10px] uppercase text-brand-sand/40 hover:text-brand-red">
+                    Remove current photo
+                  </button>
+                </form>
+              )}
+              <p className="mt-2 font-terminal text-[9px] text-brand-sand/30">
+                JPG, PNG, WEBP, or GIF. Max 2MB. Shown on your badge everywhere.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

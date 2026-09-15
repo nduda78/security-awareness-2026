@@ -32,6 +32,7 @@ export interface ClientAgentCard {
   ribbonRecognized: boolean;
   rankInTier: number;
   totalInTier: number;
+  photoUrl: string | null;
 }
 
 function formatDate(d: Date | null): string | null {
@@ -70,5 +71,6 @@ export function toClientCard(card: AgentCard, rankInTier: number, totalInTier: n
     ribbonRecognized: card.flare?.ribbonRecognized ?? false,
     rankInTier,
     totalInTier,
+    photoUrl: card.photoUrl,
   };
 }

@@ -111,10 +111,15 @@ export function BadgeCard({ card, dimmed = false }: { card: ClientAgentCard; dim
               {/* photo box */}
               <div className="flex w-[74px] shrink-0 flex-col items-center gap-1">
                 <div
-                  className="relative flex h-[74px] w-[74px] items-center justify-center rounded border-2 bg-black/40"
+                  className="relative flex h-[74px] w-[74px] items-center justify-center overflow-hidden rounded border-2 bg-black/40"
                   style={{ borderColor: outline }}
                 >
-                  <PersonSilhouette className="h-10 w-10 text-brand-sand/30" />
+                  {card.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
+                    <img src={card.photoUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <PersonSilhouette className="h-10 w-10 text-brand-sand/30" />
+                  )}
                   <Icon
                     name={icon}
                     className="absolute h-4 w-4 translate-x-6 translate-y-6 rounded-full bg-black/70 p-0.5"
