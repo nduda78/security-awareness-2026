@@ -12,6 +12,13 @@ async function requireAdmin() {
   }
 }
 
+// Everything an admin does that isn't already visible through the
+// submission ledger (flare edits, ROGUE overrides, manual XP grants) gets
+// logged here so there's a single timestamped activity trail to review.
+async function logAdminAudit(action: string, detail: string) {
+  await prisma.adminAudit.create({ data: { action, detail } });
+}
+
 export async function adminLoginAction(formData: FormData) {
   const passphrase = String(formData.get("passphrase") ?? "");
   if (passphrase !== (process.env.ADMIN_PASSPHRASE || "")) {
@@ -159,6 +166,15 @@ export async function upsertFlareAction(formData: FormData) {
     create: { employeeId: employee!.id, ...data },
   });
 
+  const changedFields = Object.entries(data)
+    .filter(([key, value]) => key !== "achievements" && value !== null && value !== false)
+    .map(([key, value]) => `${key}=${value instanceof Date ? value.toISOString() : String(value)}`);
+  if (achievements.length) changedFields.push(`achievements=[${achievements.join(", ")}]`);
+  await logAdminAudit(
+    "FLARE_UPDATE",
+    `${employee!.displayName} (${employee!.email}): ${changedFields.length ? changedFields.join(", ") : "cleared all flare fields"}`
+  );
+
   revalidatePath("/admin/flare");
   revalidatePath("/leaderboard");
   revalidatePath("/profile");
@@ -169,7 +185,12 @@ export async function toggleRogueAction(formData: FormData) {
   await requireAdmin();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const rogue = formData.get("rogue") === "on";
+  const employee = await prisma.employee.findUnique({ where: { email } });
   await prisma.employee.update({ where: { email }, data: { rogueOverride: rogue } });
+  await logAdminAudit(
+    "ROGUE_OVERRIDE",
+    `${employee?.displayName ?? email} (${email}): ${rogue ? "marked ROGUE" : "cleared ROGUE"}`
+  );
   revalidatePath("/admin/employees");
   revalidatePath("/leaderboard");
   revalidatePath("/profile");
@@ -211,6 +232,8 @@ export async function grantManualXpAction(formData: FormData) {
       reviewedAt: new Date(),
     },
   });
+
+  await logAdminAudit("MANUAL_XP_GRANT", `${employee!.displayName} (${employee!.email}): +${xp} XP — ${reason}`);
 
   revalidatePath("/admin/employees");
   revalidatePath("/leaderboard");

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
 import { upsertFlareAction } from "@/lib/actions/admin";
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
+import { ColorField } from "@/components/ColorField";
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +64,8 @@ export default async function AdminFlarePage({
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <TextField label="Outline color" name="outlineColor" defaultValue={selected.flare?.outlineColor ?? ""} placeholder="Hot Pink, #ff0, royalblue" />
-                <TextField label="Background color" name="backgroundColor" defaultValue={selected.flare?.backgroundColor ?? ""} />
+                <ColorField label="Outline color" name="outlineColor" defaultValue={selected.flare?.outlineColor ?? ""} placeholder="#ff6a00, hotpink, royalblue" />
+                <ColorField label="Background color" name="backgroundColor" defaultValue={selected.flare?.backgroundColor ?? ""} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <SelectField
