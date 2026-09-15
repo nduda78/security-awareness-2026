@@ -21,17 +21,36 @@ function glow(color: string, pct: number) {
   return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 }
 
-function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; outline: string; icon: string; isRogue: boolean }) {
+function CardFront({
+  card,
+  outline,
+  icon,
+  isRogue,
+  large = false,
+}: {
+  card: ClientAgentCard;
+  outline: string;
+  icon: string;
+  isRogue: boolean;
+  large?: boolean;
+}) {
+  const photoSize = large ? 148 : 82;
   return (
-    <div className="relative z-10 flex h-full flex-col p-3.5">
+    <div className={`relative z-10 flex h-full flex-col ${large ? "p-6" : "p-3.5"}`}>
       {/* header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 font-terminal text-[9px] font-semibold uppercase tracking-widest text-brand-sand/70 ring-1 ring-white/10">
-          <Icon name="shield" className="h-3 w-3 opacity-70" />
+      <div className={`flex items-center justify-between ${large ? "mb-5" : "mb-3"}`}>
+        <div
+          className={`flex items-center gap-1.5 rounded-full bg-black/25 font-terminal font-semibold uppercase tracking-widest text-brand-sand/70 ring-1 ring-white/10 ${
+            large ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[9px]"
+          }`}
+        >
+          <Icon name="shield" className={large ? "h-4 w-4 opacity-70" : "h-3 w-3 opacity-70"} />
           Dutchie Security
         </div>
         <div
-          className={`rounded-full px-2.5 py-1 font-terminal text-[9px] font-bold uppercase tracking-wide ring-1 ${isRogue ? "glitch-text" : ""}`}
+          className={`rounded-full font-terminal font-bold uppercase tracking-wide ring-1 ${
+            large ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[9px]"
+          } ${isRogue ? "glitch-text" : ""}`}
           style={{
             color: outline,
             background: glow(outline, 16),
@@ -43,12 +62,14 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
       </div>
 
       {/* body */}
-      <div className="flex min-h-0 flex-1 gap-3">
+      <div className={`flex min-h-0 flex-1 ${large ? "gap-5" : "gap-3"}`}>
         {/* photo box */}
-        <div className="flex w-[82px] shrink-0 flex-col items-center gap-1.5">
+        <div className={`flex shrink-0 flex-col items-center ${large ? "w-[148px] gap-2.5" : "w-[82px] gap-1.5"}`}>
           <div
-            className="relative flex h-[82px] w-[82px] items-center justify-center overflow-hidden rounded-2xl bg-black/35"
+            className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-black/35"
             style={{
+              width: photoSize,
+              height: photoSize,
               boxShadow: `0 8px 20px -8px ${glow(outline, 55)}, 0 0 0 2px ${glow(outline, 55)}, inset 0 0 0 1px rgba(255,255,255,0.06)`,
             }}
           >
@@ -56,16 +77,22 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
               // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
               <img src={card.photoUrl} alt="" className="h-full w-full object-cover" />
             ) : (
-              <PersonSilhouette className="h-10 w-10 text-brand-sand/25" />
+              <PersonSilhouette className={large ? "h-16 w-16 text-brand-sand/25" : "h-10 w-10 text-brand-sand/25"} />
             )}
             <div
-              className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 ring-1 ring-white/15"
+              className={`absolute flex items-center justify-center rounded-full bg-black/70 ring-1 ring-white/15 ${
+                large ? "bottom-1.5 right-1.5 h-8 w-8" : "bottom-1 right-1 h-5 w-5"
+              }`}
               style={{ color: outline }}
             >
-              <Icon name={icon} className="h-3 w-3" />
+              <Icon name={icon} className={large ? "h-4.5 w-4.5" : "h-3 w-3"} />
             </div>
           </div>
-          <div className="rounded-full bg-black/25 px-2 py-0.5 font-terminal text-[9px] tracking-wide text-brand-sand/45">
+          <div
+            className={`rounded-full bg-black/25 tracking-wide text-brand-sand/45 font-terminal ${
+              large ? "px-3 py-1 text-xs" : "px-2 py-0.5 text-[9px]"
+            }`}
+          >
             {card.agentId}
           </div>
         </div>
@@ -73,28 +100,44 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
         {/* details */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-between">
           <div className="min-w-0">
-            <div className={`truncate font-display text-[19px] font-semibold leading-tight text-brand-sand ${isRogue ? "glitch-text" : ""}`}>
+            <div
+              className={`truncate font-display font-semibold leading-tight text-brand-sand ${
+                large ? "text-[34px]" : "text-[19px]"
+              } ${isRogue ? "glitch-text" : ""}`}
+            >
               {card.renderedName}
             </div>
-            <div className="truncate text-[12px] italic text-brand-sand/60">
+            <div className={`truncate italic text-brand-sand/60 ${large ? "mt-1 text-lg" : "text-[12px]"}`}>
               &ldquo;{card.motto ?? card.codename}&rdquo;
             </div>
             {card.clearanceIssuedLabel && (
-              <div className="mt-1.5 font-terminal text-[9px] uppercase tracking-wide text-brand-sand/35">
+              <div
+                className={`uppercase tracking-wide text-brand-sand/35 font-terminal ${
+                  large ? "mt-2.5 text-xs" : "mt-1.5 text-[9px]"
+                }`}
+              >
                 Issued {card.clearanceIssuedLabel}
               </div>
             )}
-            <div className="mt-1.5 line-clamp-2 text-[10.5px] leading-snug text-brand-sand/45">{card.funFact}</div>
+            <div
+              className={`leading-snug text-brand-sand/50 ${
+                large ? "mt-3 line-clamp-3 text-base" : "mt-1.5 line-clamp-2 text-[10.5px] text-brand-sand/45"
+              }`}
+            >
+              {card.funFact}
+            </div>
           </div>
 
           <div>
-            <div className="flex items-baseline justify-between font-terminal text-[10px]">
+            <div className={`flex items-baseline justify-between font-terminal ${large ? "text-base" : "text-[10px]"}`}>
               <span className="uppercase tracking-wide text-brand-sand/45">XP Level</span>
               <span className="font-bold" style={{ color: outline }}>
                 <XpCountUp value={card.xp} />
               </span>
             </div>
-            <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-black/35 ring-1 ring-white/5">
+            <div
+              className={`w-full overflow-hidden rounded-full bg-black/35 ring-1 ring-white/5 ${large ? "mt-2 h-3" : "mt-1 h-2"}`}
+            >
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
@@ -104,18 +147,22 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
                 }}
               />
             </div>
-            <div className="mt-1 truncate font-terminal text-[9px] text-brand-sand/40">
+            <div className={`truncate font-terminal text-brand-sand/40 ${large ? "mt-1.5 text-sm" : "mt-1 text-[9px]"}`}>
               {card.xpToNext !== null ? `${card.xpToNext} XP to ${card.nextTierLabel}` : "Max clearance reached"}
             </div>
           </div>
         </div>
 
         {/* side strip: achievements + barcode */}
-        <div className="flex w-6 shrink-0 flex-col items-center justify-between gap-1.5 rounded-xl bg-black/20 py-1.5 ring-1 ring-white/5">
+        <div
+          className={`flex shrink-0 flex-col items-center justify-between rounded-xl bg-black/20 ring-1 ring-white/5 ${
+            large ? "w-9 gap-2.5 py-2.5" : "w-6 gap-1.5 py-1.5"
+          }`}
+        >
           {card.achievements.length > 0 && (
-            <div className="flex flex-col items-center gap-1">
+            <div className={`flex flex-col items-center ${large ? "gap-2" : "gap-1"}`}>
               {card.achievements.slice(0, 3).map((a, i) => (
-                <Icon key={i} name="trophy" className="h-3 w-3 text-brand-yellow" />
+                <Icon key={i} name="trophy" className={large ? "h-4.5 w-4.5 text-brand-yellow" : "h-3 w-3 text-brand-yellow"} />
               ))}
             </div>
           )}
@@ -123,32 +170,44 @@ function CardFront({ card, outline, icon, isRogue }: { card: ClientAgentCard; ou
               surprisingly large intrinsic block-size (a full barcode string
               here measured ~210px tall), which was silently overflowing the
               fixed-height card and clipping the footer below it. */}
-          <div className="max-h-[72px] overflow-hidden font-terminal text-[9px] leading-[0.55rem] tracking-[0.15em] text-brand-sand/35 [writing-mode:vertical-rl]">
-            {card.barcode.slice(0, 9)}
+          <div
+            className={`overflow-hidden font-terminal tracking-[0.15em] text-brand-sand/35 [writing-mode:vertical-rl] ${
+              large ? "max-h-[130px] text-xs leading-[0.85rem]" : "max-h-[72px] text-[9px] leading-[0.55rem]"
+            }`}
+          >
+            {card.barcode.slice(0, large ? 12 : 9)}
           </div>
         </div>
       </div>
 
       {/* holo footer strip */}
-      <div className="relative mt-3 h-2 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
+      <div
+        className={`relative shrink-0 overflow-hidden rounded-full ring-1 ring-white/10 ${large ? "mt-5 h-3" : "mt-3 h-2"}`}
+      >
         <div className="fx-holo absolute inset-0 opacity-60" />
       </div>
     </div>
   );
 }
 
-function CardBack({ card }: { card: ClientAgentCard }) {
+function CardBack({ card, large = false }: { card: ClientAgentCard; large?: boolean }) {
   return (
-    <div className="relative z-10 flex h-full flex-col p-4">
-      <div className="mb-3 h-6 w-full rounded-full bg-gradient-to-r from-black/80 via-black/60 to-black/80 ring-1 ring-white/10" />
+    <div className={`relative z-10 flex h-full flex-col ${large ? "p-7" : "p-4"}`}>
+      <div
+        className={`w-full rounded-full bg-gradient-to-r from-black/80 via-black/60 to-black/80 ring-1 ring-white/10 ${
+          large ? "mb-5 h-9" : "mb-3 h-6"
+        }`}
+      />
       <div className="flex flex-1 flex-col justify-between">
         <div>
-          <div className="font-terminal text-[9px] uppercase tracking-widest text-brand-sand/35">
+          <div className={`uppercase tracking-widest text-brand-sand/35 font-terminal ${large ? "text-sm" : "text-[9px]"}`}>
             Authorized Signature
           </div>
-          <div className="mt-1 truncate font-serif text-xl italic text-brand-sand/90">{card.codename}</div>
+          <div className={`truncate font-serif italic text-brand-sand/90 ${large ? "mt-2 text-4xl" : "mt-1 text-xl"}`}>
+            {card.codename}
+          </div>
         </div>
-        <div className="font-terminal text-[11px] text-brand-sand/60">
+        <div className={`text-brand-sand/60 font-terminal ${large ? "text-lg" : "text-[11px]"}`}>
           <div>
             AGENT ID <span className="text-brand-sand">{card.agentId}</span>
           </div>
@@ -156,9 +215,9 @@ function CardBack({ card }: { card: ClientAgentCard }) {
             RANK <span className="text-brand-sand">#{card.rankInTier}</span> of {card.totalInTier} in{" "}
             {card.tierLabel}
           </div>
-          <div className="mt-1.5 tracking-[0.2em] text-brand-sand/40">{card.barcode}</div>
+          <div className={`tracking-[0.2em] text-brand-sand/40 ${large ? "mt-3 text-sm" : "mt-1.5"}`}>{card.barcode}</div>
         </div>
-        <div className="font-terminal text-[7px] leading-tight text-brand-sand/25">
+        <div className={`leading-tight text-brand-sand/25 font-terminal ${large ? "text-xs" : "text-[7px]"}`}>
           PROPERTY OF DUTCHIE SECURITY. IF FOUND, RETURN TO THE SECURITY DESK. UNAUTHORIZED DUPLICATION PROHIBITED.
         </div>
       </div>
@@ -174,9 +233,10 @@ interface CardVisualProps {
   flipped: boolean;
   onClick: (e: React.MouseEvent) => void;
   tiltEnabled?: boolean;
+  large?: boolean;
 }
 
-function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnabled = true }: CardVisualProps) {
+function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnabled = true, large = false }: CardVisualProps) {
   const outerRef = useRef<HTMLDivElement>(null);
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
@@ -207,7 +267,7 @@ function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnable
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      className="flip-scene tilt-card relative aspect-[1.42/1] w-full cursor-pointer"
+      className={`flip-scene tilt-card relative w-full cursor-pointer ${large ? "aspect-[2.05/1]" : "aspect-[1.42/1]"}`}
       style={{
         // @ts-expect-error custom property for pulse animation color
         "--pulse-color": outline,
@@ -233,14 +293,14 @@ function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnable
           {card.ribbonText && (
             <div
               title={card.ribbonText}
-              className={`absolute right-3 top-3 z-20 max-w-[42%] truncate rounded-full px-2.5 py-1 text-[9px] font-terminal font-semibold uppercase shadow-lg backdrop-blur-sm ${
-                card.ribbonRecognized ? "bg-brand-yellow/90 text-brand-dark-green" : "bg-brand-purple/85 text-brand-sand"
-              }`}
+              className={`absolute z-20 max-w-[42%] truncate rounded-full font-terminal font-semibold uppercase shadow-lg backdrop-blur-sm ${
+                large ? "right-5 top-5 px-4 py-1.5 text-xs" : "right-3 top-3 px-2.5 py-1 text-[9px]"
+              } ${card.ribbonRecognized ? "bg-brand-yellow/90 text-brand-dark-green" : "bg-brand-purple/85 text-brand-sand"}`}
             >
               {card.ribbonText}
             </div>
           )}
-          <CardFront card={card} outline={outline} icon={icon} isRogue={isRogue} />
+          <CardFront card={card} outline={outline} icon={icon} isRogue={isRogue} large={large} />
         </div>
 
         {/* back face */}
@@ -252,7 +312,7 @@ function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnable
         >
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.07] via-transparent to-transparent" />
           {isRogue && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
-          <CardBack card={card} />
+          <CardBack card={card} large={large} />
         </div>
       </div>
     </div>
@@ -308,10 +368,18 @@ function BadgeSpotlight({
         ✕
       </button>
       <div
-        className="spotlight-card-in w-full max-w-[640px]"
+        className="spotlight-card-in w-full max-w-[760px]"
         onClick={(e) => e.stopPropagation()}
       >
-        <CardVisual card={card} outline={outline} icon={icon} isRogue={isRogue} flipped={flipped} onClick={handleCardClick} />
+        <CardVisual
+          card={card}
+          outline={outline}
+          icon={icon}
+          isRogue={isRogue}
+          flipped={flipped}
+          onClick={handleCardClick}
+          large
+        />
         <p className="mt-4 text-center font-terminal text-[11px] uppercase tracking-wide text-brand-sand/40">
           Click the badge to flip · Esc or click outside to close
         </p>
