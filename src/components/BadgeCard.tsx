@@ -47,6 +47,16 @@ function CardFront({
   large?: boolean;
 }) {
   const photoSize = large ? 148 : 82;
+
+  // In the spotlight, animate the XP bar filling up from empty rather than
+  // just appearing already full — the small grid card keeps its static bar.
+  const [barPct, setBarPct] = useState(large ? 0 : card.progressPct);
+  useEffect(() => {
+    if (!large) return;
+    const t = setTimeout(() => setBarPct(card.progressPct), 150);
+    return () => clearTimeout(t);
+  }, [large, card.progressPct]);
+
   return (
     <div className={`relative z-10 flex h-full flex-col ${large ? "p-6" : "p-3.5"}`}>
       {/* header */}
@@ -170,7 +180,7 @@ function CardFront({
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
-                  width: `${card.progressPct}%`,
+                  width: `${barPct}%`,
                   background: `linear-gradient(90deg, ${glow(outline, 70)}, ${outline})`,
                   boxShadow: `0 0 10px 0 ${glow(outline, 60)}`,
                 }}
@@ -232,7 +242,11 @@ function CardBack({ card, large = false }: { card: ClientAgentCard; large?: bool
           <div className={`uppercase tracking-widest text-brand-sand/35 font-terminal ${large ? "text-sm" : "text-[9px]"}`}>
             Authorized Signature
           </div>
-          <div className={`truncate font-script text-brand-sand/90 ${large ? "mt-1 text-7xl" : "mt-0.5 text-4xl"}`}>
+          <div
+            className={`overflow-visible whitespace-nowrap font-script leading-[1.35] text-brand-sand/90 ${
+              large ? "mt-2 py-1 text-4xl" : "mt-1 py-0.5 text-xl"
+            }`}
+          >
             {titleCase(card.codename)}
           </div>
         </div>
@@ -387,7 +401,7 @@ function BadgeSpotlight({
         ✕
       </button>
       <div
-        className="spotlight-card-in w-full max-w-[760px]"
+        className="spotlight-card-in w-full max-w-[560px]"
         onClick={(e) => e.stopPropagation()}
       >
         <CardVisual
