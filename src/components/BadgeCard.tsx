@@ -280,7 +280,16 @@ interface CardVisualProps {
   large?: boolean;
 }
 
-function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnabled = true, large = false }: CardVisualProps) {
+/** Derives the outline/icon/isRogue visual props shared by BadgeCard and any standalone CardVisual usage (e.g. the admin flare back-face preview). */
+export function deriveBadgeVisualProps(card: ClientAgentCard) {
+  return {
+    isRogue: card.tierKey === "ROGUE",
+    outline: card.outlineColor ?? card.tierColor,
+    icon: card.iconOverride ?? card.tierIcon,
+  };
+}
+
+export function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnabled = true, large = false }: CardVisualProps) {
   const outerRef = useRef<HTMLDivElement>(null);
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
@@ -311,7 +320,7 @@ function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnable
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      className="flip-scene tilt-card relative aspect-[27/17] w-full cursor-pointer"
+      className={`flip-scene tilt-card relative aspect-[27/17] w-full ${tiltEnabled ? "cursor-pointer" : ""}`}
       style={{
         // @ts-expect-error custom property for pulse animation color
         "--pulse-color": outline,
@@ -425,9 +434,7 @@ function BadgeSpotlight({
 
 export function BadgeCard({ card, dimmed = false }: { card: ClientAgentCard; dimmed?: boolean }) {
   const [spotlightOpen, setSpotlightOpen] = useState(false);
-  const isRogue = card.tierKey === "ROGUE";
-  const outline = card.outlineColor ?? card.tierColor;
-  const icon = card.iconOverride ?? card.tierIcon;
+  const { isRogue, outline, icon } = deriveBadgeVisualProps(card);
 
   return (
     <div

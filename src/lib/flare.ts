@@ -57,11 +57,30 @@ const CSS_NAMED_COLORS = new Set([
   "deeppink",
 ]);
 
-export type BackgroundEffect = "holo" | "crt" | "gradient-sweep" | "starfield";
-export const BACKGROUND_EFFECTS: BackgroundEffect[] = ["holo", "crt", "gradient-sweep", "starfield"];
+export type BackgroundEffect =
+  | "holo"
+  | "crt"
+  | "gradient-sweep"
+  | "starfield"
+  | "matrix"
+  | "smoke"
+  | "confetti"
+  | "circuit"
+  | "aurora";
+export const BACKGROUND_EFFECTS: BackgroundEffect[] = [
+  "holo",
+  "crt",
+  "gradient-sweep",
+  "starfield",
+  "matrix",
+  "smoke",
+  "confetti",
+  "circuit",
+  "aurora",
+];
 
-export type BorderStyle = "pulse" | "shimmer" | "marching-ants";
-export const BORDER_STYLES: BorderStyle[] = ["pulse", "shimmer", "marching-ants"];
+export type BorderStyle = "pulse" | "shimmer" | "marching-ants" | "neon" | "glitch" | "foil";
+export const BORDER_STYLES: BorderStyle[] = ["pulse", "shimmer", "marching-ants", "neon", "glitch", "foil"];
 
 export type IconKey = "crown" | "flame" | "trophy" | "lightning" | "skull" | "shield" | "lock" | "file";
 export const ICONS: IconKey[] = ["crown", "flame", "trophy", "lightning", "skull", "shield", "lock", "file"];

@@ -5,7 +5,7 @@ import { upsertFlareAction } from "@/lib/actions/admin";
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { applyFlareToCard, type ClientAgentCard } from "@/lib/client-types";
 import { ColorField } from "./ColorField";
-import { BadgeCard } from "./BadgeCard";
+import { BadgeCard, CardVisual, deriveBadgeVisualProps } from "./BadgeCard";
 
 export function FlareEditor({
   email,
@@ -81,14 +81,29 @@ export function FlareEditor({
     ]
   );
 
+  const { outline, icon, isRogue } = deriveBadgeVisualProps(previewCard);
+
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
       <div className="lg:sticky lg:top-24 lg:self-start">
-        <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Live preview</div>
+        <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Live preview — front</div>
         <BadgeCard card={previewCard} />
-        <p className="mt-3 text-center text-xs text-brand-sand/35">
+        <p className="mb-6 mt-3 text-center text-xs text-brand-sand/35">
           Updates as you edit below — nothing is saved until you click Save flare.
         </p>
+
+        <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Back</div>
+        <div className="mx-auto w-full max-w-[460px]">
+          <CardVisual
+            card={previewCard}
+            outline={outline}
+            icon={icon}
+            isRogue={isRogue}
+            flipped
+            onClick={() => {}}
+            tiltEnabled={false}
+          />
+        </div>
       </div>
 
       <form action={upsertFlareAction} className="surface-card space-y-4 p-5">
