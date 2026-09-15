@@ -26,6 +26,7 @@
   --font-sans: var(--font-sans-raw);
   --font-display: var(--font-display-raw);
   --font-mono: var(--font-mono-raw);
+  --font-script: var(--font-script-raw);
 }
 
 * {
@@ -73,6 +74,9 @@ body {
 }
 .font-display {
   font-family: var(--font-display);
+}
+.font-script {
+  font-family: var(--font-script), cursive;
 }
 
 .gradient-text {

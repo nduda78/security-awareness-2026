@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, Inter, JetBrains_Mono, Dancing_Script } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
@@ -21,6 +21,12 @@ const monoFont = JetBrains_Mono({
   weight: ["400", "500", "600"],
 });
 
+const scriptFont = Dancing_Script({
+  variable: "--font-script-raw",
+  subsets: ["latin"],
+  weight: ["600", "700"],
+});
+
 export const metadata: Metadata = {
   title: "2026 Dutchie Cybersecurity Awareness Month",
   description: "Earn XP, unlock clearance levels, and climb the ranks all October long.",
@@ -30,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${displayFont.variable} ${sansFont.variable} ${monoFont.variable} h-full antialiased`}
+      className={`${displayFont.variable} ${sansFont.variable} ${monoFont.variable} ${scriptFont.variable} h-full antialiased`}
     >
       <body className="grid-glow min-h-full flex flex-col">
         <Nav />

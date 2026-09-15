@@ -85,7 +85,7 @@ function CardFront({
               }`}
               style={{ color: outline }}
             >
-              <Icon name={icon} className={large ? "h-4.5 w-4.5" : "h-3 w-3"} />
+              <Icon name={icon} className={large ? "h-[18px] w-[18px]" : "h-3 w-3"} />
             </div>
           </div>
           <div
@@ -121,11 +121,24 @@ function CardFront({
             )}
             <div
               className={`leading-snug text-brand-sand/50 ${
-                large ? "mt-3 line-clamp-3 text-base" : "mt-1.5 line-clamp-2 text-[10.5px] text-brand-sand/45"
+                large ? "mt-3 line-clamp-2 text-base" : "mt-1.5 line-clamp-2 text-[10.5px] text-brand-sand/45"
               }`}
             >
               {card.funFact}
             </div>
+            {large && card.achievements.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {card.achievements.map((a, i) => (
+                  <span
+                    key={i}
+                    className="flex items-center gap-1.5 rounded-full bg-brand-yellow/10 px-3 py-1 text-sm font-medium text-brand-yellow ring-1 ring-brand-yellow/25"
+                  >
+                    <Icon name="trophy" className="h-4 w-4" />
+                    {a}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -162,7 +175,7 @@ function CardFront({
           {card.achievements.length > 0 && (
             <div className={`flex flex-col items-center ${large ? "gap-2" : "gap-1"}`}>
               {card.achievements.slice(0, 3).map((a, i) => (
-                <Icon key={i} name="trophy" className={large ? "h-4.5 w-4.5 text-brand-yellow" : "h-3 w-3 text-brand-yellow"} />
+                <Icon key={i} name="trophy" className={large ? "h-[18px] w-[18px] text-brand-yellow" : "h-3 w-3 text-brand-yellow"} />
               ))}
             </div>
           )}
@@ -203,7 +216,7 @@ function CardBack({ card, large = false }: { card: ClientAgentCard; large?: bool
           <div className={`uppercase tracking-widest text-brand-sand/35 font-terminal ${large ? "text-sm" : "text-[9px]"}`}>
             Authorized Signature
           </div>
-          <div className={`truncate font-serif italic text-brand-sand/90 ${large ? "mt-2 text-4xl" : "mt-1 text-xl"}`}>
+          <div className={`truncate font-script text-brand-sand/90 ${large ? "mt-1 text-6xl" : "mt-0.5 text-3xl"}`}>
             {card.codename}
           </div>
         </div>
