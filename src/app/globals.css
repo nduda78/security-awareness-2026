@@ -277,6 +277,13 @@ body.chaos-mode {
   animation: marching-ants 1.5s linear infinite;
 }
 
+/* --- Realistic ID card security print texture --- */
+.badge-security-pattern {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 6px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 6px);
+}
+
 /* --- XP progress ring --- */
 .xp-ring {
   transition: stroke-dashoffset 1.2s cubic-bezier(0.22, 1, 0.36, 1);

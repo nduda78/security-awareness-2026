@@ -167,7 +167,7 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
                 {section.members.length === 1 ? "" : "s"}
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
               {visibleMembers.map((card) => (
                 <BadgeCard key={card.email} card={card} dimmed={isDimmed(card)} />
               ))}

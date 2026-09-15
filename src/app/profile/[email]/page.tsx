@@ -29,13 +29,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ email:
     : [];
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[340px_1fr]">
-      <div>
-        <BadgeCard card={clientCard} />
-      </div>
-
-      <div className="space-y-8">
-        <div>
+    <div className="space-y-8">
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+        <div className="w-full max-w-[420px] shrink-0">
+          <BadgeCard card={clientCard} />
+        </div>
+        <div className="w-full">
           <div className="font-terminal text-xs uppercase tracking-widest text-brand-light-green">
             Personnel Record
           </div>
@@ -47,7 +46,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ email:
             <Stat label="Challenges Done" value={String(card.challengesCompleted)} />
           </div>
         </div>
+      </div>
 
+      <div className="space-y-8">
         <div>
           <h3 className="mb-3 font-terminal text-sm uppercase text-brand-sand/50">Progress</h3>
           <div className="rounded-md border border-brand-sand/10 bg-black/20 p-4">
