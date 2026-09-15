@@ -26,14 +26,8 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block font-terminal text-xs uppercase text-brand-sand/50">{label}</label>
-      <input
-        name={name}
-        type={type}
-        defaultValue={defaultValue}
-        required={required}
-        className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
-      />
+      <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
+      <input name={name} type={type} defaultValue={defaultValue} required={required} className="input-modern w-full" />
     </div>
   );
 }
@@ -57,7 +51,7 @@ function ChallengeForm({
 }) {
   const choicesText = Array.isArray(challenge?.choices) ? (challenge!.choices as string[]).join("\n") : "";
   return (
-    <form action={upsertChallengeAction} className="mt-4 space-y-3">
+    <form action={upsertChallengeAction} className="mt-4 space-y-4">
       {challenge && <input type="hidden" name="id" value={challenge.id} />}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Slug (URL-safe)" name="slug" defaultValue={challenge?.slug} required />
@@ -65,22 +59,13 @@ function ChallengeForm({
       </div>
       <Field label="Title" name="title" defaultValue={challenge?.title} required />
       <div>
-        <label className="mb-1 block font-terminal text-xs uppercase text-brand-sand/50">Description</label>
-        <textarea
-          name="description"
-          rows={3}
-          defaultValue={challenge?.description}
-          className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
-        />
+        <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Description</label>
+        <textarea name="description" rows={3} defaultValue={challenge?.description} className="input-modern w-full" />
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block font-terminal text-xs uppercase text-brand-sand/50">Answer type</label>
-          <select
-            name="answerType"
-            defaultValue={challenge?.answerType ?? "EXACT"}
-            className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
-          >
+          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Answer type</label>
+          <select name="answerType" defaultValue={challenge?.answerType ?? "EXACT"} className="input-modern w-full">
             <option value="EXACT">Exact match</option>
             <option value="CASE_INSENSITIVE">Case-insensitive match</option>
             <option value="MULTIPLE_CHOICE">Multiple choice</option>
@@ -94,27 +79,20 @@ function ChallengeForm({
         />
       </div>
       <div>
-        <label className="mb-1 block font-terminal text-xs uppercase text-brand-sand/50">
+        <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
           Choices (multiple choice only, one per line)
         </label>
-        <textarea
-          name="choices"
-          rows={3}
-          defaultValue={choicesText}
-          className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
-        />
+        <textarea name="choices" rows={3} defaultValue={choicesText} className="input-modern w-full" />
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Opens at" name="opensAt" type="datetime-local" defaultValue={toInputDate(challenge?.opensAt ?? null)} />
         <Field label="Closes at" name="closesAt" type="datetime-local" defaultValue={toInputDate(challenge?.closesAt ?? null)} />
       </div>
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="isActive" defaultChecked={challenge?.isActive ?? true} />
+      <label className="flex items-center gap-2 text-sm text-brand-sand/70">
+        <input type="checkbox" name="isActive" defaultChecked={challenge?.isActive ?? true} className="accent-brand-light-green" />
         Active
       </label>
-      <button className="rounded-md bg-brand-light-green px-4 py-2 font-terminal text-xs uppercase text-brand-dark-green">
-        Save challenge
-      </button>
+      <button className="btn-primary">Save challenge</button>
     </form>
   );
 }
@@ -125,20 +103,20 @@ export default async function AdminChallengesPage() {
   const challenges = await prisma.challenge.findMany({ orderBy: { createdAt: "desc" } });
 
   return (
-    <div>
+    <div className="fade-in-up">
       <AdminNav />
-      <h2 className="mb-6 text-2xl font-bold">Challenges</h2>
+      <h1 className="mb-6 font-display text-2xl font-semibold">Challenges</h1>
 
-      <details className="mb-8 rounded-md border border-brand-sand/15 bg-black/20 p-4">
+      <details className="surface-card group mb-8 p-4 open:border-brand-yellow/30">
         <summary className="cursor-pointer font-terminal text-sm uppercase text-brand-yellow">
           + New Challenge
         </summary>
         <ChallengeForm />
       </details>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {challenges.map((c) => (
-          <details key={c.id} className="rounded-md border border-brand-sand/15 bg-black/20 p-4">
+            <details key={c.id} className="surface-card p-4">
             <summary className="flex cursor-pointer items-center justify-between font-medium">
               <span>
                 {c.title} <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>{" "}
@@ -147,7 +125,7 @@ export default async function AdminChallengesPage() {
               <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>
             </summary>
             <ChallengeForm challenge={c} />
-            <form action={deleteChallengeAction} className="mt-2">
+            <form action={deleteChallengeAction} className="mt-3">
               <input type="hidden" name="id" value={c.id} />
               <button className="font-terminal text-xs uppercase text-brand-red hover:underline">
                 Delete challenge

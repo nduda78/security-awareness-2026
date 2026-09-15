@@ -23,23 +23,192 @@
   --color-brand-light-green: var(--brand-light-green);
   --color-brand-yellow: var(--brand-yellow);
   --color-brand-red: var(--brand-red);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans-raw);
+  --font-display: var(--font-display-raw);
+  --font-mono: var(--font-mono-raw);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: radial-gradient(circle at 20% -10%, var(--brand-medium-green) 0%, var(--brand-dark-green) 55%);
+  background: var(--brand-dark-green);
   color: var(--foreground);
   font-family: var(--font-sans);
   min-height: 100vh;
 }
 
-.font-terminal {
-  font-family: var(--font-mono);
-  letter-spacing: 0.04em;
+/* --- Modern glowing mesh background, replaces the flat radial gradient --- */
+.grid-glow {
+  position: relative;
+  isolation: isolate;
+}
+.grid-glow::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(650px circle at 10% -10%, rgba(106, 186, 72, 0.16), transparent 60%),
+    radial-gradient(600px circle at 90% 0%, rgba(94, 50, 78, 0.22), transparent 60%),
+    radial-gradient(800px circle at 50% 110%, rgba(255, 192, 42, 0.08), transparent 55%),
+    linear-gradient(180deg, var(--brand-dark-green) 0%, #051d15 45%, var(--brand-dark-green) 100%);
+}
+.grid-glow::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(241, 232, 214, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(241, 232, 214, 0.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(1200px circle at 50% 0%, black 0%, transparent 75%);
 }
 
-/* Scanline overlay used across "classified terminal" surfaces */
+.font-terminal {
+  font-family: var(--font-mono);
+  letter-spacing: 0.03em;
+}
+.font-display {
+  font-family: var(--font-display);
+}
+
+.gradient-text {
+  background: linear-gradient(100deg, var(--brand-light-green) 0%, var(--brand-yellow) 55%, var(--brand-sand) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --- Reusable modern surfaces --- */
+.glass-panel {
+  background: linear-gradient(160deg, rgba(241, 232, 214, 0.06), rgba(241, 232, 214, 0.02));
+  border: 1px solid rgba(241, 232, 214, 0.1);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
+.surface-card {
+  background: rgba(241, 232, 214, 0.04);
+  border: 1px solid rgba(241, 232, 214, 0.08);
+  border-radius: 1rem;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.surface-card:hover {
+  border-color: rgba(241, 232, 214, 0.18);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, var(--brand-light-green), #4f9c33);
+  color: #04150e;
+  box-shadow: 0 6px 20px -6px rgba(106, 186, 72, 0.55);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(241, 232, 214, 0.06);
+  border: 1px solid rgba(241, 232, 214, 0.16);
+  color: var(--brand-sand);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.btn-secondary:hover {
+  background: rgba(241, 232, 214, 0.1);
+  border-color: rgba(241, 232, 214, 0.28);
+}
+
+.input-modern {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(241, 232, 214, 0.14);
+  background: rgba(4, 32, 23, 0.55);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.875rem;
+  color: var(--brand-sand);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input-modern::placeholder {
+  color: rgba(241, 232, 214, 0.35);
+}
+.input-modern:focus {
+  outline: none;
+  border-color: var(--brand-light-green);
+  box-shadow: 0 0 0 3px rgba(106, 186, 72, 0.18);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(241, 232, 214, 0.16);
+  color: rgba(241, 232, 214, 0.65);
+  background: rgba(241, 232, 214, 0.03);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.pill:hover {
+  color: var(--brand-sand);
+  border-color: rgba(241, 232, 214, 0.3);
+}
+.pill-active {
+  background: linear-gradient(135deg, rgba(255, 192, 42, 0.22), rgba(255, 192, 42, 0.08));
+  border-color: var(--brand-yellow);
+  color: var(--brand-yellow);
+}
+
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--brand-light-green);
+}
+
+/* Scanline overlay — used sparingly now, just for badge/terminal flourishes */
+.scanlines {
+  position: relative;
+}
 .scanlines::before {
   content: "";
   position: absolute;
@@ -47,8 +216,8 @@ body {
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.025) 0px,
-    rgba(255, 255, 255, 0.025) 1px,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
     transparent 1px,
     transparent 3px
   );
@@ -292,6 +461,23 @@ body.chaos-mode {
 /* --- Card tilt --- */
 .tilt-card {
   transform-style: preserve-3d;
-  transition: transform 0.15s ease-out;
-  will-change: transform;
+  transition: transform 0.15s ease-out, box-shadow 0.2s ease;
+}
+.tilt-card:hover {
+  box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.55);
+}
+
+/* Fade-in-up utility for page content */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in-up {
+  animation: fade-in-up 0.5s ease both;
 }

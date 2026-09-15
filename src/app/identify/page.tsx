@@ -1,4 +1,6 @@
+import Image from "next/image";
 import { identifyAction } from "@/lib/actions/identify";
+import { Icon } from "@/components/Icon";
 
 export default async function IdentifyPage({
   searchParams,
@@ -8,32 +10,29 @@ export default async function IdentifyPage({
   const { next = "/leaderboard", error } = await searchParams;
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="scanlines relative rounded-xl border border-brand-light-green/30 bg-black/30 p-6">
-        <div className="mb-1 font-terminal text-xs uppercase tracking-widest text-brand-light-green">
-          Access Request
+    <div className="fade-in-up mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center">
+      <Image src="/brand/dutchie-logo.png" alt="Dutchie" width={140} height={38} className="mb-8 h-9 w-auto" />
+      <div className="glass-panel w-full rounded-2xl p-7">
+        <div className="mb-3 flex items-center gap-2 text-brand-light-green">
+          <Icon name="shield" className="h-4 w-4" />
+          <span className="section-eyebrow">Access Request</span>
         </div>
-        <h2 className="mb-4 text-xl font-bold">Agent Identification Required</h2>
-        <p className="mb-6 text-sm text-brand-sand/70">
+        <h1 className="mb-3 font-display text-2xl font-semibold">Agent Identification Required</h1>
+        <p className="mb-6 text-sm text-brand-sand/60">
           Enter your name and Dutchie email to open your file. No password needed — this is an internal
           engagement tool, not a real security boundary.
         </p>
 
-        {error && <div className="mb-4 rounded bg-brand-red/15 p-2 text-sm text-brand-red">{error}</div>}
+        {error && <div className="mb-4 rounded-xl bg-brand-red/15 p-3 text-sm text-brand-red">{error}</div>}
 
         <form action={identifyAction} className="space-y-4">
           <input type="hidden" name="next" value={next} />
           <div>
-            <label className="mb-1 block font-terminal text-xs uppercase text-brand-sand/50">Full name</label>
-            <input
-              name="name"
-              required
-              placeholder="Nick Duda"
-              className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
-            />
+            <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Full name</label>
+            <input name="name" required placeholder="Nick Duda" className="input-modern w-full" />
           </div>
           <div>
-            <label className="mb-1 block font-terminal text-xs uppercase text-brand-sand/50">
+            <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
               Dutchie email
             </label>
             <input
@@ -41,12 +40,10 @@ export default async function IdentifyPage({
               required
               type="email"
               placeholder="nick.duda@dutchie.com"
-              className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
+              className="input-modern w-full"
             />
           </div>
-          <button className="w-full rounded-md bg-brand-light-green py-2 font-terminal text-sm uppercase text-brand-dark-green hover:brightness-110">
-            Enter the Program
-          </button>
+          <button className="btn-primary w-full">Enter the Program</button>
         </form>
       </div>
     </div>

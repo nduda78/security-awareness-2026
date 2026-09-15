@@ -22,13 +22,19 @@ export default async function LeaderboardPage() {
   }));
 
   return (
-    <div>
-      <p className="mb-6 max-w-3xl text-sm text-brand-sand/70">
-        Every completed challenge earns XP. XP unlocks clearance tiers. Climb from{" "}
-        <span className="text-brand-sand">UNCLASSIFIED</span> to{" "}
-        <span className="text-brand-yellow">SECRET</span> to{" "}
-        <span className="text-brand-light-green">TOP SECRET</span> — if you dare.
-      </p>
+    <div className="fade-in-up">
+      <div className="mb-8">
+        <div className="section-eyebrow mb-2">Personnel Roster</div>
+        <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+          <span className="gradient-text">Clearance</span> Leaderboard
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm text-brand-sand/60">
+          Every completed challenge earns XP. XP unlocks clearance tiers. Climb from{" "}
+          <span className="text-brand-sand">UNCLASSIFIED</span> to{" "}
+          <span className="text-brand-yellow">SECRET</span> to{" "}
+          <span className="text-brand-light-green">TOP SECRET</span> — if you dare.
+        </p>
+      </div>
       <LeaderboardClient sections={clientSections} />
     </div>
   );

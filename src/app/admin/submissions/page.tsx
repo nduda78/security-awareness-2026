@@ -23,36 +23,40 @@ export default async function AdminSubmissionsPage() {
   });
 
   return (
-    <div>
+    <div className="fade-in-up">
       <AdminNav />
-      <h2 className="mb-6 text-2xl font-bold">Submissions</h2>
+      <h1 className="mb-6 font-display text-2xl font-semibold">Submissions</h1>
 
-      <h3 className="mb-3 font-terminal text-sm uppercase text-brand-yellow">
+      <h2 className="mb-3 font-terminal text-sm uppercase text-brand-yellow">
         Pending review ({pending.length})
-      </h3>
-      {pending.length === 0 && <p className="mb-8 text-sm text-brand-sand/50">Nothing waiting on you. Nice.</p>}
+      </h2>
+      {pending.length === 0 && (
+        <p className="surface-card mb-8 p-4 text-sm text-brand-sand/50">Nothing waiting on you. Nice.</p>
+      )}
       <div className="mb-10 space-y-3">
         {pending.map((s) => (
-          <div key={s.id} className="rounded-md border border-brand-yellow/30 bg-black/20 p-4">
-            <div className="mb-1 flex justify-between text-sm">
-              <span className="font-medium">{s.employee.displayName}</span>
+          <div key={s.id} className="surface-card border-brand-yellow/25 p-4">
+            <div className="mb-2 flex justify-between text-sm">
+              <span className="font-medium text-brand-sand">{s.employee.displayName}</span>
               <span className="text-brand-sand/50">{s.challenge.title}</span>
             </div>
-            <p className="mb-3 whitespace-pre-wrap rounded bg-black/30 p-2 text-sm text-brand-sand/80">
+            <p className="mb-3 whitespace-pre-wrap rounded-lg bg-black/30 p-3 text-sm text-brand-sand/80">
               {s.answerRaw}
             </p>
             <div className="flex gap-2">
               <form action={reviewSubmissionAction}>
                 <input type="hidden" name="id" value={s.id} />
                 <input type="hidden" name="decision" value="approve" />
-                <button className="rounded bg-brand-light-green px-3 py-1 font-terminal text-xs uppercase text-brand-dark-green">
+                <button className="btn-primary !px-3 !py-1.5 !text-[11px]">
                   Approve (+{s.challenge.xpValue} XP)
                 </button>
               </form>
               <form action={reviewSubmissionAction}>
                 <input type="hidden" name="id" value={s.id} />
                 <input type="hidden" name="decision" value="reject" />
-                <button className="rounded bg-brand-red/80 px-3 py-1 font-terminal text-xs uppercase text-brand-sand">
+                <button
+                  className="btn-secondary !px-3 !py-1.5 !text-[11px] !border-brand-red/40 !text-brand-red"
+                >
                   Reject
                 </button>
               </form>
@@ -61,11 +65,11 @@ export default async function AdminSubmissionsPage() {
         ))}
       </div>
 
-      <h3 className="mb-3 font-terminal text-sm uppercase text-brand-sand/50">Recent decisions</h3>
+      <h2 className="mb-3 font-terminal text-sm uppercase text-brand-sand/50">Recent decisions</h2>
       <div className="space-y-2">
         {recent.map((s) => (
-          <div key={s.id} className="flex justify-between rounded-md border border-brand-sand/10 bg-black/20 p-3 text-sm">
-            <span>
+          <div key={s.id} className="surface-card flex justify-between px-4 py-3 text-sm">
+            <span className="text-brand-sand/80">
               {s.employee.displayName} — {s.challenge.title}
             </span>
             <span className={s.status === "CORRECT" ? "text-brand-light-green" : "text-brand-red"}>

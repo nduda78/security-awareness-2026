@@ -19,20 +19,24 @@ export default async function AdminFlarePage({
   const selected = selectedEmail ? employees.find((e) => e.email === selectedEmail.toLowerCase()) : undefined;
 
   return (
-    <div>
+    <div className="fade-in-up">
       <AdminNav />
-      <h2 className="mb-6 text-2xl font-bold">Badge Flare</h2>
-      {saved && <div className="mb-4 rounded bg-brand-light-green/15 p-2 text-sm text-brand-light-green">Saved.</div>}
-      {error && <div className="mb-4 rounded bg-brand-red/15 p-2 text-sm text-brand-red">{error}</div>}
+      <h1 className="mb-6 font-display text-2xl font-semibold">Badge Flare</h1>
+      {saved && (
+        <div className="mb-4 rounded-xl bg-brand-light-green/15 p-3 text-sm text-brand-light-green">Saved.</div>
+      )}
+      {error && <div className="mb-4 rounded-xl bg-brand-red/15 p-3 text-sm text-brand-red">{error}</div>}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
-        <div className="space-y-1">
+        <div className="surface-card space-y-1 p-2">
           {employees.map((e) => (
             <a
               key={e.email}
               href={`/admin/flare?email=${encodeURIComponent(e.email)}`}
-              className={`block rounded px-3 py-2 text-sm ${
-                selected?.email === e.email ? "bg-brand-purple/30" : "hover:bg-black/20"
+              className={`block rounded-lg px-3 py-2 text-sm transition ${
+                selected?.email === e.email
+                  ? "bg-brand-purple/25 text-brand-sand"
+                  : "text-brand-sand/70 hover:bg-brand-sand/5 hover:text-brand-sand"
               }`}
             >
               {e.displayName}
@@ -45,17 +49,17 @@ export default async function AdminFlarePage({
           {!selected ? (
             <p className="text-sm text-brand-sand/50">Pick an employee on the left to edit their flare.</p>
           ) : (
-            <form action={upsertFlareAction} className="space-y-4">
+            <form action={upsertFlareAction} className="surface-card space-y-4 p-5">
               <input type="hidden" name="email" value={selected.email} />
               <div>
-                <label className="mb-1 block font-terminal text-xs uppercase text-brand-sand/50">
+                <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
                   Achievements (one per line)
                 </label>
                 <textarea
                   name="achievements"
                   rows={3}
                   defaultValue={selected.flare?.achievements.join("\n")}
-                  className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
+                  className="input-modern w-full"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -94,11 +98,19 @@ export default async function AdminFlarePage({
                 type="datetime-local"
                 defaultValue={selected.flare?.expiresAt ? selected.flare.expiresAt.toISOString().slice(0, 16) : ""}
               />
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="pinned" defaultChecked={selected.flare?.pinned ?? false} />
+              <label className="flex items-center gap-2 text-sm text-brand-sand/70">
+                <input
+                  type="checkbox"
+                  name="pinned"
+                  defaultChecked={selected.flare?.pinned ?? false}
+                  className="accent-brand-purple"
+                />
                 Pin to top of tier
               </label>
-              <button className="rounded-md bg-brand-purple px-4 py-2 font-terminal text-xs uppercase text-brand-sand">
+              <button
+                className="btn-primary"
+                style={{ background: "linear-gradient(135deg, var(--brand-purple), #401f36)", color: "var(--brand-sand)" }}
+              >
                 Save flare
               </button>
             </form>
@@ -124,14 +136,8 @@ function TextField({
 }) {
   return (
     <div>
-      <label className="mb-1 block font-terminal text-xs uppercase text-brand-sand/50">{label}</label>
-      <input
-        name={name}
-        type={type}
-        defaultValue={defaultValue}
-        placeholder={placeholder}
-        className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
-      />
+      <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
+      <input name={name} type={type} defaultValue={defaultValue} placeholder={placeholder} className="input-modern w-full" />
     </div>
   );
 }
@@ -149,12 +155,8 @@ function SelectField({
 }) {
   return (
     <div>
-      <label className="mb-1 block font-terminal text-xs uppercase text-brand-sand/50">{label}</label>
-      <select
-        name={name}
-        defaultValue={defaultValue}
-        className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
-      >
+      <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
+      <select name={name} defaultValue={defaultValue} className="input-modern w-full">
         {options.map((o) => (
           <option key={o} value={o}>
             {o || "(none)"}

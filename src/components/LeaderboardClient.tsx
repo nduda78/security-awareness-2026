@@ -110,19 +110,25 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
 
   return (
     <div className={chaos ? "glitch-text" : ""}>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <input
-          ref={searchRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleSearchKeyDown}
-          placeholder="Find your badge..."
-          className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 font-terminal text-sm placeholder:text-brand-sand/40 sm:max-w-xs"
-        />
+      <div className="glass-panel mb-6 flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs">
+          <Icon
+            name="search"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-sand/35"
+          />
+          <input
+            ref={searchRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Find your badge..."
+            className="input-modern w-full pl-9"
+          />
+        </div>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
-          className="rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 font-terminal text-sm"
+          className="input-modern font-terminal text-xs uppercase tracking-wide"
         >
           <option value="XP_DESC">XP: High to Low</option>
           <option value="XP_ASC">XP: Low to High</option>
@@ -136,11 +142,7 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`rounded-full border px-3 py-1 font-terminal text-xs uppercase transition ${
-              filter === f.key
-                ? "border-brand-yellow bg-brand-yellow/20 text-brand-yellow"
-                : "border-brand-sand/20 text-brand-sand/60 hover:text-brand-sand"
-            }`}
+            className={`pill ${filter === f.key ? "pill-active" : ""}`}
           >
             {f.label}
           </button>
@@ -152,20 +154,31 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
         return (
           <section key={section.tierKey} className="mb-10">
             {section.tierKey === "ROGUE" && (
-              <div className="glitch-text rogue-flicker mb-4 rounded border border-brand-red/50 bg-brand-red/10 px-4 py-2 font-terminal text-xs uppercase tracking-wide text-brand-red">
+              <div className="glitch-text rogue-flicker mb-4 rounded-xl border border-brand-red/40 bg-brand-red/10 px-4 py-3 font-terminal text-xs uppercase tracking-wide text-brand-red">
                 ⚠ THIS CLEARANCE TIER WAS NOT ISSUED BY DUTCHIE SECURITY. ORIGIN UNTRACEABLE.
               </div>
             )}
-            <div className="mb-4 flex items-center gap-3 border-b border-brand-sand/15 pb-2">
-              <Icon name={section.tierIcon} className="h-6 w-6" style={{ color: section.tierColor } as React.CSSProperties} />
-              <h2 className="font-terminal text-lg uppercase tracking-wider" style={{ color: section.tierColor }}>
-                {section.tierLabel}
-              </h2>
-              <span className="font-terminal text-xs text-brand-sand/50">
-                {section.minXp}
-                {section.maxXp !== null ? `–${section.maxXp}` : "+"} XP · {section.members.length} agent
-                {section.members.length === 1 ? "" : "s"}
-              </span>
+            <div className="mb-5 flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{ background: `${section.tierColor}1a`, border: `1px solid ${section.tierColor}55` }}
+              >
+                <Icon name={section.tierIcon} className="h-5 w-5" style={{ color: section.tierColor } as React.CSSProperties} />
+              </div>
+              <div>
+                <h2
+                  className="font-display text-lg font-semibold uppercase tracking-wide leading-tight"
+                  style={{ color: section.tierColor }}
+                >
+                  {section.tierLabel}
+                </h2>
+                <span className="font-terminal text-[11px] text-brand-sand/45">
+                  {section.minXp}
+                  {section.maxXp !== null ? `–${section.maxXp}` : "+"} XP · {section.members.length} agent
+                  {section.members.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <div className="h-px flex-1 bg-gradient-to-r from-brand-sand/15 to-transparent" />
             </div>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
               {visibleMembers.map((card) => (

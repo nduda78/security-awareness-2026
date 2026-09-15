@@ -42,36 +42,39 @@ export default async function ProfilePage({
     : [];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+    <div className="fade-in-up space-y-8">
+      <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
         <div className="w-full max-w-[420px] shrink-0">
           <BadgeCard card={clientCard} />
         </div>
         <div className="w-full">
-          <div className="font-terminal text-xs uppercase tracking-widest text-brand-light-green">
-            Personnel Record
-          </div>
-          <h2 className="text-2xl font-bold">{card.renderedName}</h2>
-          <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Stat label="Total XP" value={String(card.xp)} />
+          <div className="section-eyebrow mb-1">Personnel Record</div>
+          <h1 className="font-display text-2xl font-semibold sm:text-3xl">{card.renderedName}</h1>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Stat label="Total XP" value={String(card.xp)} accent="var(--brand-yellow)" />
             <Stat label="Overall Rank" value={`#${overall} / ${overallTotal}`} />
             <Stat label={`Rank in ${card.tier.shortLabel}`} value={`#${tierRank} / ${tierTotal}`} />
-            <Stat label="Challenges Done" value={String(card.challengesCompleted)} />
+            <Stat label="Challenges Done" value={String(card.challengesCompleted)} accent="var(--brand-light-green)" />
           </div>
 
           {isOwnProfile && (
-            <div className="mt-4 rounded-md border border-brand-sand/10 bg-black/20 p-3">
-              <h3 className="mb-2 font-terminal text-xs uppercase text-brand-sand/50">Badge Photo</h3>
+            <div className="surface-card mt-4 p-4">
+              <h3 className="mb-3 flex items-center gap-2 font-terminal text-xs uppercase tracking-wide text-brand-sand/50">
+                <Icon name="lock" className="h-3.5 w-3.5" />
+                Badge Photo
+              </h3>
               {photoUploaded === "1" && (
-                <div className="mb-2 rounded bg-brand-light-green/15 p-2 text-xs text-brand-light-green">
+                <div className="mb-3 rounded-lg bg-brand-light-green/15 p-2.5 text-xs text-brand-light-green">
                   Photo updated.
                 </div>
               )}
               {photoRemoved === "1" && (
-                <div className="mb-2 rounded bg-brand-sand/10 p-2 text-xs text-brand-sand/60">Photo removed.</div>
+                <div className="mb-3 rounded-lg bg-brand-sand/10 p-2.5 text-xs text-brand-sand/60">
+                  Photo removed.
+                </div>
               )}
               {photoError && (
-                <div className="mb-2 rounded bg-brand-red/15 p-2 text-xs text-brand-red">{photoError}</div>
+                <div className="mb-3 rounded-lg bg-brand-red/15 p-2.5 text-xs text-brand-red">{photoError}</div>
               )}
               <PhotoUploader
                 uploadAction={uploadPhotoAction}
@@ -83,42 +86,47 @@ export default async function ProfilePage({
         </div>
       </div>
 
-      <div className="space-y-8">
-        <div>
-          <h3 className="mb-3 font-terminal text-sm uppercase text-brand-sand/50">Progress</h3>
-          <div className="rounded-md border border-brand-sand/10 bg-black/20 p-4">
-            {card.progress.next ? (
-              <>
-                <div className="mb-2 flex justify-between text-sm">
-                  <span>{card.tier.label}</span>
-                  <span>{card.progress.next.label}</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-brand-sand/10">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${card.progress.progressPct}%`, background: card.tier.color }}
-                  />
-                </div>
-                <div className="mt-2 text-sm text-brand-sand/60">
-                  {card.progress.xpToNext} XP to {card.progress.next.label}
-                </div>
-              </>
-            ) : (
-              <div className="text-sm text-brand-sand/60">
-                {card.tier.key === "ROGUE" ? "Off the grid. No further progress tracked." : "Maximum clearance reached."}
+      <div className="space-y-6">
+        <div className="surface-card p-5">
+          <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
+            Progress
+          </h3>
+          {card.progress.next ? (
+            <>
+              <div className="mb-2 flex justify-between font-terminal text-xs uppercase tracking-wide">
+                <span style={{ color: card.tier.color }}>{card.tier.label}</span>
+                <span className="text-brand-sand/50">{card.progress.next.label}</span>
               </div>
-            )}
-          </div>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/40">
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{
+                    width: `${card.progress.progressPct}%`,
+                    background: `linear-gradient(90deg, ${card.tier.color}, ${card.progress.next.color})`,
+                  }}
+                />
+              </div>
+              <div className="mt-2 text-sm text-brand-sand/55">
+                {card.progress.xpToNext} XP to {card.progress.next.label}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-brand-sand/55">
+              {card.tier.key === "ROGUE" ? "Off the grid. No further progress tracked." : "Maximum clearance reached."}
+            </div>
+          )}
         </div>
 
         {card.flare?.achievements.length ? (
           <div>
-            <h3 className="mb-3 font-terminal text-sm uppercase text-brand-sand/50">Achievements</h3>
+            <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
+              Achievements
+            </h3>
             <div className="flex flex-wrap gap-2">
               {card.flare.achievements.map((a, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 rounded-full bg-brand-yellow/15 px-3 py-1 text-sm text-brand-yellow"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-brand-yellow/30 bg-brand-yellow/10 px-3.5 py-1.5 text-sm text-brand-yellow"
                 >
                   <Icon name="trophy" className="h-4 w-4" /> {a}
                 </span>
@@ -128,23 +136,22 @@ export default async function ProfilePage({
         ) : null}
 
         <div>
-          <h3 className="mb-3 font-terminal text-sm uppercase text-brand-sand/50">Challenge History</h3>
+          <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
+            Challenge History
+          </h3>
           {submissions.length === 0 ? (
-            <p className="text-sm text-brand-sand/50">No challenges completed yet.</p>
+            <p className="surface-card p-4 text-sm text-brand-sand/50">No challenges completed yet.</p>
           ) : (
             <div className="space-y-2">
               {submissions.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center justify-between rounded-md border border-brand-sand/10 bg-black/20 p-3 text-sm"
-                >
+                <div key={s.id} className="surface-card flex items-center justify-between px-4 py-3 text-sm">
                   <div>
-                    <div className="font-medium">{s.challenge.title}</div>
-                    <div className="text-xs text-brand-sand/50">
+                    <div className="font-medium text-brand-sand">{s.challenge.title}</div>
+                    <div className="text-xs text-brand-sand/45">
                       {s.submittedAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </div>
                   </div>
-                  <div className="font-terminal text-xs">
+                  <div className="font-terminal text-xs font-semibold">
                     {s.status === "CORRECT" ? (
                       <span className="text-brand-light-green">+{s.xpAwarded} XP</span>
                     ) : (
@@ -161,11 +168,13 @@ export default async function ProfilePage({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
-    <div className="rounded-md border border-brand-sand/10 bg-black/20 p-3">
-      <div className="font-terminal text-[10px] uppercase text-brand-sand/40">{label}</div>
-      <div className="text-lg font-semibold">{value}</div>
+    <div className="surface-card p-3.5">
+      <div className="font-terminal text-[10px] uppercase tracking-wide text-brand-sand/40">{label}</div>
+      <div className="font-display text-lg font-semibold" style={accent ? { color: accent } : undefined}>
+        {value}
+      </div>
     </div>
   );
 }
