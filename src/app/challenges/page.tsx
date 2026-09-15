@@ -48,8 +48,8 @@ export default async function ChallengesPage() {
           rewardIcon: c.rewardIcon,
           rewardRibbonText: c.rewardRibbonText,
           rewardNameSuffix: c.rewardNameSuffix,
-          rewardOutlineColor: c.rewardOutlineColor,
-          rewardBackgroundColor: c.rewardBackgroundColor,
+          rewardOutlineColorPicker: c.rewardOutlineColorPicker,
+          rewardBackgroundColorPicker: c.rewardBackgroundColorPicker,
           rewardPrize: c.rewardPrize,
         },
         unlockTeaser: {

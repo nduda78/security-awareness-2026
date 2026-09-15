@@ -5,15 +5,19 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
 import { getUnlockedFlareOptions } from "@/lib/rewards";
+import { resolveColor } from "@/lib/flare";
 
 /**
  * Self-service equivalent of the admin flare editor, but heavily
  * restricted: an employee may only set backgroundEffect / borderStyle /
- * iconOverride / ribbonText / nameSuffix / outlineColor / backgroundColor,
- * and only to values they've actually unlocked by completing a challenge
- * that rewards them (see lib/rewards.ts). Everything else on BadgeFlare
- * (achievements, motto, codenameOverride, expiresAt) stays admin-only and
- * is left untouched by this action.
+ * iconOverride / ribbonText / nameSuffix — each locked to a pool of exact
+ * values they've unlocked — plus outlineColor / backgroundColor, which
+ * work differently: those two are a *capability* unlock (see
+ * lib/rewards.ts), not a value pool, so once granted the employee may set
+ * any resolvable color of their own choosing for that field, not just a
+ * pre-set option. Everything else on BadgeFlare (achievements, motto,
+ * codenameOverride, expiresAt) stays admin-only and is left untouched by
+ * this action.
  *
  * Submitted values are re-validated server-side against a fresh query of
  * the employee's own completed challenges — the unlocked list rendered
@@ -49,14 +53,35 @@ export async function selfUpdateFlareAction(formData: FormData) {
     return null; // silently drop anything not actually unlocked
   }
 
+  // Colors aren't a pool of exact values — canUse just gates whether the
+  // picker is usable at all. Any value that passes must still resolve to a
+  // real CSS color (same rule the admin editor already enforces), so a
+  // stray unresolvable string can't sneak into storage.
+  function pickColor(value: string, canUse: boolean, field: string): string | null {
+    if (!value) return null;
+    if (!canUse) {
+      rejected.push(field);
+      return null;
+    }
+    const resolved = resolveColor(value, field, []);
+    if (!resolved) {
+      // Distinct from "not unlocked" — the capability is there, the text just
+      // isn't a color format resolveColor understands. Different problem,
+      // different message on the way back (see SelfFlareEditor.tsx).
+      rejected.push(`${field}Invalid`);
+      return null;
+    }
+    return value;
+  }
+
   const data = {
     backgroundEffect: pickValidated(requested.backgroundEffect, unlocked.backgroundEffect, "backgroundEffect"),
     borderStyle: pickValidated(requested.borderStyle, unlocked.borderStyle, "borderStyle"),
     iconOverride: pickValidated(requested.iconOverride, unlocked.icon, "iconOverride"),
     ribbonText: pickValidated(requested.ribbonText, unlocked.ribbonText, "ribbonText"),
     nameSuffix: pickValidated(requested.nameSuffix, unlocked.nameSuffix, "nameSuffix"),
-    outlineColor: pickValidated(requested.outlineColor, unlocked.outlineColor, "outlineColor"),
-    backgroundColor: pickValidated(requested.backgroundColor, unlocked.backgroundColor, "backgroundColor"),
+    outlineColor: pickColor(requested.outlineColor, unlocked.canPickOutlineColor, "outlineColor"),
+    backgroundColor: pickColor(requested.backgroundColor, unlocked.canPickBackgroundColor, "backgroundColor"),
   };
 
   await prisma.badgeFlare.upsert({

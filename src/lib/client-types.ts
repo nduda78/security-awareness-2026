@@ -55,8 +55,8 @@ export interface ClientChallengeCard {
     rewardIcon: string | null;
     rewardRibbonText: string | null;
     rewardNameSuffix: string | null;
-    rewardOutlineColor: string | null;
-    rewardBackgroundColor: string | null;
+    rewardOutlineColorPicker: boolean;
+    rewardBackgroundColorPicker: boolean;
     rewardPrize: string | null;
   };
   unlockTeaser: {

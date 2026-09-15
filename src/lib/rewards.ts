@@ -6,8 +6,11 @@ export interface UnlockedFlareOptions {
   icon: string[];
   ribbonText: string[];
   nameSuffix: string[];
-  outlineColor: string[];
-  backgroundColor: string[];
+  // Not value pools like the fields above — these are capability flags.
+  // Once true, the employee may set *any* resolvable color of their own
+  // choosing for that field, not just a pre-set option.
+  canPickOutlineColor: boolean;
+  canPickBackgroundColor: boolean;
 }
 
 const EMPTY: UnlockedFlareOptions = {
@@ -16,8 +19,8 @@ const EMPTY: UnlockedFlareOptions = {
   icon: [],
   ribbonText: [],
   nameSuffix: [],
-  outlineColor: [],
-  backgroundColor: [],
+  canPickOutlineColor: false,
+  canPickBackgroundColor: false,
 };
 
 /**
@@ -39,8 +42,8 @@ export async function getUnlockedFlareOptions(employeeId: string): Promise<Unloc
     icon: [],
     ribbonText: [],
     nameSuffix: [],
-    outlineColor: [],
-    backgroundColor: [],
+    canPickOutlineColor: false,
+    canPickBackgroundColor: false,
   };
   const seen = {
     backgroundEffect: new Set<string>(),
@@ -48,8 +51,6 @@ export async function getUnlockedFlareOptions(employeeId: string): Promise<Unloc
     icon: new Set<string>(),
     ribbonText: new Set<string>(),
     nameSuffix: new Set<string>(),
-    outlineColor: new Set<string>(),
-    backgroundColor: new Set<string>(),
   };
 
   for (const { challenge: c } of correct) {
@@ -73,14 +74,8 @@ export async function getUnlockedFlareOptions(employeeId: string): Promise<Unloc
       seen.nameSuffix.add(c.rewardNameSuffix);
       result.nameSuffix.push(c.rewardNameSuffix);
     }
-    if (c.rewardOutlineColor && !seen.outlineColor.has(c.rewardOutlineColor)) {
-      seen.outlineColor.add(c.rewardOutlineColor);
-      result.outlineColor.push(c.rewardOutlineColor);
-    }
-    if (c.rewardBackgroundColor && !seen.backgroundColor.has(c.rewardBackgroundColor)) {
-      seen.backgroundColor.add(c.rewardBackgroundColor);
-      result.backgroundColor.push(c.rewardBackgroundColor);
-    }
+    if (c.rewardOutlineColorPicker) result.canPickOutlineColor = true;
+    if (c.rewardBackgroundColorPicker) result.canPickBackgroundColor = true;
   }
 
   return result;

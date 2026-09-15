@@ -5,7 +5,6 @@ import { AdminNav } from "@/components/AdminNav";
 import { upsertChallengeAction, deleteChallengeAction } from "@/lib/actions/admin";
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
-import { StandaloneColorField } from "@/components/ColorField";
 import { TIER_BY_KEY } from "@/lib/tiers";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +15,8 @@ function rewardTags(c: {
   rewardIcon: string | null;
   rewardRibbonText: string | null;
   rewardNameSuffix: string | null;
-  rewardOutlineColor: string | null;
-  rewardBackgroundColor: string | null;
+  rewardOutlineColorPicker: boolean;
+  rewardBackgroundColorPicker: boolean;
   rewardPrize: string | null;
 }): string[] {
   const tags: string[] = [];
@@ -26,8 +25,8 @@ function rewardTags(c: {
   if (c.rewardIcon) tags.push(`${c.rewardIcon} icon`);
   if (c.rewardRibbonText) tags.push(`"${c.rewardRibbonText}" ribbon`);
   if (c.rewardNameSuffix) tags.push(`"${c.rewardNameSuffix}" suffix`);
-  if (c.rewardOutlineColor) tags.push(`${c.rewardOutlineColor} outline`);
-  if (c.rewardBackgroundColor) tags.push(`${c.rewardBackgroundColor} bg color`);
+  if (c.rewardOutlineColorPicker) tags.push("outline color picker");
+  if (c.rewardBackgroundColorPicker) tags.push("background color picker");
   if (c.rewardPrize) tags.push(c.rewardPrize);
   return tags;
 }
@@ -169,8 +168,8 @@ function ChallengeForm({
     rewardIcon: string | null;
     rewardRibbonText: string | null;
     rewardNameSuffix: string | null;
-    rewardOutlineColor?: string | null;
-    rewardBackgroundColor?: string | null;
+    rewardOutlineColorPicker?: boolean;
+    rewardBackgroundColorPicker?: boolean;
     rewardPrize: string | null;
     rewardMode?: string;
     questionImageMimeType?: string | null;
@@ -345,16 +344,24 @@ function ChallengeForm({
             defaultValue={challenge?.rewardNameSuffix ?? ""}
             placeholder="the Vigilant"
           />
-          <StandaloneColorField
-            label="Outline color"
-            name="rewardOutlineColor"
-            defaultValue={challenge?.rewardOutlineColor ?? ""}
-          />
-          <StandaloneColorField
-            label="Background color"
-            name="rewardBackgroundColor"
-            defaultValue={challenge?.rewardBackgroundColor ?? ""}
-          />
+          <label className="flex items-center gap-2 text-sm text-brand-sand/70">
+            <input
+              type="checkbox"
+              name="rewardOutlineColorPicker"
+              defaultChecked={challenge?.rewardOutlineColorPicker ?? false}
+              className="accent-brand-cyan"
+            />
+            Unlocks: choose your own outline color
+          </label>
+          <label className="flex items-center gap-2 text-sm text-brand-sand/70">
+            <input
+              type="checkbox"
+              name="rewardBackgroundColorPicker"
+              defaultChecked={challenge?.rewardBackgroundColorPicker ?? false}
+              className="accent-brand-cyan"
+            />
+            Unlocks: choose your own background color
+          </label>
           <Field
             label="Other prize"
             name="rewardPrize"
@@ -434,8 +441,8 @@ export default async function AdminChallengesPage() {
       rewardIcon: true,
       rewardRibbonText: true,
       rewardNameSuffix: true,
-      rewardOutlineColor: true,
-      rewardBackgroundColor: true,
+      rewardOutlineColorPicker: true,
+      rewardBackgroundColorPicker: true,
       rewardPrize: true,
       isActive: true,
       opensAt: true,

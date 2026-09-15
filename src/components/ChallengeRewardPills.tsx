@@ -7,8 +7,8 @@ export interface ChallengeReward {
   rewardIcon: string | null;
   rewardRibbonText: string | null;
   rewardNameSuffix: string | null;
-  rewardOutlineColor: string | null;
-  rewardBackgroundColor: string | null;
+  rewardOutlineColorPicker: boolean;
+  rewardBackgroundColorPicker: boolean;
   rewardPrize: string | null;
 }
 
@@ -24,8 +24,8 @@ function hasFlareReward(reward: ChallengeReward): boolean {
     reward.rewardIcon ||
     reward.rewardRibbonText ||
     reward.rewardNameSuffix ||
-    reward.rewardOutlineColor ||
-    reward.rewardBackgroundColor
+    reward.rewardOutlineColorPicker ||
+    reward.rewardBackgroundColorPicker
   );
 }
 
@@ -46,11 +46,11 @@ function flarePills(reward: ChallengeReward): { key: string; icon: IconKey; text
   if (reward.rewardNameSuffix) {
     pills.push({ key: "suffix", icon: "crown", text: `\u201c${reward.rewardNameSuffix}\u201d suffix` });
   }
-  if (reward.rewardOutlineColor) {
-    pills.push({ key: "outline-color", icon: "flame", text: `${reward.rewardOutlineColor} outline` });
+  if (reward.rewardOutlineColorPicker) {
+    pills.push({ key: "outline-color", icon: "flame", text: "custom outline color" });
   }
-  if (reward.rewardBackgroundColor) {
-    pills.push({ key: "bg-color", icon: "flame", text: `${reward.rewardBackgroundColor} background color` });
+  if (reward.rewardBackgroundColorPicker) {
+    pills.push({ key: "bg-color", icon: "flame", text: "custom background color" });
   }
   return pills;
 }

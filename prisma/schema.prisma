@@ -92,8 +92,12 @@ model Challenge {
   rewardIcon             String?
   rewardRibbonText       String?
   rewardNameSuffix       String?
-  rewardOutlineColor     String? // free-ish color text — same resolution rules as BadgeFlare.outlineColor
-  rewardBackgroundColor  String? // free-ish color text — same resolution rules as BadgeFlare.backgroundColor
+  // These two aren't a specific color value to unlock — they grant the
+  // *capability* to use the free-color picker for that field at all.
+  // Once unlocked, the employee can set literally any resolvable color of
+  // their own choosing (see selfFlare.ts), not a pre-set option.
+  rewardOutlineColorPicker    Boolean @default(false)
+  rewardBackgroundColorPicker Boolean @default(false)
   rewardPrize            String? // freeform other prize, e.g. "Company hoodie", "Extra PTO day"
   minClearance  ClearanceLevel @default(UNCLASSIFIED)
   isActive      Boolean    @default(true)

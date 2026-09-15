@@ -21,25 +21,33 @@ export function ColorField({
   value,
   onChange,
   placeholder,
+  disabled,
+  hint,
 }: {
   label: string;
   name: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
+  hint?: string;
 }) {
   const pickerValue = HEX_RE.test(value) ? value.toLowerCase() : "#ffffff";
 
   return (
     <div>
-      <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
+      <label className="mb-1.5 flex items-center gap-1.5 font-terminal text-xs uppercase text-brand-sand/45">
+        {label}
+        {disabled && <span className="text-brand-sand/25">(not unlocked yet)</span>}
+      </label>
       <div className="flex items-center gap-2">
         <input
           type="color"
           aria-label={`${label} picker`}
           value={pickerValue}
           onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-brand-sand/15 bg-transparent p-0.5"
+          disabled={disabled}
+          className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-brand-sand/15 bg-transparent p-0.5 disabled:cursor-not-allowed disabled:opacity-40"
         />
         <input
           name={name}
@@ -47,9 +55,11 @@ export function ColorField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder ?? "#ff6a00, hotpink, royalblue"}
-          className="input-modern w-full"
+          disabled={disabled}
+          className="input-modern w-full disabled:cursor-not-allowed disabled:opacity-40"
         />
       </div>
+      {hint && <p className="mt-1 text-[11px] text-brand-sand/35">{hint}</p>}
     </div>
   );
 }
