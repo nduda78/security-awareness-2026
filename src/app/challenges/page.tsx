@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
 import { Icon } from "@/components/Icon";
-import { ChallengeRewardPills } from "@/components/ChallengeRewardPills";
+import { ChallengeRewardPills, UnlockTeaserPills } from "@/components/ChallengeRewardPills";
 
 export const dynamic = "force-dynamic";
 
@@ -69,19 +69,35 @@ export default async function ChallengesPage() {
                 {c.title}
               </h3>
               <div className="mb-2 flex flex-wrap gap-1.5">
-                <span className="pill !cursor-default !border-brand-yellow/30 !text-brand-yellow">
-                  +{c.xpValue} XP
-                </span>
-                <ChallengeRewardPills reward={c} />
+                {c.rewardMode === "UNLOCK" ? (
+                  <UnlockTeaserPills challenge={c} />
+                ) : (
+                  <>
+                    <span className="pill !cursor-default !border-brand-yellow/30 !text-brand-yellow">
+                      +{c.xpValue} XP
+                    </span>
+                    <ChallengeRewardPills reward={c} />
+                  </>
+                )}
               </div>
               <p className="mb-3 line-clamp-2 text-sm text-brand-sand/55">{c.description}</p>
               {!isOpen && <div className="font-terminal text-xs text-brand-sand/40">Not currently open</div>}
               {completed && status && (
                 <div className="flex items-center gap-1.5 font-terminal text-xs text-brand-light-green">
                   <Icon name="shield" className="h-3.5 w-3.5" />
-                  {status.status === "CORRECT" && `Completed · +${status.xpAwarded} XP`}
-                  {status.status === "PENDING_REVIEW" && "Submitted · pending review"}
-                  {status.status === "INCORRECT" && "Attempted"}
+                  {c.rewardMode === "UNLOCK" ? (
+                    <>
+                      {status.status === "CORRECT" && "Unlocked"}
+                      {status.status === "PENDING_REVIEW" && "Submitted · pending review"}
+                      {status.status === "INCORRECT" && "Not yet — try again"}
+                    </>
+                  ) : (
+                    <>
+                      {status.status === "CORRECT" && `Completed · +${status.xpAwarded} XP`}
+                      {status.status === "PENDING_REVIEW" && "Submitted · pending review"}
+                      {status.status === "INCORRECT" && "Attempted"}
+                    </>
+                  )}
                 </div>
               )}
             </Link>

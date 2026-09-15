@@ -19,6 +19,49 @@ async function logAdminAudit(action: string, detail: string) {
   await prisma.adminAudit.create({ data: { action, detail } });
 }
 
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const IMAGE_MAX_BYTES = 4 * 1024 * 1024; // 4MB — question/unlock images can be a bit bigger than badge photos
+const AUDIO_TYPES = new Set(["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/x-m4a", "audio/mp4"]);
+const AUDIO_MAX_BYTES = 15 * 1024 * 1024; // 15MB — generous enough for a few minutes of mp3
+
+/**
+ * Reads an optional file upload + "remove" checkbox off formData and, only
+ * if one of them actually applies, mutates `data` in place with the new
+ * bytes/mimetype (or nulls to clear). If neither a file was chosen nor
+ * remove was checked, `data` is left untouched so an existing asset isn't
+ * silently wiped out just because the challenge form was re-saved.
+ */
+async function applyAssetField(
+  data: Record<string, unknown>,
+  formData: FormData,
+  opts: {
+    fileField: string;
+    removeField: string;
+    dataField: string;
+    mimeField: string;
+    allowedTypes: Set<string>;
+    maxBytes: number;
+  }
+): Promise<string | null> {
+  const file = formData.get(opts.fileField);
+  const remove = formData.get(opts.removeField) === "on";
+
+  if (file instanceof File && file.size > 0) {
+    if (!opts.allowedTypes.has(file.type)) {
+      return `Unsupported file type for ${opts.fileField} (${file.type || "unknown"}).`;
+    }
+    if (file.size > opts.maxBytes) {
+      return `${opts.fileField} is too large — max ${Math.floor(opts.maxBytes / (1024 * 1024))}MB.`;
+    }
+    data[opts.dataField] = Buffer.from(await file.arrayBuffer());
+    data[opts.mimeField] = file.type;
+  } else if (remove) {
+    data[opts.dataField] = null;
+    data[opts.mimeField] = null;
+  }
+  return null;
+}
+
 export async function adminLoginAction(formData: FormData) {
   const passphrase = String(formData.get("passphrase") ?? "");
   if (passphrase !== (process.env.ADMIN_PASSPHRASE || "")) {
@@ -63,6 +106,10 @@ export async function upsertChallengeAction(formData: FormData) {
   const correctAnswer = String(formData.get("correctAnswer") ?? "").trim() || null;
   const choicesRaw = String(formData.get("choices") ?? "");
   const xpValue = parseInt(String(formData.get("xpValue") ?? "0"), 10) || 0;
+  const rewardMode = String(formData.get("rewardMode") ?? "XP") === "UNLOCK" ? "UNLOCK" : "XP";
+  const unlockText = String(formData.get("unlockText") ?? "").trim() || null;
+  const unlockLinkUrl = String(formData.get("unlockLinkUrl") ?? "").trim() || null;
+  const unlockLinkLabel = String(formData.get("unlockLinkLabel") ?? "").trim() || null;
   const rewardBackgroundEffect = String(formData.get("rewardBackgroundEffect") ?? "").trim() || null;
   const rewardBorderStyle = String(formData.get("rewardBorderStyle") ?? "").trim() || null;
   const rewardIcon = String(formData.get("rewardIcon") ?? "").trim() || null;
@@ -73,7 +120,7 @@ export async function upsertChallengeAction(formData: FormData) {
   const opensAtRaw = String(formData.get("opensAt") ?? "");
   const closesAtRaw = String(formData.get("closesAt") ?? "");
 
-  const data = {
+  const data: Record<string, unknown> = {
     slug,
     title,
     description,
@@ -81,6 +128,10 @@ export async function upsertChallengeAction(formData: FormData) {
     correctAnswer: answerType === "FREE_TEXT_REVIEW" ? null : correctAnswer,
     choices: answerType === "MULTIPLE_CHOICE" ? parseChoices(choicesRaw) : undefined,
     xpValue,
+    rewardMode,
+    unlockText,
+    unlockLinkUrl,
+    unlockLinkLabel,
     rewardBackgroundEffect,
     rewardBorderStyle,
     rewardIcon,
@@ -92,10 +143,47 @@ export async function upsertChallengeAction(formData: FormData) {
     closesAt: closesAtRaw ? new Date(closesAtRaw) : null,
   };
 
+  // Image/audio assets: only touched when a new file was actually chosen or
+  // its "remove" checkbox was ticked — otherwise the existing bytea (if any)
+  // is left completely alone rather than getting nulled out by every save.
+  const assetError =
+    (await applyAssetField(data, formData, {
+      fileField: "questionImage",
+      removeField: "questionImageRemove",
+      dataField: "questionImage",
+      mimeField: "questionImageMimeType",
+      allowedTypes: IMAGE_TYPES,
+      maxBytes: IMAGE_MAX_BYTES,
+    })) ||
+    (await applyAssetField(data, formData, {
+      fileField: "unlockImage",
+      removeField: "unlockImageRemove",
+      dataField: "unlockImage",
+      mimeField: "unlockImageMimeType",
+      allowedTypes: IMAGE_TYPES,
+      maxBytes: IMAGE_MAX_BYTES,
+    })) ||
+    (await applyAssetField(data, formData, {
+      fileField: "unlockAudio",
+      removeField: "unlockAudioRemove",
+      dataField: "unlockAudio",
+      mimeField: "unlockAudioMimeType",
+      allowedTypes: AUDIO_TYPES,
+      maxBytes: AUDIO_MAX_BYTES,
+    }));
+
+  if (assetError) {
+    redirect(`/admin/challenges?error=${encodeURIComponent(assetError)}`);
+  }
+
   if (id) {
-    await prisma.challenge.update({ where: { id }, data });
+    // data's exact shape is built dynamically (asset fields only present
+    // when actually changed), so it doesn't line up with Prisma's precise
+    // per-field input types — the runtime keys are all real Challenge
+    // columns, so this is safe.
+    await prisma.challenge.update({ where: { id }, data: data as never });
   } else {
-    await prisma.challenge.create({ data });
+    await prisma.challenge.create({ data: data as never });
   }
 
   revalidatePath("/admin/challenges");

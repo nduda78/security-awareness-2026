@@ -60,8 +60,15 @@ export async function submitAnswerAction(formData: FormData) {
   const existing = await prisma.submission.findUnique({
     where: { employeeId_challengeId: { employeeId: employee.id, challengeId: challenge.id } },
   });
+
   if (existing) {
-    redirect(`/challenges/${slug}?already=1`);
+    if (challenge.rewardMode === "UNLOCK") {
+      // UNLOCK challenges aren't scored, so there's no fairness reason to
+      // cap attempts at one — clear the old attempt and let them try again.
+      await prisma.submission.delete({ where: { id: existing.id } });
+    } else {
+      redirect(`/challenges/${slug}?already=1`);
+    }
   }
 
   if (!answerRaw) {
@@ -69,7 +76,7 @@ export async function submitAnswerAction(formData: FormData) {
   }
 
   const status = grade(challenge.answerType, challenge.correctAnswer, answerRaw);
-  const xpAwarded = status === "CORRECT" ? challenge.xpValue : 0;
+  const xpAwarded = challenge.rewardMode === "UNLOCK" ? 0 : status === "CORRECT" ? challenge.xpValue : 0;
 
   try {
     await prisma.submission.create({

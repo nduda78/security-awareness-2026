@@ -22,6 +22,11 @@ enum SubmissionStatus {
   PENDING_REVIEW
 }
 
+enum RewardMode {
+  XP // completing it earns XP (and optionally badge flare / prize) as normal
+  UNLOCK // earns no XP — a correct answer reveals unlockAudio/unlockText/unlockLinkUrl/unlockImage instead. Unlimited retries.
+}
+
 model Employee {
   id             String    @id @default(cuid())
   email          String    @unique
@@ -45,6 +50,24 @@ model Challenge {
   correctAnswer String? // null for FREE_TEXT_REVIEW
   choices       Json? // string[] for MULTIPLE_CHOICE
   xpValue       Int
+  rewardMode    RewardMode @default(XP)
+
+  // Optional image shown alongside the question itself — e.g. a phishing
+  // screenshot to inspect before picking a multiple-choice answer. Usable
+  // on any challenge, regardless of rewardMode.
+  questionImage         Bytes?
+  questionImageMimeType String?
+
+  // Unlock-mode reveal content (only meaningful when rewardMode = UNLOCK).
+  // Any subset may be set — whatever's populated renders on a correct answer.
+  unlockAudio         Bytes?
+  unlockAudioMimeType String?
+  unlockText          String?
+  unlockLinkUrl       String?
+  unlockLinkLabel     String?
+  unlockImage         Bytes?
+  unlockImageMimeType String?
+
   // Advertised badge-flare reward — mirrors the same fields on BadgeFlare (see flare.ts for the
   // validated value sets). Granted by hand via /admin/flare once someone actually completes the
   // challenge; these just describe what's on offer.

@@ -90,3 +90,37 @@ export function ChallengeRewardDetails({ reward }: { reward: ChallengeReward }) 
     </>
   );
 }
+
+export interface UnlockTeaser {
+  unlockAudio: Buffer | null;
+  unlockText: string | null;
+  unlockLinkUrl: string | null;
+  unlockImage: Buffer | null;
+}
+
+/**
+ * Teaser pills for UNLOCK-mode challenges — hints at what kind of content
+ * is behind a correct answer (audio / text / link / image) without
+ * revealing the content itself.
+ */
+export function UnlockTeaserPills({ challenge }: { challenge: UnlockTeaser }) {
+  const pills: { key: string; label: string }[] = [];
+  if (challenge.unlockAudio) pills.push({ key: "audio", label: "Audio" });
+  if (challenge.unlockText) pills.push({ key: "text", label: "Info" });
+  if (challenge.unlockLinkUrl) pills.push({ key: "link", label: "Link" });
+  if (challenge.unlockImage) pills.push({ key: "image", label: "Image" });
+
+  if (pills.length === 0) {
+    return <span className="text-xs text-brand-sand/40">Something, if you get it right.</span>;
+  }
+
+  return (
+    <>
+      {pills.map((p) => (
+        <span key={p.key} className={CYAN_PILL}>
+          <Icon name="lock" className="h-3 w-3" /> {p.label}
+        </span>
+      ))}
+    </>
+  );
+}

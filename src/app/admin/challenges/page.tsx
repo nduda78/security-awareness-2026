@@ -25,6 +25,20 @@ function rewardTags(c: {
   return tags;
 }
 
+function unlockTags(c: {
+  unlockAudioMimeType: string | null;
+  unlockText: string | null;
+  unlockLinkUrl: string | null;
+  unlockImageMimeType: string | null;
+}): string[] {
+  const tags: string[] = [];
+  if (c.unlockAudioMimeType) tags.push("audio");
+  if (c.unlockText) tags.push("text");
+  if (c.unlockLinkUrl) tags.push("link");
+  if (c.unlockImageMimeType) tags.push("image");
+  return tags;
+}
+
 function toInputDate(d: Date | null): string {
   if (!d) return "";
   return d.toISOString().slice(0, 16);
@@ -56,6 +70,46 @@ function Field({
         placeholder={placeholder}
         className="input-modern w-full"
       />
+    </div>
+  );
+}
+
+function FileField({
+  label,
+  name,
+  removeName,
+  currentUrl,
+  hasCurrent,
+  accept,
+  hint,
+}: {
+  label: string;
+  name: string;
+  removeName: string;
+  currentUrl?: string;
+  hasCurrent?: boolean;
+  accept: string;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
+      {hasCurrent && currentUrl && (
+        <div className="mb-2 flex items-center gap-3">
+          {accept === "audio/*" ? (
+            <audio controls src={currentUrl} className="h-8 max-w-[220px]" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
+            <img src={currentUrl} alt="" className="h-16 w-auto rounded-lg border border-brand-sand/10 object-contain" />
+          )}
+          <label className="flex items-center gap-1.5 text-xs text-brand-sand/50">
+            <input type="checkbox" name={removeName} className="accent-brand-red" />
+            Remove current
+          </label>
+        </div>
+      )}
+      <input name={name} type="file" accept={accept} className="text-xs text-brand-sand/70" />
+      {hint && <p className="mt-1 text-[11px] text-brand-sand/35">{hint}</p>}
     </div>
   );
 }
@@ -104,6 +158,13 @@ function ChallengeForm({
     rewardRibbonText: string | null;
     rewardNameSuffix: string | null;
     rewardPrize: string | null;
+    rewardMode?: string;
+    questionImageMimeType?: string | null;
+    unlockAudioMimeType?: string | null;
+    unlockText?: string | null;
+    unlockLinkUrl?: string | null;
+    unlockLinkLabel?: string | null;
+    unlockImageMimeType?: string | null;
     isActive: boolean;
     opensAt: Date | null;
     closesAt: Date | null;
@@ -115,8 +176,69 @@ function ChallengeForm({
       {challenge && <input type="hidden" name="id" value={challenge.id} />}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Slug (URL-safe)" name="slug" defaultValue={challenge?.slug} required />
-        <Field label="XP value" name="xpValue" type="number" defaultValue={String(challenge?.xpValue ?? 50)} required />
+        <div>
+          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Reward mode</label>
+          <select name="rewardMode" defaultValue={challenge?.rewardMode ?? "XP"} className="input-modern w-full">
+            <option value="XP">XP (+ optional badge flare / prize)</option>
+            <option value="UNLOCK">Unlock content (no XP — reveals audio/text/link/image)</option>
+          </select>
+        </div>
       </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="XP value (ignored for Unlock mode)" name="xpValue" type="number" defaultValue={String(challenge?.xpValue ?? 50)} required />
+        <FileField
+          label="Question image (optional, any challenge)"
+          name="questionImage"
+          removeName="questionImageRemove"
+          currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/question-image` : undefined}
+          hasCurrent={!!challenge?.questionImageMimeType}
+          accept="image/*"
+          hint="Shown above the answer form — e.g. a phishing screenshot to inspect."
+        />
+      </div>
+
+      <div className="rounded-lg border border-brand-cyan/25 bg-brand-cyan/[0.04] p-3">
+        <div className="mb-3 font-terminal text-xs uppercase text-brand-cyan">
+          Unlock content (Unlock mode only)
+        </div>
+        <p className="mb-3 text-[11px] text-brand-sand/35">
+          Revealed immediately on a correct answer, in any combination. Unlock-mode challenges allow
+          unlimited attempts — there&apos;s no XP at stake, so a wrong guess just lets them try again.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <FileField
+            label="Audio"
+            name="unlockAudio"
+            removeName="unlockAudioRemove"
+            currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/unlock-audio` : undefined}
+            hasCurrent={!!challenge?.unlockAudioMimeType}
+            accept="audio/*"
+          />
+          <FileField
+            label="Image"
+            name="unlockImage"
+            removeName="unlockImageRemove"
+            currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/unlock-image` : undefined}
+            hasCurrent={!!challenge?.unlockImageMimeType}
+            accept="image/*"
+          />
+        </div>
+        <div className="mt-3">
+          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Text</label>
+          <textarea
+            name="unlockText"
+            rows={2}
+            defaultValue={challenge?.unlockText ?? ""}
+            className="input-modern w-full"
+            placeholder="Whatever you want to reveal — a clue, an explanation, congratulations text…"
+          />
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label="Link URL" name="unlockLinkUrl" defaultValue={challenge?.unlockLinkUrl ?? ""} placeholder="https://…" />
+          <Field label="Link label" name="unlockLinkLabel" defaultValue={challenge?.unlockLinkLabel ?? ""} placeholder="View the doc" />
+        </div>
+      </div>
+
       <div className="rounded-lg border border-brand-purple/25 bg-brand-purple/[0.04] p-3">
         <div className="mb-3 font-terminal text-xs uppercase text-brand-purple">Badge flare reward</div>
         <p className="mb-3 text-[11px] text-brand-sand/35">
@@ -205,7 +327,39 @@ function ChallengeForm({
 export default async function AdminChallengesPage() {
   if (!(await isAdminSession())) redirect("/admin");
 
-  const challenges = await prisma.challenge.findMany({ orderBy: { createdAt: "desc" } });
+  // Explicit select excludes the bytea asset columns (questionImage,
+  // unlockImage, unlockAudio) — this list only needs to know whether one is
+  // set (via its mimeType sibling), not the actual bytes.
+  const challenges = await prisma.challenge.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      answerType: true,
+      correctAnswer: true,
+      choices: true,
+      xpValue: true,
+      rewardMode: true,
+      questionImageMimeType: true,
+      unlockAudioMimeType: true,
+      unlockText: true,
+      unlockLinkUrl: true,
+      unlockLinkLabel: true,
+      unlockImageMimeType: true,
+      rewardBackgroundEffect: true,
+      rewardBorderStyle: true,
+      rewardIcon: true,
+      rewardRibbonText: true,
+      rewardNameSuffix: true,
+      rewardPrize: true,
+      isActive: true,
+      opensAt: true,
+      closesAt: true,
+      createdAt: true,
+    },
+  });
 
   return (
     <div className="fade-in-up">
@@ -224,7 +378,14 @@ export default async function AdminChallengesPage() {
             <details key={c.id} className="surface-card p-4">
             <summary className="flex cursor-pointer items-center justify-between font-medium">
               <span>
-                {c.title} <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>{" "}
+                {c.title}{" "}
+                {c.rewardMode === "UNLOCK" ? (
+                  <span className="font-terminal text-xs text-brand-cyan">
+                    unlocks: {unlockTags(c).join(", ") || "nothing set yet"}
+                  </span>
+                ) : (
+                  <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>
+                )}{" "}
                 {rewardTags(c).map((tag, i) => (
                   <span key={i} className="font-terminal text-xs text-brand-purple">
                     {" "}
