@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { computeClearanceIssuedDates, computeProgress, effectiveTier, TierKey, TIERS } from "./tiers";
-import { computeFlavorProfile, resolveUniqueCodenames } from "./identity";
+import { computeFlavorProfile, resolveUniqueCodenames, resolveUniqueFunFacts } from "./identity";
 import { resolveFlare, logFlareWarnings, ResolvedFlare } from "./flare";
 
 export interface AgentCard {
@@ -55,6 +55,7 @@ export async function buildAgentRoster(): Promise<AgentCard[]> {
     if (flare?.codenameOverride) overrides.set(e.email, flare.codenameOverride);
   }
   const codenames = resolveUniqueCodenames(emailsInStableOrder, overrides);
+  const funFacts = resolveUniqueFunFacts(emailsInStableOrder);
 
   const cards: AgentCard[] = employees.map((e) => {
     const flare = resolveFlare(e.flare, new Date());
@@ -91,7 +92,7 @@ export async function buildAgentRoster(): Promise<AgentCard[]> {
       clearanceIssued,
       codename,
       agentId: flavor.agentId,
-      funFact: flavor.funFact,
+      funFact: funFacts.get(e.email) ?? "",
       barcode: flavor.barcode,
       challengesCompleted: e.submissions.length,
       flare,

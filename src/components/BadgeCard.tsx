@@ -146,9 +146,10 @@ function CardFront({
               </div>
             )}
             <div
-              className={`leading-snug text-brand-sand/50 ${
-                large ? "mt-3 line-clamp-2 text-base" : "mt-1.5 line-clamp-2 text-[10.5px] text-brand-sand/45"
+              className={`truncate leading-snug text-brand-sand/50 ${
+                large ? "mt-3 text-base" : "mt-1.5 text-[10.5px] text-brand-sand/45"
               }`}
+              title={card.funFact}
             >
               {card.funFact}
             </div>
