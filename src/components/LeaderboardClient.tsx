@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BadgeCard } from "./BadgeCard";
 import { Icon } from "./Icon";
 import type { ClientAgentCard } from "@/lib/client-types";
-import { unlockRogueAction } from "@/lib/actions/rogue";
 
 export interface ClientTierSection {
   tierKey: string;
@@ -28,15 +27,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "WINNERS", label: "🏆 Winners" },
 ];
 
-export function LeaderboardClient({
-  sections,
-  rogueUnlocked,
-  rogueError,
-}: {
-  sections: ClientTierSection[];
-  rogueUnlocked: boolean;
-  rogueError?: boolean;
-}) {
+export function LeaderboardClient({ sections }: { sections: ClientTierSection[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterKey>("ALL");
   const [sort, setSort] = useState<SortKey>("XP_DESC");
@@ -141,7 +132,7 @@ export function LeaderboardClient({
       </div>
 
       <div className="mb-8 flex flex-wrap gap-2">
-        {FILTERS.filter((f) => f.key !== "ROGUE" || rogueUnlocked).map((f) => (
+        {FILTERS.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
@@ -155,8 +146,6 @@ export function LeaderboardClient({
           </button>
         ))}
       </div>
-
-      {!rogueUnlocked && <RogueUnlockPanel error={rogueError} />}
 
       {sections.map((section) => {
         const visibleMembers = sortMembers(section.members, sort);
@@ -187,41 +176,5 @@ export function LeaderboardClient({
         );
       })}
     </div>
-  );
-}
-
-function RogueUnlockPanel({ error }: { error?: boolean }) {
-  const [open, setOpen] = useState(false);
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="mb-10 font-terminal text-[11px] uppercase text-brand-sand/30 hover:text-brand-sand/60"
-      >
-        ⋯
-      </button>
-    );
-  }
-  return (
-    <form
-      action={unlockRogueAction}
-      className="mb-10 rounded-md border border-brand-sand/10 bg-black/20 p-4"
-    >
-      <input type="hidden" name="next" value="/leaderboard" />
-      <label className="mb-2 block font-terminal text-xs uppercase text-brand-sand/50">
-        Restricted access code
-      </label>
-      <div className="flex gap-2">
-        <input
-          type="password"
-          name="passphrase"
-          className="flex-1 rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
-        />
-        <button className="rounded-md bg-brand-purple px-4 py-2 font-terminal text-xs uppercase text-brand-sand">
-          Submit
-        </button>
-      </div>
-      {error && <div className="mt-2 text-xs text-brand-red">Access denied.</div>}
-    </form>
   );
 }

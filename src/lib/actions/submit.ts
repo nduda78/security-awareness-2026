@@ -89,11 +89,8 @@ export async function submitAnswerAction(formData: FormData) {
   revalidatePath("/leaderboard");
   revalidatePath("/profile");
 
-  if (status === "CORRECT") {
-    redirect(`/challenges/${slug}?result=correct&xp=${xpAwarded}`);
-  } else if (status === "PENDING_REVIEW") {
-    redirect(`/challenges/${slug}?result=pending`);
-  } else {
-    redirect(`/challenges/${slug}?result=incorrect`);
-  }
+  // Grading/XP still happens for real behind the scenes (status/xpAwarded
+  // are stored above) — the employee-facing message is intentionally a
+  // generic acknowledgment rather than an immediate right/wrong reveal.
+  redirect(`/challenges/${slug}?submitted=1`);
 }

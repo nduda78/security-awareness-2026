@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { buildAgentRoster, overallRank, rankWithinTier } from "@/lib/leaderboard";
 import { toClientCard } from "@/lib/client-types";
 import { prisma } from "@/lib/prisma";
-import { isRogueUnlocked } from "@/lib/session";
 import { BadgeCard } from "@/components/BadgeCard";
 import { Icon } from "@/components/Icon";
 
@@ -15,9 +14,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ email:
   const roster = await buildAgentRoster();
   const card = roster.find((c) => c.email === email);
   if (!card) notFound();
-
-  const rogueUnlocked = await isRogueUnlocked();
-  if (card.tier.key === "ROGUE" && !rogueUnlocked) notFound();
 
   const { rank: overall, total: overallTotal } = overallRank(roster, email);
   const { rank: tierRank, total: tierTotal } = rankWithinTier(roster, card);

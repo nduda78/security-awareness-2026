@@ -3,7 +3,6 @@ import crypto from "crypto";
 
 const AGENT_COOKIE = "agent_session";
 const ADMIN_COOKIE = "admin_session";
-const ROGUE_COOKIE = "rogue_unlocked";
 
 function secret() {
   return process.env.AGENT_SESSION_SECRET || "dev-secret";
@@ -67,16 +66,3 @@ export function encodeAdminCookie(): string {
 }
 
 export const ADMIN_COOKIE_NAME = ADMIN_COOKIE;
-
-export async function isRogueUnlocked(): Promise<boolean> {
-  const store = await cookies();
-  const raw = store.get(ROGUE_COOKIE)?.value;
-  if (!raw) return false;
-  return unsign(raw) === "ok";
-}
-
-export function encodeRogueCookie(): string {
-  return sign("ok");
-}
-
-export const ROGUE_COOKIE_NAME = ROGUE_COOKIE;

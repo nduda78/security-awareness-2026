@@ -1,21 +1,12 @@
 import { buildAgentRoster, groupByTier, rankWithinTier } from "@/lib/leaderboard";
 import { toClientCard } from "@/lib/client-types";
-import { isRogueUnlocked } from "@/lib/session";
 import { LeaderboardClient, type ClientTierSection } from "@/components/LeaderboardClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function LeaderboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ rogueError?: string }>;
-}) {
-  const { rogueError } = await searchParams;
+export default async function LeaderboardPage() {
   const roster = await buildAgentRoster();
-  const rogueUnlocked = await isRogueUnlocked();
-
-  const visibleRoster = rogueUnlocked ? roster : roster.filter((c) => c.tier.key !== "ROGUE");
-  const sections = groupByTier(visibleRoster);
+  const sections = groupByTier(roster);
 
   const clientSections: ClientTierSection[] = sections.map((s) => ({
     tierKey: s.tier.key,
@@ -38,7 +29,7 @@ export default async function LeaderboardPage({
         <span className="text-brand-yellow">SECRET</span> to{" "}
         <span className="text-brand-light-green">TOP SECRET</span> — if you dare.
       </p>
-      <LeaderboardClient sections={clientSections} rogueUnlocked={rogueUnlocked} rogueError={!!rogueError} />
+      <LeaderboardClient sections={clientSections} />
     </div>
   );
 }

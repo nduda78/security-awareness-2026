@@ -10,10 +10,10 @@ export default async function ChallengeDetailPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ result?: string; xp?: string; already?: string; error?: string }>;
+  searchParams: Promise<{ submitted?: string; already?: string; error?: string }>;
 }) {
   const { slug } = await params;
-  const { result, xp, already, error } = await searchParams;
+  const { submitted, already, error } = await searchParams;
   const identity = await getAgentIdentity();
 
   const challenge = await prisma.challenge.findUnique({ where: { slug } });
@@ -31,6 +31,7 @@ export default async function ChallengeDetailPage({
     (!challenge.opensAt || challenge.opensAt <= now) &&
     (!challenge.closesAt || challenge.closesAt >= now);
 
+  const justSubmitted = submitted === "1";
   const choices = (challenge.choices as string[] | null) ?? null;
   const completed = already === "1" || !!existing;
 
@@ -49,7 +50,13 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {isOpen && completed && (
+      {isOpen && justSubmitted && (
+        <div className="rounded-md border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
+          Thanks for the submission.
+        </div>
+      )}
+
+      {isOpen && !justSubmitted && completed && (
         <div className="rounded-md border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
           {existing?.status === "CORRECT" && `Already completed — you earned +${existing.xpAwarded} XP.`}
           {existing?.status === "PENDING_REVIEW" && "Already submitted — pending Security team review."}
@@ -58,25 +65,10 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {isOpen && !completed && (
+      {isOpen && !justSubmitted && !completed && (
         <form action={submitAnswerAction} className="space-y-4">
           <input type="hidden" name="slug" value={challenge.slug} />
 
-          {result === "correct" && (
-            <div className="rounded-md bg-brand-light-green/15 p-3 text-sm text-brand-light-green">
-              ✅ Correct! +{xp} XP awarded.
-            </div>
-          )}
-          {result === "incorrect" && (
-            <div className="rounded-md bg-brand-red/15 p-3 text-sm text-brand-red">
-              ❌ Not quite. This challenge is now marked as attempted.
-            </div>
-          )}
-          {result === "pending" && (
-            <div className="rounded-md bg-brand-yellow/15 p-3 text-sm text-brand-yellow">
-              📨 Submitted for Security team review. XP will post once reviewed.
-            </div>
-          )}
           {error && <div className="rounded-md bg-brand-red/15 p-3 text-sm text-brand-red">{error}</div>}
 
           {challenge.answerType === "MULTIPLE_CHOICE" && choices ? (

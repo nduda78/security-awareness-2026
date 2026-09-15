@@ -18,8 +18,8 @@ codename system, and visual language are carried over from that spec.
 ## Core mechanics
 
 - **XP → Clearance tiers**: UNCLASSIFIED (0–200) → SECRET (201–400) → TOP_SECRET
-  (401+). ROGUE is a hidden, admin-only manual override tier — never reachable
-  via XP. See `src/lib/tiers.ts`.
+  (401+). ROGUE is an admin-only manual override tier — never reachable via
+  XP, only set via the admin panel. See `src/lib/tiers.ts`.
 - **Challenges**: admins create challenges with an XP value and one of four
   grading modes (exact match, case-insensitive match, multiple choice, or
   free-text manual review). Employees submit via `/challenges/[slug]`.
@@ -49,11 +49,10 @@ identity key used everywhere (profile URLs, dedup, flavor generation).
 Admins get a separate passphrase-gated `/admin` area (`ADMIN_PASSPHRASE` env
 var) since they can grant XP and edit flare.
 
-The ROGUE tier is hidden from the leaderboard by default and only appears
-after unlocking it with `ROGUE_PASSPHRASE` (a small "⋯" button reveals the
-unlock form). This is a fun deterrent, not real access control — the roster is
-genuinely not sent to the browser until unlocked, since (unlike a fully
-static build) this app has a real backend to gate on.
+The ROGUE tier renders in the leaderboard like any other tier (red glitch
+styling, warning banner, `PROCESS_420` watermark, `process420` keyboard
+easter egg) — there's no password gate on it. Anyone who's been manually
+flagged ROGUE by an admin is simply visible to everyone.
 
 ## Local development
 
@@ -103,8 +102,8 @@ src/
     identity.ts          Deterministic codename/agent-id/fun-fact generation
     flare.ts             Badge flare validation/resolution (never crashes)
     leaderboard.ts        Roster building, grouping, ranking
-    session.ts            Signed cookie helpers (agent/admin/rogue)
-    actions/              Server actions (identify, submit, admin, rogue unlock)
+    session.ts            Signed cookie helpers (agent/admin)
+    actions/              Server actions (identify, submit, admin)
   proxy.ts               Middleware-equivalent: gates all pages behind /identify
 prisma/
   schema.prisma          Employee / Challenge / Submission / BadgeFlare models
