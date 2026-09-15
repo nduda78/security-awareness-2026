@@ -97,7 +97,15 @@ export default async function ChallengeDetailPage({
         </div>
         <div className="flex flex-wrap gap-1.5">
           {isUnlock ? (
-            <UnlockTeaserPills challenge={challenge} />
+            <UnlockTeaserPills
+              challenge={{
+                hasAudio: !!challenge.unlockAudio,
+                unlockText: challenge.unlockText,
+                unlockLinkUrl: challenge.unlockLinkUrl,
+                hasImage: !!challenge.unlockImage,
+                hasVideo: !!challenge.unlockVideo,
+              }}
+            />
           ) : (
             <>
               <span className="pill !cursor-default !border-brand-yellow/30 !text-brand-yellow">

@@ -91,12 +91,16 @@ export function ChallengeRewardDetails({ reward }: { reward: ChallengeReward }) 
   );
 }
 
+// Booleans rather than the raw bytea fields — these pills only ever need
+// to know whether something is set, and this shape is also safe to pass
+// across the server -> client boundary (e.g. into ChallengesBoard) without
+// shipping actual binary content just to render a hint pill.
 export interface UnlockTeaser {
-  unlockAudio: Buffer | null;
+  hasAudio: boolean;
   unlockText: string | null;
   unlockLinkUrl: string | null;
-  unlockImage: Buffer | null;
-  unlockVideo: Buffer | null;
+  hasImage: boolean;
+  hasVideo: boolean;
 }
 
 /**
@@ -106,11 +110,11 @@ export interface UnlockTeaser {
  */
 export function UnlockTeaserPills({ challenge }: { challenge: UnlockTeaser }) {
   const pills: { key: string; label: string }[] = [];
-  if (challenge.unlockAudio) pills.push({ key: "audio", label: "Audio" });
+  if (challenge.hasAudio) pills.push({ key: "audio", label: "Audio" });
   if (challenge.unlockText) pills.push({ key: "text", label: "Info" });
   if (challenge.unlockLinkUrl) pills.push({ key: "link", label: "Link" });
-  if (challenge.unlockImage) pills.push({ key: "image", label: "Image" });
-  if (challenge.unlockVideo) pills.push({ key: "video", label: "Video" });
+  if (challenge.hasImage) pills.push({ key: "image", label: "Image" });
+  if (challenge.hasVideo) pills.push({ key: "video", label: "Video" });
 
   if (pills.length === 0) {
     return <span className="text-xs text-brand-sand/40">Something, if you get it right.</span>;

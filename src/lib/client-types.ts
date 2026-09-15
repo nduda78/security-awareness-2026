@@ -36,6 +36,44 @@ export interface ClientAgentCard {
   photoUrl: string | null;
 }
 
+// --- Challenges page (ChallengesBoard) ---
+
+export interface ClientChallengeCard {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  rewardMode: string; // "XP" | "UNLOCK"
+  xpValue: number;
+  isOpen: boolean;
+  status: "CORRECT" | "PENDING_REVIEW" | "INCORRECT" | null;
+  xpAwarded: number;
+  completed: boolean; // status === "CORRECT"
+  reward: {
+    rewardBackgroundEffect: string | null;
+    rewardBorderStyle: string | null;
+    rewardIcon: string | null;
+    rewardRibbonText: string | null;
+    rewardNameSuffix: string | null;
+    rewardPrize: string | null;
+  };
+  unlockTeaser: {
+    hasAudio: boolean;
+    unlockText: string | null;
+    unlockLinkUrl: string | null;
+    hasImage: boolean;
+    hasVideo: boolean;
+  };
+}
+
+export interface ClientChallengeSection {
+  key: string; // tier key, or "INFO" for the non-XP section
+  label: string;
+  color: string;
+  icon: string;
+  challenges: ClientChallengeCard[];
+}
+
 function formatDate(d: Date | null): string | null {
   if (!d) return null;
   return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
