@@ -153,11 +153,11 @@ function CardFront({
               {card.funFact}
             </div>
             {large && card.achievements.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {card.achievements.map((a, i) => (
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {card.achievements.slice(0, 3).map((a, i) => (
                   <span
                     key={i}
-                    className="flex items-center gap-1.5 rounded-full bg-brand-yellow/10 px-3 py-1 text-sm font-medium text-brand-yellow ring-1 ring-brand-yellow/25"
+                    className="flex items-center gap-1.5 rounded-full bg-brand-yellow/10 px-2.5 py-1 text-sm font-medium text-brand-yellow ring-1 ring-brand-yellow/25"
                   >
                     <Icon name="trophy" className="h-4 w-4" />
                     {a}
@@ -310,7 +310,7 @@ function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnable
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      className={`flip-scene tilt-card relative w-full cursor-pointer ${large ? "flip-scene-auto" : "aspect-[1.42/1]"}`}
+      className="flip-scene tilt-card relative aspect-[27/17] w-full cursor-pointer"
       style={{
         // @ts-expect-error custom property for pulse animation color
         "--pulse-color": outline,
@@ -401,7 +401,7 @@ function BadgeSpotlight({
         ✕
       </button>
       <div
-        className="spotlight-card-in w-full max-w-[560px]"
+        className="spotlight-card-in w-full max-w-[640px]"
         onClick={(e) => e.stopPropagation()}
       >
         <CardVisual
