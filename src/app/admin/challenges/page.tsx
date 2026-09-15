@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
 import { upsertChallengeAction, deleteChallengeAction } from "@/lib/actions/admin";
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
+import { AssetUploader } from "@/components/AssetUploader";
+import { TIER_BY_KEY } from "@/lib/tiers";
 
 export const dynamic = "force-dynamic";
 
@@ -156,6 +158,7 @@ function ChallengeForm({
     correctAnswer: string | null;
     choices: unknown;
     xpValue: number;
+    minClearance?: string;
     rewardBackgroundEffect: string | null;
     rewardBorderStyle: string | null;
     rewardIcon: string | null;
@@ -189,17 +192,44 @@ function ChallengeForm({
           </select>
         </div>
       </div>
+      <div>
+        <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+          Who can see this (minimum clearance)
+        </label>
+        <select name="minClearance" defaultValue={challenge?.minClearance ?? "UNCLASSIFIED"} className="input-modern w-full">
+          <option value="UNCLASSIFIED">Unclassified (and any level higher)</option>
+          <option value="SECRET">Secret (and any level higher)</option>
+          <option value="TOP_SECRET">Top Secret (and any level higher)</option>
+          <option value="ROGUE">Rogue only (standalone — not part of the ladder)</option>
+        </select>
+        <p className="mt-1 text-[11px] text-brand-sand/35">
+          Unclassified/Secret/Top Secret form a ladder — anyone at or above the chosen level sees it. Rogue is its
+          own separate flag: a Rogue-only challenge is visible only to Rogue-flagged employees, regardless of their
+          real XP tier.
+        </p>
+      </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="XP value (ignored for Unlock mode)" name="xpValue" type="number" defaultValue={String(challenge?.xpValue ?? 50)} required />
-        <FileField
-          label="Question image (optional, any challenge)"
-          name="questionImage"
-          removeName="questionImageRemove"
-          currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/question-image` : undefined}
-          hasCurrent={!!challenge?.questionImageMimeType}
-          accept="image/*"
-          hint="Shown above the answer form — e.g. a phishing screenshot to inspect."
-        />
+        {challenge ? (
+          <AssetUploader
+            challengeId={challenge.id}
+            field="questionImage"
+            label="Question image (optional, any challenge)"
+            accept="image/*"
+            kind="image"
+            currentUrl={`/api/challenge-asset/${challenge.id}/question-image`}
+            hasCurrent={!!challenge?.questionImageMimeType}
+            hint="Shown above the answer form — e.g. a phishing screenshot to inspect. Uploads immediately, separately from Save."
+          />
+        ) : (
+          <FileField
+            label="Question image (optional, any challenge)"
+            name="questionImage"
+            removeName="questionImageRemove"
+            accept="image/*"
+            hint="Shown above the answer form — e.g. a phishing screenshot to inspect. Save the challenge first, then add media via edit for more reliable uploads."
+          />
+        )}
       </div>
 
       <div className="rounded-lg border border-brand-cyan/25 bg-brand-cyan/[0.04] p-3">
@@ -210,33 +240,50 @@ function ChallengeForm({
           Revealed immediately on a correct answer, in any combination. Unlock-mode challenges allow
           unlimited attempts — there&apos;s no XP at stake, so a wrong guess just lets them try again.
         </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <FileField
-            label="Audio"
-            name="unlockAudio"
-            removeName="unlockAudioRemove"
-            currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/unlock-audio` : undefined}
-            hasCurrent={!!challenge?.unlockAudioMimeType}
-            accept="audio/*"
-          />
-          <FileField
-            label="Image"
-            name="unlockImage"
-            removeName="unlockImageRemove"
-            currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/unlock-image` : undefined}
-            hasCurrent={!!challenge?.unlockImageMimeType}
-            accept="image/*"
-          />
-          <FileField
-            label="Video"
-            name="unlockVideo"
-            removeName="unlockVideoRemove"
-            currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/unlock-video` : undefined}
-            hasCurrent={!!challenge?.unlockVideoMimeType}
-            accept="video/*"
-            hint="MP4, WebM, or MOV — up to 20MB. Large uploads occasionally fail on this dev server; just retry if so."
-          />
-        </div>
+        {challenge ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <AssetUploader
+              challengeId={challenge.id}
+              field="unlockAudio"
+              label="Audio"
+              accept="audio/*"
+              kind="audio"
+              currentUrl={`/api/challenge-asset/${challenge.id}/unlock-audio`}
+              hasCurrent={!!challenge?.unlockAudioMimeType}
+            />
+            <AssetUploader
+              challengeId={challenge.id}
+              field="unlockImage"
+              label="Image"
+              accept="image/*"
+              kind="image"
+              currentUrl={`/api/challenge-asset/${challenge.id}/unlock-image`}
+              hasCurrent={!!challenge?.unlockImageMimeType}
+            />
+            <AssetUploader
+              challengeId={challenge.id}
+              field="unlockVideo"
+              label="Video"
+              accept="video/*"
+              kind="video"
+              currentUrl={`/api/challenge-asset/${challenge.id}/unlock-video`}
+              hasCurrent={!!challenge?.unlockVideoMimeType}
+              hint="MP4, WebM, or MOV — up to 20MB. Uploads immediately with a progress bar, separately from Save."
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FileField label="Audio" name="unlockAudio" removeName="unlockAudioRemove" accept="audio/*" />
+            <FileField label="Image" name="unlockImage" removeName="unlockImageRemove" accept="image/*" />
+            <FileField
+              label="Video"
+              name="unlockVideo"
+              removeName="unlockVideoRemove"
+              accept="video/*"
+              hint="MP4, WebM, or MOV — up to 20MB. Save the challenge first, then add media via edit for more reliable uploads."
+            />
+          </div>
+        )}
         <div className="mt-3">
           <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Text</label>
           <textarea
@@ -356,6 +403,7 @@ export default async function AdminChallengesPage() {
       choices: true,
       xpValue: true,
       rewardMode: true,
+      minClearance: true,
       questionImageMimeType: true,
       unlockAudioMimeType: true,
       unlockText: true,
@@ -401,6 +449,13 @@ export default async function AdminChallengesPage() {
                 ) : (
                   <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>
                 )}{" "}
+                <span
+                  className="font-terminal text-xs"
+                  style={{ color: TIER_BY_KEY[c.minClearance as keyof typeof TIER_BY_KEY]?.color }}
+                >
+                  • {TIER_BY_KEY[c.minClearance as keyof typeof TIER_BY_KEY]?.shortLabel ?? c.minClearance}
+                  {c.minClearance !== "ROGUE" ? "+" : ""}
+                </span>{" "}
                 {rewardTags(c).map((tag, i) => (
                   <span key={i} className="font-terminal text-xs text-brand-purple">
                     {" "}

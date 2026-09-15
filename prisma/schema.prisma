@@ -27,6 +27,20 @@ enum RewardMode {
   UNLOCK // earns no XP — a correct answer reveals unlockAudio/unlockText/unlockLinkUrl/unlockImage instead. Unlimited retries.
 }
 
+// Mirrors TierKey in src/lib/tiers.ts. Gates who a challenge is even shown
+// to. UNCLASSIFIED/SECRET/TOP_SECRET form a ladder ("this level and any
+// level higher" — the higher clearance always sees the lower bar's
+// challenges too); ROGUE is a standalone flag, never implied by or
+// implying any ladder level, so a ROGUE-tagged challenge is only ever
+// visible to ROGUE employees, and ROGUE employees still see ladder
+// challenges per their real underlying XP tier.
+enum ClearanceLevel {
+  UNCLASSIFIED
+  SECRET
+  TOP_SECRET
+  ROGUE
+}
+
 model Employee {
   id             String    @id @default(cuid())
   email          String    @unique
@@ -79,6 +93,7 @@ model Challenge {
   rewardRibbonText       String?
   rewardNameSuffix       String?
   rewardPrize            String? // freeform other prize, e.g. "Company hoodie", "Extra PTO day"
+  minClearance  ClearanceLevel @default(UNCLASSIFIED)
   isActive      Boolean    @default(true)
   opensAt       DateTime?
   closesAt      DateTime?

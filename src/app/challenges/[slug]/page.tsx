@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
+import { getViewerClearanceInfo } from "@/lib/leaderboard";
+import { meetsClearance, TierKey, TIER_BY_KEY } from "@/lib/tiers";
 import { submitAnswerAction } from "@/lib/actions/submit";
 import { ChallengeRewardDetails, UnlockTeaserPills } from "@/components/ChallengeRewardPills";
 import { Icon } from "@/components/Icon";
@@ -20,6 +22,25 @@ export default async function ChallengeDetailPage({
 
   const challenge = await prisma.challenge.findUnique({ where: { slug } });
   if (!challenge) notFound();
+
+  const viewer = identity ? await getViewerClearanceInfo(identity.email) : null;
+  const cleared = viewer ? meetsClearance(viewer, challenge.minClearance as TierKey) : false;
+
+  if (!cleared) {
+    const requiredTier = TIER_BY_KEY[challenge.minClearance as TierKey];
+    return (
+      <div className="fade-in-up mx-auto max-w-2xl">
+        <div className="surface-card p-8 text-center">
+          <Icon name="lock" className="mx-auto mb-3 h-8 w-8 text-brand-red" />
+          <h1 className="mb-2 font-display text-xl font-semibold text-brand-sand">Clearance Insufficient</h1>
+          <p className="text-sm text-brand-sand/55">
+            This mission requires <span style={{ color: requiredTier.color }}>{requiredTier.label}</span> clearance
+            {requiredTier.key !== "ROGUE" ? " or higher" : ""}. You don&apos;t have access to this briefing.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const existing = identity
     ? await prisma.submission.findFirst({

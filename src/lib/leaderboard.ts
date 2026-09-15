@@ -105,6 +105,28 @@ export async function buildAgentRoster(): Promise<AgentCard[]> {
   return cards;
 }
 
+/**
+ * Cheap lookup of just what's needed to evaluate clearance-gated visibility
+ * for a single viewer (the Challenges pages) — avoids building the entire
+ * roster (codenames, flare, fun facts, etc.) just to check one person's XP.
+ */
+export async function getViewerClearanceInfo(
+  email: string
+): Promise<{ xp: number; rogueOverride: boolean } | null> {
+  const employee = await prisma.employee.findUnique({
+    where: { email },
+    select: {
+      rogueOverride: true,
+      submissions: { where: { status: "CORRECT" }, select: { xpAwarded: true } },
+    },
+  });
+  if (!employee) return null;
+  return {
+    xp: employee.submissions.reduce((sum, s) => sum + s.xpAwarded, 0),
+    rogueOverride: employee.rogueOverride,
+  };
+}
+
 export interface TierSection {
   tier: (typeof TIERS)[number];
   members: AgentCard[];

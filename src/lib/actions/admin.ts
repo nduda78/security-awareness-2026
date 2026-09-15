@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { encodeAdminCookie, ADMIN_COOKIE_NAME, isAdminSession } from "@/lib/session";
+import { IMAGE_TYPES, IMAGE_MAX_BYTES, AUDIO_TYPES, AUDIO_MAX_BYTES, VIDEO_TYPES, VIDEO_MAX_BYTES } from "@/lib/assetUpload";
 
 async function requireAdmin() {
   if (!(await isAdminSession())) {
@@ -19,19 +20,6 @@ async function logAdminAudit(action: string, detail: string) {
   await prisma.adminAudit.create({ data: { action, detail } });
 }
 
-const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const IMAGE_MAX_BYTES = 4 * 1024 * 1024; // 4MB — question/unlock images can be a bit bigger than badge photos
-const AUDIO_TYPES = new Set(["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/x-m4a", "audio/mp4"]);
-const AUDIO_MAX_BYTES = 15 * 1024 * 1024; // 15MB — generous enough for a few minutes of mp3
-const VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
-// 20MB — lowered from an initial 60MB after finding that large multipart
-// uploads through this dev server (Turbopack, not a production build) can
-// intermittently fail with "Unexpected end of form" under load, even well
-// under the configured serverActions.bodySizeLimit. It's not a hard/exact
-// cutoff — uploads in the 40–50MB range succeeded on retry in testing —
-// but keeping well clear of that range makes a first-try success much more
-// likely. Re-check this once the app is off the ephemeral dev pod.
-const VIDEO_MAX_BYTES = 20 * 1024 * 1024;
 
 /**
  * Reads an optional file upload + "remove" checkbox off formData and, only
@@ -116,6 +104,10 @@ export async function upsertChallengeAction(formData: FormData) {
   const choicesRaw = String(formData.get("choices") ?? "");
   const xpValue = parseInt(String(formData.get("xpValue") ?? "0"), 10) || 0;
   const rewardMode = String(formData.get("rewardMode") ?? "XP") === "UNLOCK" ? "UNLOCK" : "XP";
+  const minClearanceRaw = String(formData.get("minClearance") ?? "UNCLASSIFIED");
+  const minClearance = ["UNCLASSIFIED", "SECRET", "TOP_SECRET", "ROGUE"].includes(minClearanceRaw)
+    ? minClearanceRaw
+    : "UNCLASSIFIED";
   const unlockText = String(formData.get("unlockText") ?? "").trim() || null;
   const unlockLinkUrl = String(formData.get("unlockLinkUrl") ?? "").trim() || null;
   const unlockLinkLabel = String(formData.get("unlockLinkLabel") ?? "").trim() || null;
@@ -138,6 +130,7 @@ export async function upsertChallengeAction(formData: FormData) {
     choices: answerType === "MULTIPLE_CHOICE" ? parseChoices(choicesRaw) : undefined,
     xpValue,
     rewardMode,
+    minClearance,
     unlockText,
     unlockLinkUrl,
     unlockLinkLabel,

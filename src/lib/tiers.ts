@@ -195,3 +195,24 @@ export function computeClearanceIssuedDates(
 
   return issued;
 }
+
+/**
+ * Whether an employee (identified by their real underlying XP and ROGUE
+ * flag) is allowed to even see a challenge gated at `required` clearance.
+ *
+ * ROGUE is a standalone flag, not a rung on the XP ladder: a ROGUE-tagged
+ * challenge is visible only to ROGUE employees, and — since ROGUE never
+ * overrides someone's real progress, only how their tier badge displays —
+ * ROGUE employees are still evaluated against the ladder normally for
+ * every non-ROGUE challenge, using their real XP-derived tier underneath.
+ *
+ * Ladder levels (UNCLASSIFIED/SECRET/TOP_SECRET) are "this level or any
+ * level higher": a TOP_SECRET employee can see a SECRET- or
+ * UNCLASSIFIED-gated challenge too, since TIERS.order is lower for higher
+ * clearance.
+ */
+export function meetsClearance(employee: { xp: number; rogueOverride: boolean }, required: TierKey): boolean {
+  if (required === "ROGUE") return employee.rogueOverride;
+  const viewerTier = tierForXp(employee.xp);
+  return viewerTier.order <= TIER_BY_KEY[required].order;
+}
