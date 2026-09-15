@@ -84,7 +84,6 @@ model BadgeFlare {
   iconOverride     String?
   borderStyle      String?
   ribbonText       String?
-  pinned           Boolean   @default(false)
   nameSuffix       String?
   expiresAt        DateTime?
   updatedAt        DateTime  @updatedAt

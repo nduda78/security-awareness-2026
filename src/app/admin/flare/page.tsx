@@ -12,10 +12,17 @@ export const dynamic = "force-dynamic";
 export default async function AdminFlarePage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string; saved?: string; error?: string }>;
+  searchParams: Promise<{
+    email?: string;
+    saved?: string;
+    error?: string;
+    photoUploaded?: string;
+    photoRemoved?: string;
+    photoError?: string;
+  }>;
 }) {
   if (!(await isAdminSession())) redirect("/admin");
-  const { email: selectedEmail, saved, error } = await searchParams;
+  const { email: selectedEmail, saved, error, photoUploaded, photoRemoved, photoError } = await searchParams;
 
   const employees = await prisma.employee.findMany({ orderBy: { displayName: "asc" }, include: { flare: true } });
   const selected = selectedEmail ? employees.find((e) => e.email === selectedEmail.toLowerCase()) : undefined;
@@ -74,6 +81,7 @@ export default async function AdminFlarePage({
               email={selected.email}
               baseCard={editorProps.baseCard}
               defaultCodename={editorProps.defaultCodename}
+              photoStatus={{ uploaded: photoUploaded === "1", removed: photoRemoved === "1", error: photoError }}
               initial={{
                 achievements: selected.flare?.achievements.join("\n") ?? "",
                 outlineColor: selected.flare?.outlineColor ?? "",
@@ -86,7 +94,6 @@ export default async function AdminFlarePage({
                 motto: selected.flare?.motto ?? "",
                 nameSuffix: selected.flare?.nameSuffix ?? "",
                 expiresAt: selected.flare?.expiresAt ? selected.flare.expiresAt.toISOString().slice(0, 16) : "",
-                pinned: selected.flare?.pinned ?? false,
               }}
             />
           )}

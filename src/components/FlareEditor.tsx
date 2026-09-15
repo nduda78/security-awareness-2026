@@ -1,21 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { upsertFlareAction } from "@/lib/actions/admin";
+import { upsertFlareAction, adminUploadPhotoAction, adminRemovePhotoAction } from "@/lib/actions/admin";
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { applyFlareToCard, type ClientAgentCard } from "@/lib/client-types";
 import { ColorField } from "./ColorField";
 import { BadgeCard, CardVisual, deriveBadgeVisualProps } from "./BadgeCard";
+import { PhotoUploader } from "./PhotoUploader";
 
 export function FlareEditor({
   email,
   baseCard,
   defaultCodename,
+  photoStatus,
   initial,
 }: {
   email: string;
   baseCard: ClientAgentCard;
   defaultCodename: string;
+  photoStatus: { uploaded: boolean; removed: boolean; error?: string };
   initial: {
     achievements: string;
     outlineColor: string;
@@ -28,7 +31,6 @@ export function FlareEditor({
     motto: string;
     nameSuffix: string;
     expiresAt: string;
-    pinned: boolean;
   };
 }) {
   const [achievements, setAchievements] = useState(initial.achievements);
@@ -42,7 +44,6 @@ export function FlareEditor({
   const [motto, setMotto] = useState(initial.motto);
   const [nameSuffix, setNameSuffix] = useState(initial.nameSuffix);
   const [expiresAt, setExpiresAt] = useState(initial.expiresAt);
-  const [pinned, setPinned] = useState(initial.pinned);
 
   const previewCard = useMemo(
     () =>
@@ -59,7 +60,6 @@ export function FlareEditor({
         iconOverride,
         borderStyle,
         ribbonText,
-        pinned,
         nameSuffix,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
       }),
@@ -75,7 +75,6 @@ export function FlareEditor({
       iconOverride,
       borderStyle,
       ribbonText,
-      pinned,
       nameSuffix,
       expiresAt,
     ]
@@ -102,6 +101,30 @@ export function FlareEditor({
             flipped
             onClick={() => {}}
             tiltEnabled={false}
+          />
+        </div>
+
+        <div className="surface-card mt-6 p-4">
+          <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Badge photo override</div>
+          {photoStatus.uploaded && (
+            <div className="mb-3 rounded-lg bg-brand-light-green/15 p-2.5 text-xs text-brand-light-green">
+              Photo updated.
+            </div>
+          )}
+          {photoStatus.removed && (
+            <div className="mb-3 rounded-lg bg-brand-sand/10 p-2.5 text-xs text-brand-sand/60">Photo removed.</div>
+          )}
+          {photoStatus.error && (
+            <div className="mb-3 rounded-lg bg-brand-red/15 p-2.5 text-xs text-brand-red">{photoStatus.error}</div>
+          )}
+          <p className="mb-3 text-xs text-brand-sand/40">
+            Uploads/replaces this employee&apos;s badge photo directly — saves immediately, same as their own
+            self-service upload on the profile page.
+          </p>
+          <PhotoUploader
+            uploadAction={adminUploadPhotoAction.bind(null, email)}
+            removeAction={adminRemovePhotoAction.bind(null, email)}
+            hasPhoto={!!baseCard.photoUrl}
           />
         </div>
       </div>
@@ -156,8 +179,20 @@ export function FlareEditor({
             placeholder="Gold, or an inside joke"
           />
         </div>
-        <TextField label="Codename override" name="codenameOverride" value={codenameOverride} onChange={setCodenameOverride} />
-        <TextField label="Motto / tagline" name="motto" value={motto} onChange={setMotto} />
+        <TextField
+          label="Codename override"
+          name="codenameOverride"
+          value={codenameOverride}
+          onChange={setCodenameOverride}
+          hint={'Replaces the quoted name under their name, e.g. “Golden Falcon.”'}
+        />
+        <TextField
+          label="Motto / tagline"
+          name="motto"
+          value={motto}
+          onChange={setMotto}
+          hint="Replaces their fun fact line instead of showing it."
+        />
         <TextField label="Name suffix" name="nameSuffix" value={nameSuffix} onChange={setNameSuffix} placeholder="the Master" />
         <div>
           <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Expires at</label>
@@ -169,16 +204,6 @@ export function FlareEditor({
             className="input-modern w-full"
           />
         </div>
-        <label className="flex items-center gap-2 text-sm text-brand-sand/70">
-          <input
-            type="checkbox"
-            name="pinned"
-            checked={pinned}
-            onChange={(e) => setPinned(e.target.checked)}
-            className="accent-brand-purple"
-          />
-          Pin to top of tier
-        </label>
         <button
           className="btn-primary"
           style={{ background: "linear-gradient(135deg, var(--brand-purple), #401f36)", color: "var(--brand-sand)" }}
@@ -196,12 +221,14 @@ function TextField({
   value,
   onChange,
   placeholder,
+  hint,
 }: {
   label: string;
   name: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  hint?: string;
 }) {
   return (
     <div>
@@ -214,6 +241,7 @@ function TextField({
         placeholder={placeholder}
         className="input-modern w-full"
       />
+      {hint && <p className="mt-1 text-[11px] text-brand-sand/35">{hint}</p>}
     </div>
   );
 }

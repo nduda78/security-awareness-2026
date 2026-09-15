@@ -614,6 +614,31 @@ body.chaos-mode {
   mix-blend-mode: screen;
 }
 
+/* Both at once: the neon pulse glow plus the RGB-split glitch jitter. */
+.border-fx-pulse-glitch {
+  position: relative;
+  animation: border-pulse 2.4s ease-in-out infinite, glitch-jitter 0.4s steps(2) infinite;
+}
+.border-fx-pulse-glitch::before,
+.border-fx-pulse-glitch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  pointer-events: none;
+}
+.border-fx-pulse-glitch::before {
+  border-color: rgba(255, 0, 80, 0.6);
+  transform: translate(2px, 0);
+  mix-blend-mode: screen;
+}
+.border-fx-pulse-glitch::after {
+  border-color: rgba(0, 255, 255, 0.6);
+  transform: translate(-2px, 0);
+  mix-blend-mode: screen;
+}
+
 /* Shimmering gold foil sweep — prestige/VIP feel. */
 @keyframes foil-shift {
   0% {

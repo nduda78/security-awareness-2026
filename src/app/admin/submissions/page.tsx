@@ -20,6 +20,7 @@ const AUDIT_LABELS: Record<string, string> = {
   FLARE_UPDATE: "Badge flare updated",
   ROGUE_OVERRIDE: "ROGUE override changed",
   MANUAL_XP_GRANT: "Manual XP grant",
+  PHOTO_OVERRIDE: "Badge photo overridden",
 };
 
 export default async function AdminSubmissionsPage() {

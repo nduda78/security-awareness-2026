@@ -134,7 +134,7 @@ function CardFront({
               {card.renderedName}
             </div>
             <div className={`truncate italic text-brand-sand/60 ${large ? "mt-1 text-lg" : "text-[12px]"}`}>
-              &ldquo;{card.motto ?? card.codename}&rdquo;
+              &ldquo;{card.codename}&rdquo;
             </div>
             {card.clearanceIssuedLabel && (
               <div
@@ -149,9 +149,9 @@ function CardFront({
               className={`truncate leading-snug text-brand-sand/50 ${
                 large ? "mt-3 text-base" : "mt-1.5 text-[10.5px] text-brand-sand/45"
               }`}
-              title={card.funFact}
+              title={card.motto ?? card.funFact}
             >
-              {card.funFact}
+              {card.motto ?? card.funFact}
             </div>
             {large && card.achievements.length > 0 && (
               <div className="mt-2.5 flex flex-wrap gap-1.5">

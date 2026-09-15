@@ -147,7 +147,6 @@ async function main() {
       backgroundEffect: "holo",
       motto: "Trust nothing. Verify everything.",
       ribbonText: "Gold",
-      pinned: true,
       nameSuffix: "the Vigilant",
     },
   });

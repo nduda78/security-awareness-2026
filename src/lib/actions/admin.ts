@@ -155,7 +155,6 @@ export async function upsertFlareAction(formData: FormData) {
     iconOverride: String(formData.get("iconOverride") ?? "").trim() || null,
     borderStyle: String(formData.get("borderStyle") ?? "").trim() || null,
     ribbonText: String(formData.get("ribbonText") ?? "").trim() || null,
-    pinned: formData.get("pinned") === "on",
     nameSuffix: String(formData.get("nameSuffix") ?? "").trim() || null,
     expiresAt: expiresAtRaw ? new Date(expiresAtRaw) : null,
   };
@@ -167,7 +166,7 @@ export async function upsertFlareAction(formData: FormData) {
   });
 
   const changedFields = Object.entries(data)
-    .filter(([key, value]) => key !== "achievements" && value !== null && value !== false)
+    .filter(([key, value]) => key !== "achievements" && value !== null)
     .map(([key, value]) => `${key}=${value instanceof Date ? value.toISOString() : String(value)}`);
   if (achievements.length) changedFields.push(`achievements=[${achievements.join(", ")}]`);
   await logAdminAudit(
@@ -239,4 +238,63 @@ export async function grantManualXpAction(formData: FormData) {
   revalidatePath("/leaderboard");
   revalidatePath("/profile");
   redirect("/admin/employees?granted=1");
+}
+
+const PHOTO_MAX_BYTES = 2 * 1024 * 1024; // 2MB, same cap as self-service uploads.
+const PHOTO_ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
+// Admin equivalents of the self-service photo actions (lib/actions/photo.ts)
+// — same crop tool, same validation, but targets an arbitrary employee
+// (bound via .bind(null, email) from FlareEditor) instead of the caller's
+// own session, and requires admin auth instead of employee identity.
+export async function adminUploadPhotoAction(email: string, formData: FormData) {
+  await requireAdmin();
+  const flareUrl = `/admin/flare?email=${encodeURIComponent(email)}`;
+
+  const employee = await prisma.employee.findUnique({ where: { email } });
+  if (!employee) redirect(`/admin/flare?error=${encodeURIComponent("Unknown employee")}`);
+
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) {
+    redirect(`${flareUrl}&photoError=${encodeURIComponent("Please choose an image file.")}`);
+  }
+  if (!PHOTO_ALLOWED_TYPES.has(file.type)) {
+    redirect(`${flareUrl}&photoError=${encodeURIComponent("Unsupported file type — use JPG, PNG, WEBP, or GIF.")}`);
+  }
+  if (file.size > PHOTO_MAX_BYTES) {
+    redirect(`${flareUrl}&photoError=${encodeURIComponent("Image is too large — please use one under 2MB.")}`);
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await prisma.employee.update({
+    where: { email },
+    data: { photo: buffer, photoMimeType: file.type, photoUpdatedAt: new Date() },
+  });
+
+  await logAdminAudit("PHOTO_OVERRIDE", `${employee!.displayName} (${email}): photo replaced by admin`);
+
+  revalidatePath("/leaderboard");
+  revalidatePath("/admin/flare");
+  revalidatePath(`/profile/${encodeURIComponent(email)}`);
+  redirect(`${flareUrl}&photoUploaded=1`);
+}
+
+export async function adminRemovePhotoAction(email: string) {
+  await requireAdmin();
+  const flareUrl = `/admin/flare?email=${encodeURIComponent(email)}`;
+
+  const employee = await prisma.employee.findUnique({ where: { email } });
+  if (!employee) redirect(`/admin/flare?error=${encodeURIComponent("Unknown employee")}`);
+
+  await prisma.employee.update({
+    where: { email },
+    data: { photo: null, photoMimeType: null, photoUpdatedAt: null },
+  });
+
+  await logAdminAudit("PHOTO_OVERRIDE", `${employee!.displayName} (${email}): photo removed by admin`);
+
+  revalidatePath("/leaderboard");
+  revalidatePath("/admin/flare");
+  revalidatePath(`/profile/${encodeURIComponent(email)}`);
+  redirect(`${flareUrl}&photoRemoved=1`);
 }

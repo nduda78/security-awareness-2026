@@ -110,7 +110,7 @@ export interface TierSection {
   members: AgentCard[];
 }
 
-/** Groups + sorts the roster per BUILD_PROMPT.md rules: ROGUE -> TOP_SECRET -> SECRET -> UNCLASSIFIED, pinned first, then XP desc, name asc. Empty tiers omitted. */
+/** Groups + sorts the roster per BUILD_PROMPT.md rules: ROGUE -> TOP_SECRET -> SECRET -> UNCLASSIFIED, then XP desc, name asc. Empty tiers omitted. */
 export function groupByTier(cards: AgentCard[]): TierSection[] {
   const byKey = new Map<string, AgentCard[]>();
   for (const c of cards) {
@@ -124,9 +124,6 @@ export function groupByTier(cards: AgentCard[]): TierSection[] {
     const members = byKey.get(tier.key);
     if (!members || members.length === 0) continue;
     members.sort((a, b) => {
-      const aPinned = a.flare?.pinned ?? false;
-      const bPinned = b.flare?.pinned ?? false;
-      if (aPinned !== bPinned) return aPinned ? -1 : 1;
       if (b.xp !== a.xp) return b.xp - a.xp;
       return a.displayName.localeCompare(b.displayName);
     });
@@ -149,9 +146,6 @@ export function overallRank(cards: AgentCard[], email: string): { rank: number; 
 export function rankWithinTier(cards: AgentCard[], card: AgentCard): { rank: number; total: number } {
   const tierMembers = cards.filter((c) => c.tier.key === card.tier.key);
   tierMembers.sort((a, b) => {
-    const aPinned = a.flare?.pinned ?? false;
-    const bPinned = b.flare?.pinned ?? false;
-    if (aPinned !== bPinned) return aPinned ? -1 : 1;
     if (b.xp !== a.xp) return b.xp - a.xp;
     return a.displayName.localeCompare(b.displayName);
   });

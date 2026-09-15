@@ -79,8 +79,16 @@ export const BACKGROUND_EFFECTS: BackgroundEffect[] = [
   "aurora",
 ];
 
-export type BorderStyle = "pulse" | "shimmer" | "marching-ants" | "neon" | "glitch" | "foil";
-export const BORDER_STYLES: BorderStyle[] = ["pulse", "shimmer", "marching-ants", "neon", "glitch", "foil"];
+export type BorderStyle = "pulse" | "shimmer" | "marching-ants" | "neon" | "glitch" | "foil" | "pulse-glitch";
+export const BORDER_STYLES: BorderStyle[] = [
+  "pulse",
+  "shimmer",
+  "marching-ants",
+  "neon",
+  "glitch",
+  "foil",
+  "pulse-glitch",
+];
 
 export type IconKey = "crown" | "flame" | "trophy" | "lightning" | "skull" | "shield" | "lock" | "file";
 export const ICONS: IconKey[] = ["crown", "flame", "trophy", "lightning", "skull", "shield", "lock", "file"];
@@ -156,7 +164,6 @@ export interface ResolvedFlare {
   borderStyle: BorderStyle | null;
   ribbonText: string | null;
   ribbonRecognized: boolean;
-  pinned: boolean;
   nameSuffix: string | null;
   warnings: FlareWarning[];
 }
@@ -171,7 +178,6 @@ export interface RawFlareInput {
   iconOverride?: string | null;
   borderStyle?: string | null;
   ribbonText?: string | null;
-  pinned?: boolean | null;
   nameSuffix?: string | null;
   expiresAt?: Date | null;
 }
@@ -199,7 +205,6 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
     borderStyle: resolveBorderStyle(raw.borderStyle, warnings),
     ribbonText,
     ribbonRecognized: ribbonText ? RECOGNIZED_RIBBONS.has(ribbonText.toLowerCase()) : false,
-    pinned: !!raw.pinned,
     nameSuffix: raw.nameSuffix?.trim() || null,
     warnings,
   };
