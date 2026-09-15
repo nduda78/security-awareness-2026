@@ -64,7 +64,7 @@ export default async function AdminSubmissionsPage() {
   return (
     <div className="fade-in-up">
       <AdminNav />
-      <h1 className="mb-6 font-display text-2xl font-semibold">Submissions</h1>
+      <h1 className="mb-6 font-display text-2xl font-semibold">Audit Log</h1>
 
       <h2 className="mb-3 font-terminal text-sm uppercase text-brand-yellow">
         Pending review ({pending.length})

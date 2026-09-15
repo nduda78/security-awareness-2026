@@ -64,13 +64,25 @@ export default async function ChallengesPage() {
                 completed ? "border-brand-light-green/30 bg-brand-light-green/[0.04]" : ""
               }`}
             >
-              <div className="mb-1.5 flex items-center justify-between gap-3">
+              <div className="mb-1.5 flex items-start justify-between gap-3">
                 <h3 className="font-display font-semibold text-brand-sand transition group-hover:text-brand-yellow">
                   {c.title}
                 </h3>
-                <span className="pill shrink-0 !cursor-default !border-brand-yellow/30 !text-brand-yellow">
-                  +{c.xpValue} XP
-                </span>
+                <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+                  <span className="pill !cursor-default !border-brand-yellow/30 !text-brand-yellow">
+                    +{c.xpValue} XP
+                  </span>
+                  {c.rewardBadgeFlare && (
+                    <span className="pill !cursor-default !border-brand-purple/40 !text-brand-purple">
+                      <Icon name="trophy" className="h-3 w-3" /> {c.rewardBadgeFlare} ribbon
+                    </span>
+                  )}
+                  {c.rewardPrize && (
+                    <span className="pill !cursor-default !border-brand-light-green/40 !text-brand-light-green">
+                      <Icon name="crown" className="h-3 w-3" /> {c.rewardPrize}
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="mb-3 line-clamp-2 text-sm text-brand-sand/55">{c.description}</p>
               {!isOpen && <div className="font-terminal text-xs text-brand-sand/40">Not currently open</div>}

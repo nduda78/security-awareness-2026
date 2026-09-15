@@ -63,6 +63,8 @@ export async function upsertChallengeAction(formData: FormData) {
   const correctAnswer = String(formData.get("correctAnswer") ?? "").trim() || null;
   const choicesRaw = String(formData.get("choices") ?? "");
   const xpValue = parseInt(String(formData.get("xpValue") ?? "0"), 10) || 0;
+  const rewardBadgeFlare = String(formData.get("rewardBadgeFlare") ?? "").trim() || null;
+  const rewardPrize = String(formData.get("rewardPrize") ?? "").trim() || null;
   const isActive = formData.get("isActive") === "on";
   const opensAtRaw = String(formData.get("opensAt") ?? "");
   const closesAtRaw = String(formData.get("closesAt") ?? "");
@@ -75,6 +77,8 @@ export async function upsertChallengeAction(formData: FormData) {
     correctAnswer: answerType === "FREE_TEXT_REVIEW" ? null : correctAnswer,
     choices: answerType === "MULTIPLE_CHOICE" ? parseChoices(choicesRaw) : undefined,
     xpValue,
+    rewardBadgeFlare,
+    rewardPrize,
     isActive,
     opensAt: opensAtRaw ? new Date(opensAtRaw) : null,
     closesAt: closesAtRaw ? new Date(closesAtRaw) : null,

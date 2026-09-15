@@ -17,17 +17,26 @@ function Field({
   defaultValue,
   type = "text",
   required,
+  placeholder,
 }: {
   label: string;
   name: string;
   defaultValue?: string;
   type?: string;
   required?: boolean;
+  placeholder?: string;
 }) {
   return (
     <div>
       <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
-      <input name={name} type={type} defaultValue={defaultValue} required={required} className="input-modern w-full" />
+      <input
+        name={name}
+        type={type}
+        defaultValue={defaultValue}
+        required={required}
+        placeholder={placeholder}
+        className="input-modern w-full"
+      />
     </div>
   );
 }
@@ -44,6 +53,8 @@ function ChallengeForm({
     correctAnswer: string | null;
     choices: unknown;
     xpValue: number;
+    rewardBadgeFlare: string | null;
+    rewardPrize: string | null;
     isActive: boolean;
     opensAt: Date | null;
     closesAt: Date | null;
@@ -56,6 +67,32 @@ function ChallengeForm({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Slug (URL-safe)" name="slug" defaultValue={challenge?.slug} required />
         <Field label="XP value" name="xpValue" type="number" defaultValue={String(challenge?.xpValue ?? 50)} required />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+            Badge flare reward
+          </label>
+          <select
+            name="rewardBadgeFlare"
+            defaultValue={challenge?.rewardBadgeFlare ?? ""}
+            className="input-modern w-full"
+          >
+            <option value="">(none)</option>
+            <option value="Gold">Gold ribbon</option>
+            <option value="Platinum">Platinum ribbon</option>
+            <option value="Diamond">Diamond ribbon</option>
+          </select>
+          <p className="mt-1 text-[11px] text-brand-sand/35">
+            Advertised on the challenge — granted by hand via Badge Flare once someone completes it.
+          </p>
+        </div>
+        <Field
+          label="Other prize (optional)"
+          name="rewardPrize"
+          defaultValue={challenge?.rewardPrize ?? ""}
+          placeholder="Company hoodie, gift card, extra PTO day…"
+        />
       </div>
       <Field label="Title" name="title" defaultValue={challenge?.title} required />
       <div>
@@ -120,6 +157,10 @@ export default async function AdminChallengesPage() {
             <summary className="flex cursor-pointer items-center justify-between font-medium">
               <span>
                 {c.title} <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>{" "}
+                {c.rewardBadgeFlare && (
+                  <span className="font-terminal text-xs text-brand-purple">• {c.rewardBadgeFlare} ribbon</span>
+                )}{" "}
+                {c.rewardPrize && <span className="font-terminal text-xs text-brand-light-green">• {c.rewardPrize}</span>}{" "}
                 {!c.isActive && <span className="font-terminal text-xs text-brand-sand/40">(inactive)</span>}
               </span>
               <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>

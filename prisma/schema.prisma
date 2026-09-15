@@ -45,6 +45,8 @@ model Challenge {
   correctAnswer String? // null for FREE_TEXT_REVIEW
   choices       Json? // string[] for MULTIPLE_CHOICE
   xpValue       Int
+  rewardBadgeFlare String? // e.g. "Gold" / "Platinum" / "Diamond" ribbon — advertised reward, granted manually via /admin/flare on completion
+  rewardPrize      String? // freeform other prize, e.g. "Company hoodie", "Extra PTO day"
   isActive      Boolean    @default(true)
   opensAt       DateTime?
   closesAt      DateTime?
