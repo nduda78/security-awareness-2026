@@ -24,7 +24,14 @@ const IMAGE_MAX_BYTES = 4 * 1024 * 1024; // 4MB — question/unlock images can b
 const AUDIO_TYPES = new Set(["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/x-m4a", "audio/mp4"]);
 const AUDIO_MAX_BYTES = 15 * 1024 * 1024; // 15MB — generous enough for a few minutes of mp3
 const VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
-const VIDEO_MAX_BYTES = 60 * 1024 * 1024; // 60MB — enough for a short clip; whole file loads into memory server-side, so kept well below Postgres's practical bytea comfort zone
+// 20MB — lowered from an initial 60MB after finding that large multipart
+// uploads through this dev server (Turbopack, not a production build) can
+// intermittently fail with "Unexpected end of form" under load, even well
+// under the configured serverActions.bodySizeLimit. It's not a hard/exact
+// cutoff — uploads in the 40–50MB range succeeded on retry in testing —
+// but keeping well clear of that range makes a first-try success much more
+// likely. Re-check this once the app is off the ephemeral dev pod.
+const VIDEO_MAX_BYTES = 20 * 1024 * 1024;
 
 /**
  * Reads an optional file upload + "remove" checkbox off formData and, only

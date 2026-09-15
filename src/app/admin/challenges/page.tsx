@@ -234,7 +234,7 @@ function ChallengeForm({
             currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/unlock-video` : undefined}
             hasCurrent={!!challenge?.unlockVideoMimeType}
             accept="video/*"
-            hint="MP4, WebM, or MOV — up to 60MB."
+            hint="MP4, WebM, or MOV — up to 20MB. Large uploads occasionally fail on this dev server; just retry if so."
           />
         </div>
         <div className="mt-3">
