@@ -30,12 +30,14 @@ function unlockTags(c: {
   unlockText: string | null;
   unlockLinkUrl: string | null;
   unlockImageMimeType: string | null;
+  unlockVideoMimeType: string | null;
 }): string[] {
   const tags: string[] = [];
   if (c.unlockAudioMimeType) tags.push("audio");
   if (c.unlockText) tags.push("text");
   if (c.unlockLinkUrl) tags.push("link");
   if (c.unlockImageMimeType) tags.push("image");
+  if (c.unlockVideoMimeType) tags.push("video");
   return tags;
 }
 
@@ -98,6 +100,8 @@ function FileField({
         <div className="mb-2 flex items-center gap-3">
           {accept === "audio/*" ? (
             <audio controls src={currentUrl} className="h-8 max-w-[220px]" />
+          ) : accept === "video/*" ? (
+            <video controls src={currentUrl} className="h-24 w-auto rounded-lg border border-brand-sand/10 object-contain" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
             <img src={currentUrl} alt="" className="h-16 w-auto rounded-lg border border-brand-sand/10 object-contain" />
@@ -165,6 +169,7 @@ function ChallengeForm({
     unlockLinkUrl?: string | null;
     unlockLinkLabel?: string | null;
     unlockImageMimeType?: string | null;
+    unlockVideoMimeType?: string | null;
     isActive: boolean;
     opensAt: Date | null;
     closesAt: Date | null;
@@ -221,6 +226,15 @@ function ChallengeForm({
             currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/unlock-image` : undefined}
             hasCurrent={!!challenge?.unlockImageMimeType}
             accept="image/*"
+          />
+          <FileField
+            label="Video"
+            name="unlockVideo"
+            removeName="unlockVideoRemove"
+            currentUrl={challenge ? `/api/challenge-asset/${challenge.id}/unlock-video` : undefined}
+            hasCurrent={!!challenge?.unlockVideoMimeType}
+            accept="video/*"
+            hint="MP4, WebM, or MOV — up to 60MB."
           />
         </div>
         <div className="mt-3">
@@ -348,6 +362,7 @@ export default async function AdminChallengesPage() {
       unlockLinkUrl: true,
       unlockLinkLabel: true,
       unlockImageMimeType: true,
+      unlockVideoMimeType: true,
       rewardBackgroundEffect: true,
       rewardBorderStyle: true,
       rewardIcon: true,

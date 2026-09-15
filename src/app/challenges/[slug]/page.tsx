@@ -152,9 +152,15 @@ function UnlockedContent({
     unlockLinkUrl: string | null;
     unlockLinkLabel: string | null;
     unlockImage: Buffer | null;
+    unlockVideo: Buffer | null;
   };
 }) {
-  const hasAnything = challenge.unlockAudio || challenge.unlockText || challenge.unlockLinkUrl || challenge.unlockImage;
+  const hasAnything =
+    challenge.unlockAudio ||
+    challenge.unlockText ||
+    challenge.unlockLinkUrl ||
+    challenge.unlockImage ||
+    challenge.unlockVideo;
 
   return (
     <div className="surface-card space-y-4 border-brand-cyan/30 bg-brand-cyan/[0.04] p-5">
@@ -167,6 +173,15 @@ function UnlockedContent({
 
       {challenge.unlockAudio && (
         <audio controls autoPlay className="w-full" src={`/api/challenge-asset/${challenge.id}/unlock-audio`} />
+      )}
+
+      {challenge.unlockVideo && (
+        <video
+          controls
+          autoPlay
+          className="w-full rounded-xl"
+          src={`/api/challenge-asset/${challenge.id}/unlock-video`}
+        />
       )}
 
       {challenge.unlockText && <p className="whitespace-pre-wrap text-brand-sand/85">{challenge.unlockText}</p>}

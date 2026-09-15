@@ -23,6 +23,8 @@ const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif
 const IMAGE_MAX_BYTES = 4 * 1024 * 1024; // 4MB — question/unlock images can be a bit bigger than badge photos
 const AUDIO_TYPES = new Set(["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/x-m4a", "audio/mp4"]);
 const AUDIO_MAX_BYTES = 15 * 1024 * 1024; // 15MB — generous enough for a few minutes of mp3
+const VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
+const VIDEO_MAX_BYTES = 60 * 1024 * 1024; // 60MB — enough for a short clip; whole file loads into memory server-side, so kept well below Postgres's practical bytea comfort zone
 
 /**
  * Reads an optional file upload + "remove" checkbox off formData and, only
@@ -170,6 +172,14 @@ export async function upsertChallengeAction(formData: FormData) {
       mimeField: "unlockAudioMimeType",
       allowedTypes: AUDIO_TYPES,
       maxBytes: AUDIO_MAX_BYTES,
+    })) ||
+    (await applyAssetField(data, formData, {
+      fileField: "unlockVideo",
+      removeField: "unlockVideoRemove",
+      dataField: "unlockVideo",
+      mimeField: "unlockVideoMimeType",
+      allowedTypes: VIDEO_TYPES,
+      maxBytes: VIDEO_MAX_BYTES,
     }));
 
   if (assetError) {

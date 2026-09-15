@@ -11,11 +11,12 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["*.stable.dexus.io", "*.dev.dexus.io", "*.dexus.io"],
 
   // Default server-action body limit (1MB) is too small for the challenge
-  // admin form's unlock-audio/image uploads (audio up to 15MB, images up to
-  // 4MB — see actions/admin.ts).
+  // admin form's unlock-audio/image/video uploads (video up to 60MB, audio
+  // up to 15MB, images up to 4MB — see actions/admin.ts). Sized to fit all
+  // three at once since they're all fields on the same form submission.
   experimental: {
     serverActions: {
-      bodySizeLimit: "20mb",
+      bodySizeLimit: "85mb",
     },
   },
 };

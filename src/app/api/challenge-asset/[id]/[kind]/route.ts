@@ -36,6 +36,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     bytes = c?.unlockAudio ?? null;
     mimeType = c?.unlockAudioMimeType ?? null;
     fallbackMime = "audio/mpeg";
+  } else if (kind === "unlock-video") {
+    const c = await prisma.challenge.findUnique({
+      where: { id },
+      select: { unlockVideo: true, unlockVideoMimeType: true },
+    });
+    bytes = c?.unlockVideo ?? null;
+    mimeType = c?.unlockVideoMimeType ?? null;
+    fallbackMime = "video/mp4";
   } else {
     return new NextResponse(null, { status: 404 });
   }

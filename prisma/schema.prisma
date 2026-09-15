@@ -67,6 +67,8 @@ model Challenge {
   unlockLinkLabel     String?
   unlockImage         Bytes?
   unlockImageMimeType String?
+  unlockVideo         Bytes?
+  unlockVideoMimeType String?
 
   // Advertised badge-flare reward — mirrors the same fields on BadgeFlare (see flare.ts for the
   // validated value sets). Granted by hand via /admin/flare once someone actually completes the

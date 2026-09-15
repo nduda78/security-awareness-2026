@@ -96,11 +96,12 @@ export interface UnlockTeaser {
   unlockText: string | null;
   unlockLinkUrl: string | null;
   unlockImage: Buffer | null;
+  unlockVideo: Buffer | null;
 }
 
 /**
  * Teaser pills for UNLOCK-mode challenges — hints at what kind of content
- * is behind a correct answer (audio / text / link / image) without
+ * is behind a correct answer (audio / text / link / image / video) without
  * revealing the content itself.
  */
 export function UnlockTeaserPills({ challenge }: { challenge: UnlockTeaser }) {
@@ -109,6 +110,7 @@ export function UnlockTeaserPills({ challenge }: { challenge: UnlockTeaser }) {
   if (challenge.unlockText) pills.push({ key: "text", label: "Info" });
   if (challenge.unlockLinkUrl) pills.push({ key: "link", label: "Link" });
   if (challenge.unlockImage) pills.push({ key: "image", label: "Image" });
+  if (challenge.unlockVideo) pills.push({ key: "video", label: "Video" });
 
   if (pills.length === 0) {
     return <span className="text-xs text-brand-sand/40">Something, if you get it right.</span>;
