@@ -153,11 +153,6 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
         const visibleMembers = sortMembers(section.members, sort);
         return (
           <section key={section.tierKey} className="mb-10">
-            {section.tierKey === "ROGUE" && (
-              <div className="glitch-text rogue-flicker mb-4 rounded-xl border border-brand-red/40 bg-brand-red/10 px-4 py-3 font-terminal text-xs uppercase tracking-wide text-brand-red">
-                ⚠ THIS CLEARANCE TIER WAS NOT ISSUED BY DUTCHIE SECURITY. ORIGIN UNTRACEABLE.
-              </div>
-            )}
             <div className="mb-5 flex items-center gap-3">
               <div
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
@@ -180,6 +175,13 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
               </div>
               <div className="h-px flex-1 bg-gradient-to-r from-brand-sand/15 to-transparent" />
             </div>
+
+            {section.tierKey === "ROGUE" && (
+              <div className="glitch-text rogue-flicker mb-5 rounded-xl border border-brand-red/40 bg-brand-red/10 px-4 py-3 font-terminal text-xs uppercase tracking-wide text-brand-red">
+                ⚠ THIS CLEARANCE TIER WAS NOT ISSUED BY DUTCHIE SECURITY. ORIGIN UNTRACEABLE.
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
               {visibleMembers.map((card) => (
                 <BadgeCard key={card.email} card={card} dimmed={isDimmed(card)} />
