@@ -1,12 +1,15 @@
 import { notFound } from "next/navigation";
 import { buildAgentRoster, overallRank, rankWithinTier } from "@/lib/leaderboard";
 import { toClientCard } from "@/lib/client-types";
+import { resolveUniqueCodenames } from "@/lib/identity";
+import { getUnlockedFlareOptions } from "@/lib/rewards";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
 import { BadgeCard } from "@/components/BadgeCard";
 import { Icon } from "@/components/Icon";
 import { uploadPhotoAction, removePhotoAction } from "@/lib/actions/photo";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { SelfFlareEditor } from "@/components/SelfFlareEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +18,17 @@ export default async function ProfilePage({
   searchParams,
 }: {
   params: Promise<{ email: string }>;
-  searchParams: Promise<{ photoError?: string; photoUploaded?: string; photoRemoved?: string }>;
+  searchParams: Promise<{
+    photoError?: string;
+    photoUploaded?: string;
+    photoRemoved?: string;
+    flareSaved?: string;
+    flareRejected?: string;
+  }>;
 }) {
   const { email: emailParam } = await params;
   const email = decodeURIComponent(emailParam).toLowerCase();
-  const { photoError, photoUploaded, photoRemoved } = await searchParams;
+  const { photoError, photoUploaded, photoRemoved, flareSaved, flareRejected } = await searchParams;
 
   const roster = await buildAgentRoster();
   const card = roster.find((c) => c.email === email);
@@ -40,6 +49,13 @@ export default async function ProfilePage({
         orderBy: { submittedAt: "desc" },
       })
     : [];
+
+  const unlockedFlare = isOwnProfile && employee ? await getUnlockedFlareOptions(employee.id) : null;
+  let defaultCodename = clientCard.codename;
+  if (isOwnProfile) {
+    const emailsInStableOrder = roster.map((c) => c.email).sort();
+    defaultCodename = resolveUniqueCodenames(emailsInStableOrder, new Map()).get(email) ?? clientCard.codename;
+  }
 
   return (
     <div className="fade-in-up space-y-8">
@@ -85,6 +101,35 @@ export default async function ProfilePage({
           )}
         </div>
       </div>
+
+      {isOwnProfile && unlockedFlare && (
+        <div>
+          <h3 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
+            <Icon name="trophy" className="h-4 w-4" />
+            Badge Flare
+          </h3>
+          <SelfFlareEditor
+            baseCard={clientCard}
+            defaultCodename={defaultCodename}
+            passthrough={{
+              achievements: card.flare?.achievements ?? [],
+              outlineColor: card.flare?.outlineColor ?? null,
+              backgroundColor: card.flare?.backgroundColor ?? null,
+              motto: card.flare?.motto ?? null,
+              codenameOverride: card.flare?.codenameOverride ?? null,
+            }}
+            initial={{
+              backgroundEffect: card.flare?.backgroundEffect ?? "",
+              borderStyle: card.flare?.borderStyle ?? "",
+              iconOverride: card.flare?.iconOverride ?? "",
+              ribbonText: card.flare?.ribbonText ?? "",
+              nameSuffix: card.flare?.nameSuffix ?? "",
+            }}
+            unlocked={unlockedFlare}
+            status={{ saved: flareSaved === "1", rejectedFields: flareRejected ? flareRejected.split(",") : [] }}
+          />
+        </div>
+      )}
 
       <div className="space-y-6">
         <div className="surface-card p-5">
