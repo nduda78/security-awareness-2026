@@ -6,6 +6,7 @@ import { getAgentIdentity } from "@/lib/session";
 import { BadgeCard } from "@/components/BadgeCard";
 import { Icon } from "@/components/Icon";
 import { uploadPhotoAction, removePhotoAction } from "@/lib/actions/photo";
+import { PhotoUploader } from "@/components/PhotoUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -72,28 +73,11 @@ export default async function ProfilePage({
               {photoError && (
                 <div className="mb-2 rounded bg-brand-red/15 p-2 text-xs text-brand-red">{photoError}</div>
               )}
-              <form action={uploadPhotoAction} className="flex flex-wrap items-center gap-2">
-                <input
-                  type="file"
-                  name="photo"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  required
-                  className="text-xs text-brand-sand/70"
-                />
-                <button className="rounded bg-brand-light-green px-3 py-1 font-terminal text-[10px] uppercase text-brand-dark-green">
-                  Upload
-                </button>
-              </form>
-              {clientCard.photoUrl && (
-                <form action={removePhotoAction} className="mt-2">
-                  <button className="font-terminal text-[10px] uppercase text-brand-sand/40 hover:text-brand-red">
-                    Remove current photo
-                  </button>
-                </form>
-              )}
-              <p className="mt-2 font-terminal text-[9px] text-brand-sand/30">
-                JPG, PNG, WEBP, or GIF. Max 2MB. Shown on your badge everywhere.
-              </p>
+              <PhotoUploader
+                uploadAction={uploadPhotoAction}
+                removeAction={removePhotoAction}
+                hasPhoto={!!clientCard.photoUrl}
+              />
             </div>
           )}
         </div>
