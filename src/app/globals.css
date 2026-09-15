@@ -8,6 +8,7 @@
   --brand-light-green: #6aba48;
   --brand-yellow: #ffc02a;
   --brand-red: #e5484d;
+  --brand-cyan: #2ad8ff; /* bright accent for badge-flare reward callouts — purple was too low-contrast */
 
   --background: var(--brand-dark-green);
   --foreground: var(--brand-sand);
@@ -23,6 +24,7 @@
   --color-brand-light-green: var(--brand-light-green);
   --color-brand-yellow: var(--brand-yellow);
   --color-brand-red: var(--brand-red);
+  --color-brand-cyan: var(--brand-cyan);
   --font-sans: var(--font-sans-raw);
   --font-display: var(--font-display-raw);
   --font-mono: var(--font-mono-raw);

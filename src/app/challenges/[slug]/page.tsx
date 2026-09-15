@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
 import { submitAnswerAction } from "@/lib/actions/submit";
-import { ChallengeRewardPills } from "@/components/ChallengeRewardPills";
+import { ChallengeRewardDetails } from "@/components/ChallengeRewardPills";
 
 export const dynamic = "force-dynamic";
 
@@ -41,13 +41,25 @@ export default async function ChallengeDetailPage({
       <div className="section-eyebrow mb-2">Mission Briefing</div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <h1 className="font-display text-2xl font-semibold sm:text-3xl">{challenge.title}</h1>
-        <div className="flex flex-wrap justify-end gap-1.5">
-          <span className="pill !cursor-default !border-brand-yellow/30 !text-brand-yellow">
-            +{challenge.xpValue} XP
-          </span>
-          <ChallengeRewardPills reward={challenge} />
-        </div>
+        <span className="pill !cursor-default !border-brand-yellow/30 !text-brand-yellow">
+          +{challenge.xpValue} XP
+        </span>
       </div>
+
+      {(challenge.rewardBackgroundEffect ||
+        challenge.rewardBorderStyle ||
+        challenge.rewardIcon ||
+        challenge.rewardRibbonText ||
+        challenge.rewardNameSuffix ||
+        challenge.rewardPrize) && (
+        <div className="surface-card mb-6 p-4">
+          <div className="mb-2.5 font-terminal text-xs uppercase text-brand-cyan/70">Rewards</div>
+          <div className="flex flex-wrap gap-1.5">
+            <ChallengeRewardDetails reward={challenge} />
+          </div>
+        </div>
+      )}
+
       <p className="surface-card mb-6 whitespace-pre-wrap p-5 text-brand-sand/75">{challenge.description}</p>
 
       {!isOpen && (
