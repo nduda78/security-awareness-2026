@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 /**
@@ -11,19 +9,23 @@ const HEX_RE = /^#[0-9a-f]{6}$/i;
  * a `name` and gets submitted, so typing a non-hex value still works fine,
  * it just means the swatch button shows a neutral fallback until the text
  * value is a valid 6-digit hex.
+ *
+ * Fully controlled (value/onChange from the parent) so the parent can also
+ * drive a live badge preview from the same state.
  */
 export function ColorField({
   label,
   name,
-  defaultValue,
+  value,
+  onChange,
   placeholder,
 }: {
   label: string;
   name: string;
-  defaultValue?: string;
+  value: string;
+  onChange: (value: string) => void;
   placeholder?: string;
 }) {
-  const [value, setValue] = useState(defaultValue ?? "");
   const pickerValue = HEX_RE.test(value) ? value.toLowerCase() : "#ffffff";
 
   return (
@@ -34,14 +36,14 @@ export function ColorField({
           type="color"
           aria-label={`${label} picker`}
           value={pickerValue}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-brand-sand/15 bg-transparent p-0.5"
         />
         <input
           name={name}
           type="text"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder ?? "#ff6a00, hotpink, royalblue"}
           className="input-modern w-full"
         />

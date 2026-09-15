@@ -2,9 +2,10 @@ import { redirect } from "next/navigation";
 import { isAdminSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
-import { upsertFlareAction } from "@/lib/actions/admin";
-import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
-import { ColorField } from "@/components/ColorField";
+import { buildAgentRoster, rankWithinTier } from "@/lib/leaderboard";
+import { resolveUniqueCodenames } from "@/lib/identity";
+import { toClientCard } from "@/lib/client-types";
+import { FlareEditor } from "@/components/FlareEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,25 @@ export default async function AdminFlarePage({
 
   const employees = await prisma.employee.findMany({ orderBy: { displayName: "asc" }, include: { flare: true } });
   const selected = selectedEmail ? employees.find((e) => e.email === selectedEmail.toLowerCase()) : undefined;
+
+  let editorProps: { baseCard: ReturnType<typeof toClientCard>; defaultCodename: string } | null = null;
+  if (selected) {
+    const roster = await buildAgentRoster();
+    const agentCard = roster.find((c) => c.email === selected.email);
+    if (agentCard) {
+      const { rank, total } = rankWithinTier(roster, agentCard);
+      const baseCard = toClientCard(agentCard, rank, total);
+
+      // What this employee's codename would be with NO admin override —
+      // needed so the live preview can correctly fall back to it if the
+      // override field is cleared or the whole flare has expired.
+      const emailsInStableOrder = roster.map((c) => c.email).sort();
+      const defaultCodenames = resolveUniqueCodenames(emailsInStableOrder, new Map());
+      const defaultCodename = defaultCodenames.get(selected.email) ?? baseCard.codename;
+
+      editorProps = { baseCard, defaultCodename };
+    }
+  }
 
   return (
     <div className="fade-in-up">
@@ -47,123 +67,31 @@ export default async function AdminFlarePage({
         </div>
 
         <div>
-          {!selected ? (
+          {!selected || !editorProps ? (
             <p className="text-sm text-brand-sand/50">Pick an employee on the left to edit their flare.</p>
           ) : (
-            <form action={upsertFlareAction} className="surface-card space-y-4 p-5">
-              <input type="hidden" name="email" value={selected.email} />
-              <div>
-                <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
-                  Achievements (one per line)
-                </label>
-                <textarea
-                  name="achievements"
-                  rows={3}
-                  defaultValue={selected.flare?.achievements.join("\n")}
-                  className="input-modern w-full"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <ColorField label="Outline color" name="outlineColor" defaultValue={selected.flare?.outlineColor ?? ""} placeholder="#ff6a00, hotpink, royalblue" />
-                <ColorField label="Background color" name="backgroundColor" defaultValue={selected.flare?.backgroundColor ?? ""} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <SelectField
-                  label="Background effect"
-                  name="backgroundEffect"
-                  defaultValue={selected.flare?.backgroundEffect ?? ""}
-                  options={["", ...BACKGROUND_EFFECTS]}
-                />
-                <SelectField
-                  label="Border style"
-                  name="borderStyle"
-                  defaultValue={selected.flare?.borderStyle ?? ""}
-                  options={["", ...BORDER_STYLES]}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <SelectField
-                  label="Icon override"
-                  name="iconOverride"
-                  defaultValue={selected.flare?.iconOverride ?? ""}
-                  options={["", ...ICONS]}
-                />
-                <TextField label="Ribbon text" name="ribbonText" defaultValue={selected.flare?.ribbonText ?? ""} placeholder="Gold, or an inside joke" />
-              </div>
-              <TextField label="Codename override" name="codenameOverride" defaultValue={selected.flare?.codenameOverride ?? ""} />
-              <TextField label="Motto / tagline" name="motto" defaultValue={selected.flare?.motto ?? ""} />
-              <TextField label="Name suffix" name="nameSuffix" defaultValue={selected.flare?.nameSuffix ?? ""} placeholder="the Master" />
-              <TextField
-                label="Expires at"
-                name="expiresAt"
-                type="datetime-local"
-                defaultValue={selected.flare?.expiresAt ? selected.flare.expiresAt.toISOString().slice(0, 16) : ""}
-              />
-              <label className="flex items-center gap-2 text-sm text-brand-sand/70">
-                <input
-                  type="checkbox"
-                  name="pinned"
-                  defaultChecked={selected.flare?.pinned ?? false}
-                  className="accent-brand-purple"
-                />
-                Pin to top of tier
-              </label>
-              <button
-                className="btn-primary"
-                style={{ background: "linear-gradient(135deg, var(--brand-purple), #401f36)", color: "var(--brand-sand)" }}
-              >
-                Save flare
-              </button>
-            </form>
+            <FlareEditor
+              email={selected.email}
+              baseCard={editorProps.baseCard}
+              defaultCodename={editorProps.defaultCodename}
+              initial={{
+                achievements: selected.flare?.achievements.join("\n") ?? "",
+                outlineColor: selected.flare?.outlineColor ?? "",
+                backgroundColor: selected.flare?.backgroundColor ?? "",
+                backgroundEffect: selected.flare?.backgroundEffect ?? "",
+                borderStyle: selected.flare?.borderStyle ?? "",
+                iconOverride: selected.flare?.iconOverride ?? "",
+                ribbonText: selected.flare?.ribbonText ?? "",
+                codenameOverride: selected.flare?.codenameOverride ?? "",
+                motto: selected.flare?.motto ?? "",
+                nameSuffix: selected.flare?.nameSuffix ?? "",
+                expiresAt: selected.flare?.expiresAt ? selected.flare.expiresAt.toISOString().slice(0, 16) : "",
+                pinned: selected.flare?.pinned ?? false,
+              }}
+            />
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function TextField({
-  label,
-  name,
-  defaultValue,
-  placeholder,
-  type = "text",
-}: {
-  label: string;
-  name: string;
-  defaultValue?: string;
-  placeholder?: string;
-  type?: string;
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
-      <input name={name} type={type} defaultValue={defaultValue} placeholder={placeholder} className="input-modern w-full" />
-    </div>
-  );
-}
-
-function SelectField({
-  label,
-  name,
-  defaultValue,
-  options,
-}: {
-  label: string;
-  name: string;
-  defaultValue?: string;
-  options: string[];
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
-      <select name={name} defaultValue={defaultValue} className="input-modern w-full">
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o || "(none)"}
-          </option>
-        ))}
-      </select>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { AgentCard } from "./leaderboard";
+import { resolveFlare, type RawFlareInput } from "./flare";
 
 // Plain-data shape safe to pass from server -> client components (dates
 // pre-formatted to strings).
@@ -38,6 +39,52 @@ export interface ClientAgentCard {
 function formatDate(d: Date | null): string | null {
   if (!d) return null;
   return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+/**
+ * Live-previews what a card would look like with a given (not-yet-saved)
+ * set of flare inputs applied — same validation/warn-and-ignore rules as
+ * the real save path (via resolveFlare), so the admin preview never shows
+ * something that couldn't actually be saved. `defaultCodename` is the
+ * auto-generated codename this employee would have with no override, used
+ * when the override field is empty (or the whole flare has expired).
+ */
+export function applyFlareToCard(
+  base: ClientAgentCard,
+  defaultCodename: string,
+  raw: RawFlareInput
+): ClientAgentCard {
+  const resolved = resolveFlare(raw);
+  if (!resolved) {
+    return {
+      ...base,
+      achievements: [],
+      outlineColor: null,
+      backgroundColor: null,
+      backgroundEffect: null,
+      motto: null,
+      iconOverride: null,
+      borderStyle: null,
+      ribbonText: null,
+      ribbonRecognized: false,
+      codename: defaultCodename,
+      renderedName: base.displayName,
+    };
+  }
+  return {
+    ...base,
+    achievements: resolved.achievements,
+    outlineColor: resolved.outlineColor,
+    backgroundColor: resolved.backgroundColor,
+    backgroundEffect: resolved.backgroundEffect,
+    motto: resolved.motto,
+    iconOverride: resolved.iconOverride,
+    borderStyle: resolved.borderStyle,
+    ribbonText: resolved.ribbonText,
+    ribbonRecognized: resolved.ribbonRecognized,
+    codename: resolved.codenameOverride || defaultCodename,
+    renderedName: resolved.nameSuffix ? `${base.displayName} ${resolved.nameSuffix}` : base.displayName,
+  };
 }
 
 export function toClientCard(card: AgentCard, rankInTier: number, totalInTier: number): ClientAgentCard {
