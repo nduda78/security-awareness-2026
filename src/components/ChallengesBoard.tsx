@@ -173,7 +173,16 @@ function ChallengeCard({ challenge: c }: { challenge: ClientChallengeSection["ch
       {c.status && !isDone && !c.outOfAttempts && (
         <div className="flex items-center gap-1.5 font-terminal text-xs text-brand-light-green">
           <Icon name="shield" className="h-3.5 w-3.5" />
-          {c.rewardMode === "UNLOCK" ? (
+          {c.answerType === "FREE_TEXT_REVIEW" ? (
+            <>
+              {c.status === "PENDING_REVIEW" && "Submitted · under review by Security"}
+              {/* FREE_TEXT_REVIEW is always one-shot (see submitAnswerAction) - INCORRECT here
+                  means the Security team reviewed it and didn't approve it, not "wrong guess,
+                  try again" like every other answer type, so it gets its own wording rather
+                  than the generic "Attempted". */}
+              {c.status === "INCORRECT" && "Reviewed — not approved"}
+            </>
+          ) : c.rewardMode === "UNLOCK" ? (
             <>
               {c.status === "PENDING_REVIEW" && "Submitted · pending review"}
               {c.status === "INCORRECT" && "Not yet — try again"}

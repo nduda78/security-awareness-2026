@@ -42,6 +42,7 @@ export default async function ChallengesPage() {
         title: c.title,
         description: c.description,
         rewardMode: c.rewardMode,
+        answerType: c.answerType,
         xpValue: c.xpValue,
         isOpen,
         status: (status?.status as "CORRECT" | "PENDING_REVIEW" | "INCORRECT" | undefined) ?? null,

@@ -48,6 +48,7 @@ export interface ClientChallengeCard {
   title: string;
   description: string;
   rewardMode: string; // "XP" | "UNLOCK"
+  answerType: string;
   xpValue: number;
   isOpen: boolean;
   status: "CORRECT" | "PENDING_REVIEW" | "INCORRECT" | null;
