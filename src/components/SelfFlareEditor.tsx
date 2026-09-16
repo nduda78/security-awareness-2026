@@ -97,11 +97,8 @@ export function SelfFlareEditor({
       <div className="lg:sticky lg:top-24 lg:self-start">
         <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Live preview — front</div>
         <BadgeCard card={previewCard} />
-        <p className="mb-6 mt-3 text-center text-xs text-brand-sand/35">
-          Updates as you pick below — nothing is saved until you click Save.
-        </p>
 
-        <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Back</div>
+        <div className="mb-2 mt-6 font-terminal text-xs uppercase text-brand-sand/45">Back</div>
         <CardVisual
           card={previewCard}
           outline={outline}
@@ -111,6 +108,9 @@ export function SelfFlareEditor({
           onClick={() => {}}
           tiltEnabled={false}
         />
+        <p className="mt-3 text-center text-xs text-brand-sand/35">
+          Updates as you customize — nothing is saved until you click Save.
+        </p>
       </div>
 
       <form action={selfUpdateFlareAction} className="surface-card space-y-4 p-5">
