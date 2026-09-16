@@ -1,5 +1,6 @@
 import type { AgentCard } from "./leaderboard";
 import { resolveFlare, type RawFlareInput } from "./flare";
+import { formatEasternDate } from "./easternTime";
 
 // Plain-data shape safe to pass from server -> client components (dates
 // pre-formatted to strings).
@@ -85,8 +86,7 @@ export interface ClientChallengeSection {
 }
 
 function formatDate(d: Date | null): string | null {
-  if (!d) return null;
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return formatEasternDate(d);
 }
 
 /**

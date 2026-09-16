@@ -3,17 +3,12 @@ import { isAdminSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
 import { reviewSubmissionAction } from "@/lib/actions/admin";
+import { formatEasternDateTime } from "@/lib/easternTime";
 
 export const dynamic = "force-dynamic";
 
 function formatDateTime(d: Date): string {
-  return d.toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatEasternDateTime(d);
 }
 
 const AUDIT_LABELS: Record<string, string> = {

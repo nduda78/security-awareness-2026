@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { upsertFlareAction, adminUploadPhotoAction, adminRemovePhotoAction } from "@/lib/actions/admin";
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { applyFlareToCard, type ClientAgentCard } from "@/lib/client-types";
+import { parseEasternInputValue } from "@/lib/easternTime";
 import { ColorField } from "./ColorField";
 import { BadgeCard, CardVisual, deriveBadgeVisualProps } from "./BadgeCard";
 import { PhotoUploader } from "./PhotoUploader";
@@ -64,7 +65,7 @@ export function FlareEditor({
         ribbonText,
         nameSuffix,
         secretBackText,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        expiresAt: parseEasternInputValue(expiresAt),
       }),
     [
       baseCard,
@@ -216,7 +217,9 @@ export function FlareEditor({
           </p>
         </div>
         <div>
-          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Expires at</label>
+          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+            Expires at (Eastern Time)
+          </label>
           <input
             name="expiresAt"
             type="datetime-local"

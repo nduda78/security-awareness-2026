@@ -8,6 +8,7 @@ import { toClientCard } from "@/lib/client-types";
 import { FlareEditor } from "@/components/FlareEditor";
 import { parseAchievements } from "@/lib/flare";
 import { toggleHiddenAction } from "@/lib/actions/admin";
+import { toEasternInputValue } from "@/lib/easternTime";
 
 export const dynamic = "force-dynamic";
 
@@ -122,7 +123,7 @@ export default async function AdminFlarePage({
                 motto: selected.flare?.motto ?? "",
                 nameSuffix: selected.flare?.nameSuffix ?? "",
                 secretBackText: selected.flare?.secretBackText ?? "",
-                expiresAt: selected.flare?.expiresAt ? selected.flare.expiresAt.toISOString().slice(0, 16) : "",
+                expiresAt: selected.flare?.expiresAt ? toEasternInputValue(selected.flare.expiresAt) : "",
               }}
             />
           )}

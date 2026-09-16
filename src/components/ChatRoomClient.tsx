@@ -14,6 +14,7 @@ import {
   type Presence,
 } from "@/lib/actions/chat";
 import { parseMentionSegments, mentionsSlug, parseSystemLink, CHAT_MAX_LENGTH, REACTION_EMOJIS } from "@/lib/chat";
+import { formatEasternTime, formatEasternShortDate } from "@/lib/easternTime";
 
 export interface RosterEntry {
   slug: string;
@@ -88,10 +89,13 @@ const POLL_INTERVAL_MS = 4000;
 function formatTime(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
-  const sameDay = d.toDateString() === now.toDateString();
-  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  // "Same day" is judged in Eastern time (not the viewer's own browser
+  // zone) so everyone in the room agrees on what "today" means, same as
+  // every other timestamp in the app.
+  const sameDay = formatEasternShortDate(d) === formatEasternShortDate(now);
+  const time = formatEasternTime(d);
   if (sameDay) return time;
-  return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${time}`;
+  return `${formatEasternShortDate(d)}, ${time}`;
 }
 
 function initials(name: string): string {

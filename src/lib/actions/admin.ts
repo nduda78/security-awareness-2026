@@ -9,6 +9,7 @@ import { IMAGE_TYPES, IMAGE_MAX_BYTES, AUDIO_TYPES, AUDIO_MAX_BYTES, VIDEO_TYPES
 import { serializeAchievements } from "@/lib/flare";
 import { setCompromisedMode } from "@/lib/settings";
 import { postSystemMessage } from "@/lib/actions/chat";
+import { parseEasternInputValue } from "@/lib/easternTime";
 
 async function requireAdmin() {
   if (!(await isAdminSession())) {
@@ -159,8 +160,12 @@ export async function upsertChallengeAction(formData: FormData) {
     rewardBackgroundColorPicker,
     rewardPrize,
     isActive,
-    opensAt: opensAtRaw ? new Date(opensAtRaw) : null,
-    closesAt: closesAtRaw ? new Date(closesAtRaw) : null,
+    // The datetime-local inputs are labeled "(Eastern Time)" and always
+    // show/expect Eastern wall-clock digits (see easternTime.ts) - a plain
+    // `new Date(raw)` would instead interpret those same digits as UTC,
+    // silently shifting the actual open/close instant by several hours.
+    opensAt: parseEasternInputValue(opensAtRaw),
+    closesAt: parseEasternInputValue(closesAtRaw),
   };
 
   // Image/audio assets: only touched when a new file was actually chosen or
@@ -329,7 +334,7 @@ export async function upsertFlareAction(formData: FormData) {
     ribbonText: String(formData.get("ribbonText") ?? "").trim() || null,
     nameSuffix: String(formData.get("nameSuffix") ?? "").trim() || null,
     secretBackText: String(formData.get("secretBackText") ?? "").trim() || null,
-    expiresAt: expiresAtRaw ? new Date(expiresAtRaw) : null,
+    expiresAt: parseEasternInputValue(expiresAtRaw),
   };
 
   await prisma.badgeFlare.upsert({

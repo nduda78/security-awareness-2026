@@ -11,6 +11,7 @@ import { RewardModeProvider, RewardModeSelect, UnlockOnly } from "@/components/R
 import { TIER_BY_KEY, TIERS } from "@/lib/tiers";
 import { Icon } from "@/components/Icon";
 import type { IconKey } from "@/lib/flare";
+import { toEasternInputValue } from "@/lib/easternTime";
 
 export const dynamic = "force-dynamic";
 
@@ -52,10 +53,11 @@ function unlockTags(c: {
   return tags;
 }
 
-function toInputDate(d: Date | null): string {
-  if (!d) return "";
-  return d.toISOString().slice(0, 16);
-}
+// Was a naive d.toISOString().slice(0,16), which silently rendered/parsed
+// the input in UTC (or whatever the browser's own local zone happened to
+// be) - ambiguous for an admin who has no idea what "14:47" even means.
+// toEasternInputValue always shows/expects Eastern wall-clock time, and
+// the "(Eastern Time)" field labels below make that explicit.
 
 function Field({
   label,
@@ -385,8 +387,18 @@ function ChallengeForm({
         <textarea name="choices" rows={3} defaultValue={choicesText} className="input-modern w-full" />
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Opens at" name="opensAt" type="datetime-local" defaultValue={toInputDate(challenge?.opensAt ?? null)} />
-        <Field label="Closes at" name="closesAt" type="datetime-local" defaultValue={toInputDate(challenge?.closesAt ?? null)} />
+        <Field
+          label="Opens at (Eastern Time)"
+          name="opensAt"
+          type="datetime-local"
+          defaultValue={toEasternInputValue(challenge?.opensAt ?? null)}
+        />
+        <Field
+          label="Closes at (Eastern Time)"
+          name="closesAt"
+          type="datetime-local"
+          defaultValue={toEasternInputValue(challenge?.closesAt ?? null)}
+        />
       </div>
       <label className="flex items-center gap-2 text-sm text-brand-sand/70">
         <input type="checkbox" name="isActive" defaultChecked={challenge?.isActive ?? true} className="accent-brand-light-green" />

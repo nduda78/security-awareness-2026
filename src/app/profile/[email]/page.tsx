@@ -8,6 +8,7 @@ import { getAgentIdentity } from "@/lib/session";
 import { ProfileBadgeWithDownload } from "@/components/ProfileBadgeWithDownload";
 import { Icon } from "@/components/Icon";
 import { uploadPhotoAction, removePhotoAction } from "@/lib/actions/photo";
+import { formatEasternShortDate } from "@/lib/easternTime";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { SelfFlareEditor } from "@/components/SelfFlareEditor";
 
@@ -172,7 +173,7 @@ export default async function ProfilePage({
                   <div>
                     <div className="font-medium text-brand-sand">{s.challenge.title}</div>
                     <div className="text-xs text-brand-sand/45">
-                      {s.submittedAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {formatEasternShortDate(s.submittedAt)}
                     </div>
                   </div>
                   <div className="font-terminal text-xs font-semibold">
