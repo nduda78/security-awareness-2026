@@ -150,6 +150,7 @@ function ChallengeForm({
     isActive: boolean;
     opensAt: Date | null;
     closesAt: Date | null;
+    webhookUrl?: string | null;
   };
 }) {
   const parsedChoices: unknown = typeof challenge?.choices === "string" ? JSON.parse(challenge.choices) : null;
@@ -400,6 +401,19 @@ function ChallengeForm({
           defaultValue={toEasternInputValue(challenge?.closesAt ?? null)}
         />
       </div>
+      <div>
+        <Field
+          label="Webhook URL (optional)"
+          name="webhookUrl"
+          type="url"
+          defaultValue={challenge?.webhookUrl ?? ""}
+          placeholder="https://your-tines-webhook-url..."
+        />
+        <p className="mt-1 text-[11px] text-brand-sand/35">
+          POSTed once, the first time an agent actually completes this challenge - a JSON payload with the
+          agent, the challenge, and the XP awarded. Leave blank to send nothing.
+        </p>
+      </div>
       <label className="flex items-center gap-2 text-sm text-brand-sand/70">
         <input type="checkbox" name="isActive" defaultChecked={challenge?.isActive ?? true} className="accent-brand-light-green" />
         Active
@@ -523,6 +537,7 @@ export default async function AdminChallengesPage() {
       isActive: true,
       opensAt: true,
       closesAt: true,
+      webhookUrl: true,
       createdAt: true,
     },
   });

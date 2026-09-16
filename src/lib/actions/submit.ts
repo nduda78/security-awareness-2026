@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
 import { revalidatePath } from "next/cache";
-import { tierForXp } from "@/lib/tiers";
-import { postSystemMessage } from "@/lib/actions/chat";
+import { handlePossibleTierUp, getCurrentXp } from "@/lib/tierUpEvents";
+import { fireChallengeCompletedWebhook } from "@/lib/webhooks";
 
 function normalizeAnswer(raw: string): string {
   return raw.trim();
@@ -116,24 +116,14 @@ export async function submitAnswerAction(formData: FormData) {
   const status = grade(challenge.answerType, challenge.correctAnswer, answerRaw);
   const xpAwarded = challenge.rewardMode === "UNLOCK" ? 0 : status === "CORRECT" ? challenge.xpValue : 0;
 
-  // Tier-up announcement: ROGUE is override-only (never XP-driven), so
-  // there's no "tier up" moment to announce for those agents - skip
-  // entirely. Otherwise compare XP-derived tier before/after this award;
-  // XP is always just live-summed from CORRECT submissions elsewhere
-  // (buildAgentRoster), so "before" is every other CORRECT submission's
-  // xpAwarded and "after" adds this one.
-  if (status === "CORRECT" && xpAwarded > 0 && !employee.rogueOverride) {
-    const priorCorrect = await prisma.submission.findMany({
-      where: { employeeId: employee.id, status: "CORRECT", challengeId: { not: challenge.id } },
-      select: { xpAwarded: true },
-    });
-    const xpBefore = priorCorrect.reduce((sum, s) => sum + s.xpAwarded, 0);
-    const xpAfter = xpBefore + xpAwarded;
-    const tierBefore = tierForXp(xpBefore);
-    const tierAfter = tierForXp(xpAfter);
-    if (tierAfter.key !== tierBefore.key) {
-      await postSystemMessage(`🎉 ${employee.displayName} just reached ${tierAfter.label} clearance!`);
-    }
+  // At this point the current challenge's own submission row (if any) is
+  // still whatever it was before this grade - never CORRECT (locked-out
+  // cases already redirected above) - so the employee's live XP total
+  // right now already excludes whatever this award is about to add.
+  const xpBefore = await getCurrentXp(employee.id);
+  if (status === "CORRECT") {
+    await handlePossibleTierUp(employee, xpBefore, xpAwarded);
+    await fireChallengeCompletedWebhook(challenge, employee, xpAwarded);
   }
 
   if (existing) {

@@ -9,6 +9,9 @@ import { IMAGE_TYPES, IMAGE_MAX_BYTES, AUDIO_TYPES, AUDIO_MAX_BYTES, VIDEO_TYPES
 import { serializeAchievements } from "@/lib/flare";
 import { setCompromisedMode } from "@/lib/settings";
 import { parseEasternInputValue } from "@/lib/easternTime";
+import { handlePossibleTierUp, getCurrentXp } from "@/lib/tierUpEvents";
+import { fireChallengeCompletedWebhook } from "@/lib/webhooks";
+import { setClearanceWebhookConfig } from "@/lib/settings";
 
 async function requireAdmin() {
   if (!(await isAdminSession())) {
@@ -123,6 +126,7 @@ export async function upsertChallengeAction(formData: FormData) {
     : "UNCLASSIFIED";
   const unlockText = String(formData.get("unlockText") ?? "").trim() || null;
   const unlockLinkUrl = String(formData.get("unlockLinkUrl") ?? "").trim() || null;
+  const webhookUrl = String(formData.get("webhookUrl") ?? "").trim() || null;
   const unlockLinkLabel = String(formData.get("unlockLinkLabel") ?? "").trim() || null;
   const rewardBackgroundEffect = String(formData.get("rewardBackgroundEffect") ?? "").trim() || null;
   const rewardBorderStyle = String(formData.get("rewardBorderStyle") ?? "").trim() || null;
@@ -149,6 +153,7 @@ export async function upsertChallengeAction(formData: FormData) {
     minClearance,
     unlockText,
     unlockLinkUrl,
+    webhookUrl,
     unlockLinkLabel,
     rewardBackgroundEffect,
     rewardBorderStyle,
@@ -256,19 +261,37 @@ export async function reviewSubmissionAction(formData: FormData) {
 
   const submission = await prisma.submission.findUnique({
     where: { id },
-    include: { challenge: true },
+    include: { challenge: true, employee: true },
   });
   if (!submission) redirect("/admin/submissions");
+
+  const approved = decision === "approve";
+  const xpAwarded = approved ? submission!.challenge.xpValue : 0;
+  // Captured before the update below - this submission isn't CORRECT yet
+  // at this point, so the employee's live XP total here already excludes
+  // whatever this approval is about to add.
+  const xpBefore = approved ? await getCurrentXp(submission!.employeeId) : 0;
 
   await prisma.submission.update({
     where: { id },
     data: {
-      status: decision === "approve" ? "CORRECT" : "INCORRECT",
-      xpAwarded: decision === "approve" ? submission!.challenge.xpValue : 0,
+      status: approved ? "CORRECT" : "INCORRECT",
+      xpAwarded,
       reviewedBy: "admin",
       reviewedAt: new Date(),
     },
   });
+
+  // Same tier-up announcement/webhook and challenge-completed webhook as
+  // the auto-graded path (submit.ts) - a FREE_TEXT_REVIEW approval is just
+  // a slower route to the exact same "this challenge is now CORRECT"
+  // event, so it should trigger identically. Computed after the update
+  // above, so exclude this submission's own (just-awarded) XP from the
+  // "before" total.
+  if (approved) {
+    await handlePossibleTierUp(submission!.employee, xpBefore, xpAwarded);
+    await fireChallengeCompletedWebhook(submission!.challenge, submission!.employee, xpAwarded);
+  }
 
   revalidatePath("/admin/submissions");
   revalidatePath("/leaderboard");
@@ -413,6 +436,15 @@ export async function toggleCompromisedModeAction(formData: FormData) {
   await setCompromisedMode(enabled);
   await logAdminAudit("SITE_THEME", `Site-wide compromised theme: ${enabled ? "ENABLED" : "disabled"}`);
   revalidatePath("/", "layout");
+  redirect("/admin/settings?saved=1");
+}
+
+export async function saveClearanceWebhookAction(formData: FormData) {
+  await requireAdmin();
+  const enabled = formData.get("enabled") === "on";
+  const url = String(formData.get("url") ?? "").trim() || null;
+  await setClearanceWebhookConfig(enabled, url);
+  await logAdminAudit("CLEARANCE_WEBHOOK", `Clearance upgrade webhook: ${enabled && url ? "ENABLED" : "disabled"}`);
   redirect("/admin/settings?saved=1");
 }
 

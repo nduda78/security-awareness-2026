@@ -149,6 +149,11 @@ model Challenge {
   unlockText          String?
   unlockLinkUrl       String?
   unlockLinkLabel     String?
+  /// Optional outbound webhook (e.g. a Tines webhook), POSTed once the
+  /// first time an agent actually completes this specific challenge (a
+  /// submission grades/reviews CORRECT) - see lib/webhooks.ts. Never
+  /// fired again on retries/re-views of an already-completed challenge.
+  webhookUrl          String?
   unlockImage         Bytes?
   unlockImageMimeType String?
   unlockVideo         Bytes?
