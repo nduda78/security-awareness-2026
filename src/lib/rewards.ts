@@ -12,6 +12,12 @@ export interface UnlockedFlareOptions {
   // choosing for that field, not just a pre-set option.
   canPickOutlineColor: boolean;
   canPickBackgroundColor: boolean;
+  // Same idea, for ribbonText/nameSuffix: since those are freeform text
+  // with no closed catalog, admins (see below) get free-text entry
+  // rather than being limited to whatever exact strings other challenges
+  // happen to grant.
+  canPickRibbonText: boolean;
+  canPickNameSuffix: boolean;
 }
 
 const EMPTY: UnlockedFlareOptions = {
@@ -22,6 +28,8 @@ const EMPTY: UnlockedFlareOptions = {
   nameSuffix: [],
   canPickOutlineColor: false,
   canPickBackgroundColor: false,
+  canPickRibbonText: false,
+  canPickNameSuffix: false,
 };
 
 /**
@@ -55,6 +63,8 @@ export async function getUnlockedFlareOptions(employeeId: string): Promise<Unloc
       nameSuffix,
       canPickOutlineColor: true,
       canPickBackgroundColor: true,
+      canPickRibbonText: true,
+      canPickNameSuffix: true,
     };
   }
 
@@ -71,6 +81,8 @@ export async function getUnlockedFlareOptions(employeeId: string): Promise<Unloc
     nameSuffix: [],
     canPickOutlineColor: false,
     canPickBackgroundColor: false,
+    canPickRibbonText: false,
+    canPickNameSuffix: false,
   };
   const seen = {
     backgroundEffect: new Set<string>(),

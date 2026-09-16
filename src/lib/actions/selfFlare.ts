@@ -53,6 +53,20 @@ export async function selfUpdateFlareAction(formData: FormData) {
     return null; // silently drop anything not actually unlocked
   }
 
+  // ribbonText/nameSuffix are freeform text, not a fixed catalog like
+  // backgroundEffect/borderStyle/icon - so "unlocked" for them can mean
+  // either "matches something a challenge already grants" (pool) OR, for
+  // admins, "can type anything" (canFreeType), same idea as the color
+  // capability flags below. A generous length cap keeps it from becoming
+  // a dumping ground for arbitrary long text.
+  function pickTextOrPool(value: string, pool: string[], canFreeType: boolean, field: string): string | null {
+    if (!value) return null;
+    if (canFreeType) return value.slice(0, 60);
+    if (pool.includes(value)) return value;
+    rejected.push(field);
+    return null;
+  }
+
   // Colors aren't a pool of exact values — canUse just gates whether the
   // picker is usable at all. Any value that passes must still resolve to a
   // real CSS color (same rule the admin editor already enforces), so a
@@ -78,8 +92,8 @@ export async function selfUpdateFlareAction(formData: FormData) {
     backgroundEffect: pickValidated(requested.backgroundEffect, unlocked.backgroundEffect, "backgroundEffect"),
     borderStyle: pickValidated(requested.borderStyle, unlocked.borderStyle, "borderStyle"),
     iconOverride: pickValidated(requested.iconOverride, unlocked.icon, "iconOverride"),
-    ribbonText: pickValidated(requested.ribbonText, unlocked.ribbonText, "ribbonText"),
-    nameSuffix: pickValidated(requested.nameSuffix, unlocked.nameSuffix, "nameSuffix"),
+    ribbonText: pickTextOrPool(requested.ribbonText, unlocked.ribbonText, unlocked.canPickRibbonText, "ribbonText"),
+    nameSuffix: pickTextOrPool(requested.nameSuffix, unlocked.nameSuffix, unlocked.canPickNameSuffix, "nameSuffix"),
     outlineColor: pickColor(requested.outlineColor, unlocked.canPickOutlineColor, "outlineColor"),
     backgroundColor: pickColor(requested.backgroundColor, unlocked.canPickBackgroundColor, "backgroundColor"),
   };

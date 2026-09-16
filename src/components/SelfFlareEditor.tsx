@@ -90,7 +90,9 @@ export function SelfFlareEditor({
     unlocked.ribbonText.length +
     unlocked.nameSuffix.length +
     (unlocked.canPickOutlineColor ? 1 : 0) +
-    (unlocked.canPickBackgroundColor ? 1 : 0);
+    (unlocked.canPickBackgroundColor ? 1 : 0) +
+    (unlocked.canPickRibbonText ? 1 : 0) +
+    (unlocked.canPickNameSuffix ? 1 : 0);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
@@ -168,20 +170,40 @@ export function SelfFlareEditor({
           onChange={setIconOverride}
           options={unlocked.icon}
         />
-        <UnlockedSelect
-          label="Ribbon text"
-          name="ribbonText"
-          value={ribbonText}
-          onChange={setRibbonText}
-          options={unlocked.ribbonText}
-        />
-        <UnlockedSelect
-          label="Name suffix"
-          name="nameSuffix"
-          value={nameSuffix}
-          onChange={setNameSuffix}
-          options={unlocked.nameSuffix}
-        />
+        {unlocked.canPickRibbonText ? (
+          <FreeTextField
+            label="Ribbon text"
+            name="ribbonText"
+            value={ribbonText}
+            onChange={setRibbonText}
+            placeholder="e.g. gold, platinum, diamond, or anything you like"
+          />
+        ) : (
+          <UnlockedSelect
+            label="Ribbon text"
+            name="ribbonText"
+            value={ribbonText}
+            onChange={setRibbonText}
+            options={unlocked.ribbonText}
+          />
+        )}
+        {unlocked.canPickNameSuffix ? (
+          <FreeTextField
+            label="Name suffix"
+            name="nameSuffix"
+            value={nameSuffix}
+            onChange={setNameSuffix}
+            placeholder='e.g. "the O.G."'
+          />
+        ) : (
+          <UnlockedSelect
+            label="Name suffix"
+            name="nameSuffix"
+            value={nameSuffix}
+            onChange={setNameSuffix}
+            options={unlocked.nameSuffix}
+          />
+        )}
         <ColorField
           label="Outline color"
           name="outlineColor"
@@ -206,6 +228,37 @@ export function SelfFlareEditor({
           Save
         </button>
       </form>
+    </div>
+  );
+}
+
+function FreeTextField({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 flex items-center gap-1.5 font-terminal text-xs uppercase text-brand-sand/45">
+        {label}
+      </label>
+      <input
+        name={name}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        maxLength={60}
+        className="input-modern w-full"
+      />
     </div>
   );
 }
