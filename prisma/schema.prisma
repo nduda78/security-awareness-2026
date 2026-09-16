@@ -62,9 +62,10 @@ model Employee {
   /// Nav.tsx. Null means never opened it.
   lastChatReadAt DateTime?
 
-  submissions  Submission[]
-  flare        BadgeFlare?
-  chatMessages ChatMessage[]
+  submissions   Submission[]
+  flare         BadgeFlare?
+  chatMessages  ChatMessage[]
+  chatReactions ChatReaction[]
 }
 
 model ChatMessage {
@@ -78,9 +79,27 @@ model ChatMessage {
   body       String
   createdAt  DateTime @default(now())
 
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee  Employee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  reactions ChatReaction[]
 
   @@index([createdAt])
+}
+
+/// One emoji reaction from one employee on one message. The unique
+/// constraint is what makes "toggleReactionAction" a toggle - clicking the
+/// same emoji you already left removes it instead of stacking duplicates.
+model ChatReaction {
+  id         String   @id @default(cuid())
+  messageId  String
+  employeeId String
+  emoji      String
+  createdAt  DateTime @default(now())
+
+  message  ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  employee Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, employeeId, emoji])
+  @@index([messageId])
 }
 
 model Challenge {

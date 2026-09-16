@@ -61,3 +61,6 @@ export function mentionsSlug(body: string, slug: string): boolean {
 }
 
 export const CHAT_MAX_LENGTH = 2000;
+
+/** Fixed quick-react palette - kept small and on-theme rather than a full emoji picker. */
+export const REACTION_EMOJIS = ["👍", "❤️", "😂", "🔥", "🎉", "👀", "💯", "😮"];

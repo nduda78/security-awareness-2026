@@ -2,12 +2,74 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { postChatMessageAction, deleteChatMessageAction, markChatReadAction, type PostedMessage } from "@/lib/actions/chat";
-import { parseMentionSegments, mentionsSlug, CHAT_MAX_LENGTH } from "@/lib/chat";
+import {
+  postChatMessageAction,
+  deleteChatMessageAction,
+  markChatReadAction,
+  toggleReactionAction,
+  type PostedMessage,
+  type ReactionSummary,
+} from "@/lib/actions/chat";
+import { parseMentionSegments, mentionsSlug, CHAT_MAX_LENGTH, REACTION_EMOJIS } from "@/lib/chat";
 
 export interface RosterEntry {
   slug: string;
   displayName: string;
+}
+
+function Reactions({
+  messageId,
+  reactions,
+  onToggle,
+}: {
+  messageId: string;
+  reactions: ReactionSummary[];
+  onToggle: (messageId: string, emoji: string) => void;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  return (
+    <div className="relative mt-1.5 flex flex-wrap items-center gap-1.5">
+      {reactions.map((r) => (
+        <button
+          key={r.emoji}
+          type="button"
+          onClick={() => onToggle(messageId, r.emoji)}
+          className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
+            r.mine
+              ? "border-brand-cyan/50 bg-brand-cyan/15 text-brand-sand"
+              : "border-brand-sand/15 bg-brand-sand/5 text-brand-sand/60 hover:border-brand-sand/30"
+          }`}
+        >
+          <span>{r.emoji}</span>
+          <span className="font-terminal text-[10px]">{r.count}</span>
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={() => setPickerOpen((v) => !v)}
+        className="rounded-full border border-brand-sand/10 px-1.5 py-0.5 text-xs text-brand-sand/0 opacity-0 transition group-hover:text-brand-sand/50 group-hover:opacity-100 hover:!border-brand-sand/30 hover:!text-brand-sand"
+      >
+        +😊
+      </button>
+      {pickerOpen && (
+        <div className="absolute bottom-full left-0 z-20 mb-1 flex gap-1 rounded-xl border border-brand-sand/15 bg-brand-dark-green p-1.5 shadow-xl">
+          {REACTION_EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => {
+                onToggle(messageId, emoji);
+                setPickerOpen(false);
+              }}
+              className="rounded-lg px-1.5 py-1 text-base transition hover:bg-brand-sand/10"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 const POLL_INTERVAL_MS = 4000;
@@ -123,15 +185,20 @@ export function ChatRoomClient({
         const after = latestCreatedAtRef.current;
         const res = await fetch(`/api/chat/messages${after ? `?after=${encodeURIComponent(after)}` : ""}`);
         if (!res.ok) return;
-        const data: { messages: PostedMessage[] } = await res.json();
-        if (data.messages.length === 0) return;
+        const data: { messages: PostedMessage[]; reactionUpdates: Record<string, ReactionSummary[]> } = await res.json();
         setMessages((prev) => {
           const seen = new Set(prev.map((m) => m.id));
           const fresh = data.messages.filter((m) => !seen.has(m.id));
-          if (fresh.length === 0) return prev;
-          return [...prev, ...fresh];
+          // Refresh reactions on already-loaded messages (reacting doesn't
+          // bump createdAt, so this is the only way someone else's reaction
+          // shows up without a full reload) before appending anything new.
+          const withFreshReactions = prev.map((m) =>
+            data.reactionUpdates[m.id] ? { ...m, reactions: data.reactionUpdates[m.id] } : m
+          );
+          if (fresh.length === 0) return withFreshReactions;
+          return [...withFreshReactions, ...fresh];
         });
-        latestCreatedAtRef.current = data.messages.at(-1)!.createdAt;
+        if (data.messages.length > 0) latestCreatedAtRef.current = data.messages.at(-1)!.createdAt;
         void markChatReadAction();
       } catch {
         // transient network hiccup - next tick tries again
@@ -230,8 +297,15 @@ export function ChatRoomClient({
     }
   }
 
+  async function handleToggleReaction(messageId: string, emoji: string) {
+    const result = await toggleReactionAction(messageId, emoji);
+    if (result.ok) {
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, reactions: result.reactions } : m)));
+    }
+  }
+
   return (
-    <div className="flex h-[calc(100vh-260px)] min-h-[420px] flex-col">
+    <div className="flex h-[calc(100vh-340px)] min-h-[360px] flex-col">
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -272,6 +346,7 @@ export function ChatRoomClient({
                   )}
                 </div>
                 <MessageBody body={m.body} slugToName={slugToName} />
+                <Reactions messageId={m.id} reactions={m.reactions} onToggle={handleToggleReaction} />
               </div>
             </div>
           );

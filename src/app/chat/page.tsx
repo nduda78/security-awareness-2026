@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAgentIdentity, isAdminSession } from "@/lib/session";
 import { ChatRoomClient } from "@/components/ChatRoomClient";
 import { isCompromisedModeEnabled } from "@/lib/settings";
+import { buildReactionSummaries } from "@/lib/actions/chat";
 
 export const dynamic = "force-dynamic";
 
@@ -21,12 +22,16 @@ export default async function ChatRoomPage() {
     isCompromisedModeEnabled(),
   ]);
 
+  const viewer = await prisma.employee.findUnique({ where: { email: identity.email }, select: { id: true } });
+  const reactionMap = await buildReactionSummaries(recent.map((m) => m.id), viewer?.id ?? null);
+
   const initialMessages = [...recent].reverse().map((m) => ({
     id: m.id,
     body: m.body,
     createdAt: m.createdAt.toISOString(),
     employeeSlug: m.employee.email,
     employeeName: m.employee.displayName,
+    reactions: reactionMap.get(m.id) ?? [],
   }));
 
   const roster = employees.map((e) => ({ slug: e.email, displayName: e.displayName }));
