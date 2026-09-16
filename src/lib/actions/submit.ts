@@ -20,6 +20,27 @@ function grade(
   if (answerType === "EXACT") {
     return submitted === correctAnswer ? "CORRECT" : "INCORRECT";
   }
+
+  if (answerType === "CONTAINS") {
+    // Correct if the submitted answer contains the target substring
+    // anywhere, case-insensitively - handy for free-typed answers where
+    // you only care that the key phrase shows up (e.g. "phishing" inside
+    // a longer sentence).
+    return submitted.toLowerCase().includes(correctAnswer.toLowerCase()) ? "CORRECT" : "INCORRECT";
+  }
+
+  if (answerType === "REGEX") {
+    // correctAnswer is a JS regex pattern (no slashes/flags needed - always
+    // matched case-insensitively). An admin-authored bad pattern must never
+    // crash grading, so an invalid regex just grades INCORRECT rather than
+    // throwing.
+    try {
+      return new RegExp(correctAnswer, "i").test(submitted) ? "CORRECT" : "INCORRECT";
+    } catch {
+      return "INCORRECT";
+    }
+  }
+
   // CASE_INSENSITIVE and MULTIPLE_CHOICE both compare case-insensitively,
   // trimmed.
   return submitted.toLowerCase() === correctAnswer.toLowerCase() ? "CORRECT" : "INCORRECT";

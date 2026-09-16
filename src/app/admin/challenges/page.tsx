@@ -343,14 +343,21 @@ function ChallengeForm({
           <select name="answerType" defaultValue={challenge?.answerType ?? "EXACT"} className="input-modern w-full">
             <option value="EXACT">Exact match</option>
             <option value="CASE_INSENSITIVE">Case-insensitive match</option>
+            <option value="CONTAINS">Contains (substring)</option>
+            <option value="REGEX">Regex</option>
             <option value="MULTIPLE_CHOICE">Multiple choice</option>
             <option value="FREE_TEXT_REVIEW">Free text (manual review)</option>
           </select>
+          <p className="mt-1 text-[11px] text-brand-sand/35">
+            Contains: correct if the submitted answer includes this text anywhere (case-insensitive). Regex: this
+            field is a JS regex pattern (no slashes/flags) tested case-insensitively against the submitted answer.
+          </p>
         </div>
         <Field
           label="Correct answer (blank for review type)"
           name="correctAnswer"
           defaultValue={challenge?.correctAnswer ?? ""}
+          placeholder="e.g. phishing, or a pattern like ^\\d{4}$ for Regex"
         />
       </div>
       <div>

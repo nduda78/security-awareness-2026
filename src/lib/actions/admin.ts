@@ -100,6 +100,8 @@ export async function upsertChallengeAction(formData: FormData) {
   const answerType = String(formData.get("answerType") ?? "EXACT") as
     | "EXACT"
     | "CASE_INSENSITIVE"
+    | "CONTAINS"
+    | "REGEX"
     | "MULTIPLE_CHOICE"
     | "FREE_TEXT_REVIEW";
   const correctAnswer = String(formData.get("correctAnswer") ?? "").trim() || null;

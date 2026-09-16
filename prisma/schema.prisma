@@ -67,7 +67,7 @@ model Challenge {
   slug String @unique
   title String
   description String
-  /// One of: EXACT | CASE_INSENSITIVE | MULTIPLE_CHOICE | FREE_TEXT_REVIEW
+  /// One of: EXACT | CASE_INSENSITIVE | CONTAINS | REGEX | MULTIPLE_CHOICE | FREE_TEXT_REVIEW
   answerType    String
   correctAnswer String? // null for FREE_TEXT_REVIEW
   /// JSON-encoded string[] for MULTIPLE_CHOICE (SQLite has no native Json type in this Prisma version)
