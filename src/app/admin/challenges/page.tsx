@@ -6,6 +6,7 @@ import { upsertChallengeAction, deleteChallengeAction } from "@/lib/actions/admi
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
 import { ChallengeFileField } from "@/components/ChallengeFileField";
+import { RewardModeProvider, RewardModeSelect, UnlockOnly } from "@/components/RewardModeContext";
 import { TIER_BY_KEY } from "@/lib/tiers";
 
 export const dynamic = "force-dynamic";
@@ -149,15 +150,13 @@ function ChallengeForm({
   const choicesText = Array.isArray(parsedChoices) ? (parsedChoices as string[]).join("\n") : "";
   return (
     <form action={upsertChallengeAction} className="mt-4 space-y-4">
+      <RewardModeProvider defaultValue={challenge?.rewardMode ?? "XP"}>
       {challenge && <input type="hidden" name="id" value={challenge.id} />}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Slug (URL-safe)" name="slug" defaultValue={challenge?.slug} required />
         <div>
           <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Reward mode</label>
-          <select name="rewardMode" defaultValue={challenge?.rewardMode ?? "XP"} className="input-modern w-full">
-            <option value="XP">XP (+ optional badge flare / prize)</option>
-            <option value="UNLOCK">Unlock content (no XP — reveals audio/text/link/image)</option>
-          </select>
+          <RewardModeSelect />
         </div>
       </div>
       <div>
@@ -200,6 +199,7 @@ function ChallengeForm({
         )}
       </div>
 
+      <UnlockOnly>
       <div className="rounded-lg border border-brand-cyan/25 bg-brand-cyan/[0.04] p-3">
         <div className="mb-3 font-terminal text-xs uppercase text-brand-cyan">
           Unlock content (Unlock mode only)
@@ -267,6 +267,7 @@ function ChallengeForm({
           <Field label="Link label" name="unlockLinkLabel" defaultValue={challenge?.unlockLinkLabel ?? ""} placeholder="View the doc" />
         </div>
       </div>
+      </UnlockOnly>
 
       <div className="rounded-lg border border-brand-purple/25 bg-brand-purple/[0.04] p-3">
         <div className="mb-3 font-terminal text-xs uppercase text-brand-purple">Badge flare reward</div>
@@ -375,6 +376,7 @@ function ChallengeForm({
         Active
       </label>
       <button className="btn-primary">Save challenge</button>
+      </RewardModeProvider>
     </form>
   );
 }
