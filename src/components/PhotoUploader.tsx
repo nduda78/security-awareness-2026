@@ -239,13 +239,16 @@ export function PhotoUploader({ uploadAction, removeAction, hasPhoto }: Props) {
     <div>
       {error && <div className="mb-2 rounded bg-brand-red/15 p-2 text-xs text-brand-red">{error}</div>}
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          onChange={onFileChosen}
-          className="text-xs text-brand-sand/70"
-        />
+        <label className="btn-secondary cursor-pointer !text-[11px]">
+          Upload Photo
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={onFileChosen}
+            className="hidden"
+          />
+        </label>
       </div>
       {hasPhoto && (
         <form action={removeAction} className="mt-2">
