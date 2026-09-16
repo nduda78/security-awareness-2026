@@ -358,14 +358,6 @@ export default async function RulesPage() {
                 : "React to any message with a quick emoji — click to add, click again to remove, and everyone watching sees the count update live."}
             </span>
           </li>
-          <li className="flex gap-2.5">
-            <Icon name="skull" className="mt-0.5 h-4 w-4 shrink-0 text-brand-red" />
-            <span>
-              {compromised
-                ? "At least one identity in the channel is flagged ROGUE and cannot be traced back to Security. Its transmissions are visibly corrupted. Engage at your own risk."
-                : "Keep an eye out for anyone flagged ROGUE — their messages stand out for a reason, and they don't exactly play by the rules."}
-            </span>
-          </li>
         </ul>
       </Section>
 
