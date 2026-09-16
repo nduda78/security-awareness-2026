@@ -24,6 +24,16 @@ export default async function ChallengeDetailPage({
   const challenge = await prisma.challenge.findUnique({ where: { slug } });
   if (!challenge) notFound();
 
+  // A challenge scheduled to open in the future is a deliberate surprise -
+  // treat it as if it doesn't exist yet for anyone who finds/guesses the
+  // direct URL, rather than revealing its title/description/rewards early
+  // (that's also why it's excluded from the public Challenges list below
+  // its opens-at time - see challenges/page.tsx). A challenge that already
+  // opened and later closed is different - that one stays fully visible,
+  // just no longer answerable, since it was never meant to be secret.
+  const notYetOpen = challenge.isActive && challenge.opensAt !== null && challenge.opensAt > new Date();
+  if (notYetOpen) notFound();
+
   const viewer = identity ? await getViewerClearanceInfo(identity.email) : null;
   const cleared = viewer ? meetsClearance(viewer, challenge.minClearance as TierKey) : false;
 

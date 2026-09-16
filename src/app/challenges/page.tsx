@@ -12,7 +12,12 @@ export default async function ChallengesPage() {
   const now = new Date();
 
   const allChallenges = await prisma.challenge.findMany({
-    where: { isActive: true },
+    // Scheduled-for-the-future challenges are a deliberate surprise - kept
+    // entirely off the public list until their opens-at time (see the
+    // matching notFound() on the detail page for direct-URL access too).
+    // A challenge that's already open and later closes stays listed, just
+    // marked "Not currently open" - it was never meant to be secret.
+    where: { isActive: true, OR: [{ opensAt: null }, { opensAt: { lte: now } }] },
     orderBy: { createdAt: "asc" },
     include: {
       submissions: identity ? { where: { employee: { email: identity.email } } } : false,
