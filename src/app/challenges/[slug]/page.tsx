@@ -6,6 +6,7 @@ import { meetsClearance, TierKey, TIER_BY_KEY } from "@/lib/tiers";
 import { submitAnswerAction } from "@/lib/actions/submit";
 import { ChallengeRewardDetails, UnlockTeaserPills } from "@/components/ChallengeRewardPills";
 import { Icon } from "@/components/Icon";
+import { Linkify } from "@/components/Linkify";
 
 export const dynamic = "force-dynamic";
 
@@ -132,7 +133,9 @@ export default async function ChallengeDetailPage({
         </div>
       </div>
 
-      <p className="surface-card mb-6 whitespace-pre-wrap p-5 text-brand-sand/75">{challenge.description}</p>
+      <p className="surface-card mb-6 whitespace-pre-wrap p-5 text-brand-sand/75">
+        <Linkify text={challenge.description} />
+      </p>
 
       {challenge.questionImage && (
         // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
@@ -242,7 +245,11 @@ function UnlockedContent({
         />
       )}
 
-      {challenge.unlockText && <p className="whitespace-pre-wrap text-brand-sand/85">{challenge.unlockText}</p>}
+      {challenge.unlockText && (
+        <p className="whitespace-pre-wrap text-brand-sand/85">
+          <Linkify text={challenge.unlockText} />
+        </p>
+      )}
 
       {challenge.unlockImage && (
         // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
