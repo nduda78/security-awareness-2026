@@ -152,35 +152,6 @@ export default async function ProfilePage({
         </div>
       </div>
 
-      {isOwnProfile && unlockedFlare && (
-        <div>
-          <h3 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
-            <Icon name="trophy" className="h-4 w-4" />
-            Badge Flare
-          </h3>
-          <SelfFlareEditor
-            baseCard={clientCard}
-            defaultCodename={defaultCodename}
-            passthrough={{
-              achievements: card.flare?.achievements ?? [],
-              motto: card.flare?.motto ?? null,
-              codenameOverride: card.flare?.codenameOverride ?? null,
-            }}
-            initial={{
-              backgroundEffect: card.flare?.backgroundEffect ?? "",
-              borderStyle: card.flare?.borderStyle ?? "",
-              iconOverride: card.flare?.iconOverride ?? "",
-              ribbonText: card.flare?.ribbonText ?? "",
-              nameSuffix: card.flare?.nameSuffix ?? "",
-              outlineColor: card.flare?.outlineColor ?? "",
-              backgroundColor: card.flare?.backgroundColor ?? "",
-            }}
-            unlocked={unlockedFlare}
-            status={{ saved: flareSaved === "1", rejectedFields: flareRejected ? flareRejected.split(",") : [] }}
-          />
-        </div>
-      )}
-
       <div className="space-y-6">
         <div>
           <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
@@ -211,6 +182,35 @@ export default async function ProfilePage({
           )}
         </div>
       </div>
+
+      {isOwnProfile && unlockedFlare && (
+        <div>
+          <h3 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
+            <Icon name="trophy" className="h-4 w-4" />
+            Badge Flare
+          </h3>
+          <SelfFlareEditor
+            baseCard={clientCard}
+            defaultCodename={defaultCodename}
+            passthrough={{
+              achievements: card.flare?.achievements ?? [],
+              motto: card.flare?.motto ?? null,
+              codenameOverride: card.flare?.codenameOverride ?? null,
+            }}
+            initial={{
+              backgroundEffect: card.flare?.backgroundEffect ?? "",
+              borderStyle: card.flare?.borderStyle ?? "",
+              iconOverride: card.flare?.iconOverride ?? "",
+              ribbonText: card.flare?.ribbonText ?? "",
+              nameSuffix: card.flare?.nameSuffix ?? "",
+              outlineColor: card.flare?.outlineColor ?? "",
+              backgroundColor: card.flare?.backgroundColor ?? "",
+            }}
+            unlocked={unlockedFlare}
+            status={{ saved: flareSaved === "1", rejectedFields: flareRejected ? flareRejected.split(",") : [] }}
+          />
+        </div>
+      )}
     </div>
   );
 }
