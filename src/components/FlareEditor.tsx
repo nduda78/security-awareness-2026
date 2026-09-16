@@ -30,6 +30,7 @@ export function FlareEditor({
     codenameOverride: string;
     motto: string;
     nameSuffix: string;
+    secretBackText: string;
     expiresAt: string;
   };
 }) {
@@ -43,6 +44,7 @@ export function FlareEditor({
   const [codenameOverride, setCodenameOverride] = useState(initial.codenameOverride);
   const [motto, setMotto] = useState(initial.motto);
   const [nameSuffix, setNameSuffix] = useState(initial.nameSuffix);
+  const [secretBackText, setSecretBackText] = useState(initial.secretBackText);
   const [expiresAt, setExpiresAt] = useState(initial.expiresAt);
 
   const previewCard = useMemo(
@@ -61,6 +63,7 @@ export function FlareEditor({
         borderStyle,
         ribbonText,
         nameSuffix,
+        secretBackText,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
       }),
     [
@@ -76,6 +79,7 @@ export function FlareEditor({
       borderStyle,
       ribbonText,
       nameSuffix,
+      secretBackText,
       expiresAt,
     ]
   );
@@ -194,6 +198,23 @@ export function FlareEditor({
           hint="Replaces their fun fact line instead of showing it."
         />
         <TextField label="Name suffix" name="nameSuffix" value={nameSuffix} onChange={setNameSuffix} placeholder="the Master" />
+        <div>
+          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+            Secret back text (game master)
+          </label>
+          <textarea
+            name="secretBackText"
+            rows={3}
+            value={secretBackText}
+            onChange={(e) => setSecretBackText(e.target.value)}
+            placeholder="e.g. a code word, coordinates, or clue for a later challenge"
+            className="input-modern w-full"
+          />
+          <p className="mt-1 text-[11px] text-brand-sand/35">
+            Shows only on this agent&apos;s badge back, in a &quot;Classified Note&quot; box. Not shown anywhere
+            else in the app - safe to stash a hint or code word here for a challenge you&apos;ll run later.
+          </p>
+        </div>
         <div>
           <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Expires at</label>
           <input

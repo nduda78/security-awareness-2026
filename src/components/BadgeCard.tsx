@@ -238,7 +238,7 @@ function CardBack({ card, large = false }: { card: ClientAgentCard; large?: bool
           large ? "mb-5 h-9" : "mb-3 h-6"
         }`}
       />
-      <div className="flex flex-1 flex-col justify-between">
+      <div className="flex flex-1 flex-col">
         <div>
           <div className={`uppercase tracking-widest text-brand-sand/35 font-terminal ${large ? "text-sm" : "text-[9px]"}`}>
             Authorized Signature
@@ -251,7 +251,7 @@ function CardBack({ card, large = false }: { card: ClientAgentCard; large?: bool
             {titleCase(card.codename)}
           </div>
         </div>
-        <div className={`text-brand-sand/60 font-terminal ${large ? "text-lg" : "text-[11px]"}`}>
+        <div className={`text-brand-sand/60 font-terminal ${large ? "mt-6 text-lg" : "mt-3 text-[11px]"}`}>
           <div>
             AGENT ID <span className="text-brand-sand">{card.agentId}</span>
           </div>
@@ -260,9 +260,21 @@ function CardBack({ card, large = false }: { card: ClientAgentCard; large?: bool
             {card.tierLabel}
           </div>
           <div className={`tracking-[0.2em] text-brand-sand/40 ${large ? "mt-3 text-sm" : "mt-1.5"}`}>{card.barcode}</div>
+          {card.secretBackText && (
+            <div
+              className={`whitespace-pre-wrap rounded-md border border-dashed border-brand-yellow/40 bg-brand-yellow/5 font-terminal text-brand-sand/80 ${
+                large ? "mt-4 px-4 py-3 text-base" : "mt-2.5 px-2.5 py-2 text-[10px]"
+              }`}
+            >
+              <div className={`mb-1 uppercase tracking-widest text-brand-yellow/70 ${large ? "text-xs" : "text-[8px]"}`}>
+                Classified Note
+              </div>
+              {card.secretBackText}
+            </div>
+          )}
         </div>
-        <div className={`leading-tight text-brand-sand/25 font-terminal ${large ? "text-xs" : "text-[7px]"}`}>
-          PROPERTY OF DUTCHIE SECURITY. IF FOUND, RETURN TO THE SECURITY DESK. UNAUTHORIZED DUPLICATION PROHIBITED.
+        <div className={`mt-auto leading-tight text-brand-sand/25 font-terminal ${large ? "pt-4 text-xs" : "pt-2 text-[7px]"}`}>
+          PROPERTY OF DUTCHIE SECURITY. IF FOUND, RETURN TO THE SECURITY DESK.
         </div>
       </div>
     </div>

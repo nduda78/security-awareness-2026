@@ -271,6 +271,7 @@ export async function upsertFlareAction(formData: FormData) {
     borderStyle: String(formData.get("borderStyle") ?? "").trim() || null,
     ribbonText: String(formData.get("ribbonText") ?? "").trim() || null,
     nameSuffix: String(formData.get("nameSuffix") ?? "").trim() || null,
+    secretBackText: String(formData.get("secretBackText") ?? "").trim() || null,
     expiresAt: expiresAtRaw ? new Date(expiresAtRaw) : null,
   };
 

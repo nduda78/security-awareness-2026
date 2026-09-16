@@ -145,6 +145,11 @@ model BadgeFlare {
   borderStyle      String?
   ribbonText       String?
   nameSuffix       String?
+  /// Freeform text admins (game masters) can stash on the back of an
+  /// agent's badge - not shown anywhere else, purely a hiding spot for a
+  /// clue/code word to be used in a later challenge. No validation - any
+  /// text is fine.
+  secretBackText   String?
   expiresAt        DateTime?
   updatedAt        DateTime  @updatedAt
 

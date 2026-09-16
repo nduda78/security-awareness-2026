@@ -34,6 +34,10 @@ export interface ClientAgentCard {
   rankInTier: number;
   totalInTier: number;
   photoUrl: string | null;
+  /// Admin-only note stashed on the badge back for later challenge use.
+  /// Not shown anywhere except the card back itself - see BadgeCard's
+  /// CardBack component.
+  secretBackText: string | null;
 }
 
 // --- Challenges page (ChallengesBoard) ---
@@ -109,6 +113,7 @@ export function applyFlareToCard(
       ribbonRecognized: false,
       codename: defaultCodename,
       renderedName: base.displayName,
+      secretBackText: null,
     };
   }
   return {
@@ -124,6 +129,7 @@ export function applyFlareToCard(
     ribbonRecognized: resolved.ribbonRecognized,
     codename: resolved.codenameOverride || defaultCodename,
     renderedName: resolved.nameSuffix ? `${base.displayName} ${resolved.nameSuffix}` : base.displayName,
+    secretBackText: resolved.secretBackText,
   };
 }
 
@@ -159,5 +165,6 @@ export function toClientCard(card: AgentCard, rankInTier: number, totalInTier: n
     rankInTier,
     totalInTier,
     photoUrl: card.photoUrl,
+    secretBackText: card.flare?.secretBackText ?? null,
   };
 }

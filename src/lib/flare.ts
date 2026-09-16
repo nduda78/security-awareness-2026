@@ -165,6 +165,9 @@ export interface ResolvedFlare {
   ribbonText: string | null;
   ribbonRecognized: boolean;
   nameSuffix: string | null;
+  /// Freeform admin note stashed on the badge back, for later challenge
+  /// use - no validation, any text goes through as-is.
+  secretBackText: string | null;
   warnings: FlareWarning[];
 }
 
@@ -179,6 +182,7 @@ export interface RawFlareInput {
   borderStyle?: string | null;
   ribbonText?: string | null;
   nameSuffix?: string | null;
+  secretBackText?: string | null;
   expiresAt?: Date | null;
 }
 
@@ -206,6 +210,7 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
     ribbonText,
     ribbonRecognized: ribbonText ? RECOGNIZED_RIBBONS.has(ribbonText.toLowerCase()) : false,
     nameSuffix: raw.nameSuffix?.trim() || null,
+    secretBackText: raw.secretBackText?.trim() || null,
     warnings,
   };
 }

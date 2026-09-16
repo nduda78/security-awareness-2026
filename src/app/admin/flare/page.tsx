@@ -94,6 +94,7 @@ export default async function AdminFlarePage({
                 codenameOverride: selected.flare?.codenameOverride ?? "",
                 motto: selected.flare?.motto ?? "",
                 nameSuffix: selected.flare?.nameSuffix ?? "",
+                secretBackText: selected.flare?.secretBackText ?? "",
                 expiresAt: selected.flare?.expiresAt ? selected.flare.expiresAt.toISOString().slice(0, 16) : "",
               }}
             />
