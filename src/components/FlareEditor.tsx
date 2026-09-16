@@ -122,7 +122,7 @@ export function FlareEditor({
             <div className="mb-3 rounded-lg bg-brand-red/15 p-2.5 text-xs text-brand-red">{photoStatus.error}</div>
           )}
           <p className="mb-3 text-xs text-brand-sand/40">
-            Uploads/replaces this employee&apos;s badge photo directly — saves immediately, same as their own
+            Uploads/replaces this agent&apos;s badge photo directly — saves immediately, same as their own
             self-service upload on the profile page.
           </p>
           <PhotoUploader

@@ -5,7 +5,7 @@ const LINKS = [
   { href: "/admin/challenges", label: "Challenges", icon: "lightning" },
   { href: "/admin/submissions", label: "Audit Log", icon: "shield" },
   { href: "/admin/flare", label: "Badge Flare", icon: "trophy" },
-  { href: "/admin/employees", label: "Employees", icon: "crown" },
+  { href: "/admin/employees", label: "Agents", icon: "crown" },
   { href: "/admin/settings", label: "Settings", icon: "lock" },
 ];
 

@@ -34,7 +34,7 @@ export default async function AdminEmployeesPage({
   return (
     <div className="fade-in-up">
       <AdminNav />
-      <h1 className="mb-6 font-display text-2xl font-semibold">Employees</h1>
+      <h1 className="mb-6 font-display text-2xl font-semibold">Agents</h1>
       {saved && <div className="mb-4 rounded-xl bg-brand-light-green/15 p-3 text-sm text-brand-light-green">Saved.</div>}
       {error && <div className="mb-4 rounded-xl bg-brand-red/15 p-3 text-sm text-brand-red">{error}</div>}
 

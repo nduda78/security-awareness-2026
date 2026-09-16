@@ -76,7 +76,7 @@ export default async function AdminFlarePage({
 
         <div>
           {!selected || !editorProps ? (
-            <p className="text-sm text-brand-sand/50">Pick an employee on the left to edit their flare.</p>
+            <p className="text-sm text-brand-sand/50">Pick an agent on the left to edit their flare.</p>
           ) : (
             <FlareEditor
               email={selected.email}
