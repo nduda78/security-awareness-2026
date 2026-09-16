@@ -61,6 +61,20 @@ model Employee {
   /// ChatMessage.createdAt to compute the unread-@mention indicator in
   /// Nav.tsx. Null means never opened it.
   lastChatReadAt DateTime?
+  /// Presence heartbeat, refreshed every poll tick while the Chat Room is
+  /// open (see ChatRoomClient.tsx) - drives the "online now" strip.
+  /// Distinct from lastChatReadAt, which only tracks unread mentions.
+  chatActiveAt   DateTime?
+  /// Debounced "currently typing" heartbeat, refreshed while composing in
+  /// the Chat Room and cleared on send/blur. Drives the typing indicator.
+  typingAt       DateTime?
+  /// Marks the single synthetic "Security System" account used to author
+  /// automated chat announcements (new challenge drops, tier-ups) so they
+  /// render through the exact same message pipeline as a real agent's
+  /// post, just visually distinguished in ChatRoomClient.tsx. Never a real
+  /// login - no pinHash is ever set, and it's always isHidden so it can
+  /// never appear on the Leaderboard.
+  isSystemAccount Boolean  @default(false)
 
   submissions   Submission[]
   flare         BadgeFlare?

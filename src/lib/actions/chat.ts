@@ -24,6 +24,92 @@ export interface PostedMessage {
   /// visual treatment for free (see ChatRoomClient.tsx), same as ROGUE
   /// already gets special styling on the badge/leaderboard.
   authorIsRogue: boolean;
+  /// True if this message was auto-posted by the synthetic "Security
+  /// System" account (see Employee.isSystemAccount) rather than typed by
+  /// a real agent - rendered as a centered system pill in
+  /// ChatRoomClient.tsx instead of a normal chat bubble.
+  authorIsSystem: boolean;
+}
+
+export interface PresenceEntry {
+  slug: string;
+  displayName: string;
+}
+
+export interface Presence {
+  online: PresenceEntry[];
+  typing: PresenceEntry[];
+}
+
+const PRESENCE_WINDOW_MS = 15_000;
+const TYPING_WINDOW_MS = 4_000;
+
+/**
+ * Who's currently active in the Chat Room (heartbeat within the last
+ * ~15s) and who's currently typing (within the last ~4s) - both windows
+ * a little wider than the 4s poll interval so a single missed beat
+ * doesn't flicker someone offline. Excludes the viewer themselves from
+ * both lists (no point telling you that you're online) and never
+ * includes the system account.
+ */
+export async function getPresence(excludeSlug: string | null): Promise<Presence> {
+  const now = Date.now();
+  const [onlineRows, typingRows] = await Promise.all([
+    prisma.employee.findMany({
+      where: { chatActiveAt: { gte: new Date(now - PRESENCE_WINDOW_MS) }, isSystemAccount: false },
+      select: { email: true, displayName: true },
+    }),
+    prisma.employee.findMany({
+      where: { typingAt: { gte: new Date(now - TYPING_WINDOW_MS) }, isSystemAccount: false },
+      select: { email: true, displayName: true },
+    }),
+  ]);
+  const toEntry = (r: { email: string; displayName: string }) => ({ slug: r.email, displayName: r.displayName });
+  return {
+    online: onlineRows.filter((r) => r.email !== excludeSlug).map(toEntry),
+    typing: typingRows.filter((r) => r.email !== excludeSlug).map(toEntry),
+  };
+}
+
+/** Presence heartbeat - refreshed every poll tick while the Chat Room is open. */
+export async function heartbeatAction(): Promise<void> {
+  const identity = await getAgentIdentity();
+  if (!identity) return;
+  await prisma.employee.updateMany({ where: { email: identity.email }, data: { chatActiveAt: new Date() } });
+}
+
+/** Debounced typing heartbeat - set on keystrokes, cleared on send/blur/empty. */
+export async function setTypingAction(isTyping: boolean): Promise<void> {
+  const identity = await getAgentIdentity();
+  if (!identity) return;
+  await prisma.employee.updateMany({
+    where: { email: identity.email },
+    data: { typingAt: isTyping ? new Date() : null },
+  });
+}
+
+let systemAccountIdCache: string | null = null;
+async function getSystemAccountId(): Promise<string> {
+  if (systemAccountIdCache) return systemAccountIdCache;
+  const account = await prisma.employee.upsert({
+    where: { email: "security-system" },
+    update: {},
+    create: { email: "security-system", displayName: "Security System", isSystemAccount: true, isHidden: true },
+  });
+  systemAccountIdCache = account.id;
+  return account.id;
+}
+
+/**
+ * Auto-posts an announcement into the Chat Room as the "Security System"
+ * account - used for the activity feed (new challenge drops, tier-ups).
+ * Called directly from other server actions (admin.ts, submit.ts), not
+ * exposed to the client.
+ */
+export async function postSystemMessage(body: string): Promise<void> {
+  const employeeId = await getSystemAccountId();
+  await prisma.chatMessage.create({ data: { employeeId, body } });
+  revalidatePath("/chat");
 }
 
 /** Aggregates ChatReaction rows for one message into emoji/count/mine. */
@@ -96,6 +182,7 @@ export async function postChatMessageAction(rawBody: string): Promise<{ ok: true
       employeeName: employee.displayName,
       reactions: [],
       authorIsRogue: employee.rogueOverride,
+      authorIsSystem: employee.isSystemAccount,
     },
   };
 }

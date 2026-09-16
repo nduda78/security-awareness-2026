@@ -8,8 +8,10 @@ import {
   deleteChatMessageAction,
   markChatReadAction,
   toggleReactionAction,
+  setTypingAction,
   type PostedMessage,
   type ReactionSummary,
+  type Presence,
 } from "@/lib/actions/chat";
 import { parseMentionSegments, mentionsSlug, CHAT_MAX_LENGTH, REACTION_EMOJIS } from "@/lib/chat";
 
@@ -195,11 +197,13 @@ export function ChatRoomClient({
   roster,
   currentSlug,
   isAdmin,
+  initialPresence,
 }: {
   initialMessages: PostedMessage[];
   roster: RosterEntry[];
   currentSlug: string;
   isAdmin: boolean;
+  initialPresence: Presence;
 }) {
   const [messages, setMessages] = useState<PostedMessage[]>(initialMessages);
   const [text, setText] = useState("");
@@ -207,10 +211,13 @@ export function ChatRoomClient({
   const [error, setError] = useState<string | null>(null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [presence, setPresence] = useState<Presence>(initialPresence);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const stickToBottomRef = useRef(true);
   const latestCreatedAtRef = useRef<string | null>(initialMessages.at(-1)?.createdAt ?? null);
+  const lastTypingPingRef = useRef(0);
+  const isTypingRef = useRef(false);
 
   const slugToName = useMemo(() => new Map(roster.map((r) => [r.slug, r.displayName])), [roster]);
   const rosterBySlug = useMemo(() => new Map(roster.map((r) => [r.slug, r])), [roster]);
@@ -247,7 +254,12 @@ export function ChatRoomClient({
         const after = latestCreatedAtRef.current;
         const res = await fetch(`/api/chat/messages${after ? `?after=${encodeURIComponent(after)}` : ""}`);
         if (!res.ok) return;
-        const data: { messages: PostedMessage[]; reactionUpdates: Record<string, ReactionSummary[]> } = await res.json();
+        const data: {
+          messages: PostedMessage[];
+          reactionUpdates: Record<string, ReactionSummary[]>;
+          presence: Presence;
+        } = await res.json();
+        setPresence(data.presence);
         setMessages((prev) => {
           const seen = new Set(prev.map((m) => m.id));
           const fresh = data.messages.filter((m) => !seen.has(m.id));
@@ -283,8 +295,29 @@ export function ChatRoomClient({
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    setText(e.target.value);
-    updateMentionState(e.target.value, e.target.selectionStart ?? e.target.value.length);
+    const value = e.target.value;
+    setText(value);
+    updateMentionState(value, e.target.selectionStart ?? value.length);
+    pingTyping(value.length > 0);
+  }
+
+  // Debounced typing heartbeat: while actively composing, ping at most
+  // once every ~1.5s (not on every keystroke) - cleared immediately (no
+  // debounce) the moment the box empties out or a message sends.
+  function pingTyping(isTyping: boolean) {
+    if (!isTyping) {
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+        void setTypingAction(false);
+      }
+      return;
+    }
+    const now = Date.now();
+    isTypingRef.current = true;
+    if (now - lastTypingPingRef.current > 1500) {
+      lastTypingPingRef.current = now;
+      void setTypingAction(true);
+    }
   }
 
   function insertMention(entry: RosterEntry) {
@@ -325,6 +358,7 @@ export function ChatRoomClient({
     }
     setText("");
     setMentionQuery(null);
+    pingTyping(false);
     stickToBottomRef.current = true;
     setMessages((prev) => (prev.some((m) => m.id === result.message.id) ? prev : [...prev, result.message]));
     latestCreatedAtRef.current = result.message.createdAt;
@@ -377,6 +411,18 @@ export function ChatRoomClient({
 
   return (
     <div className="flex h-[calc(100vh-340px)] min-h-[360px] flex-col">
+      {presence.online.length > 0 && (
+        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 font-terminal text-[10px] uppercase tracking-wide text-brand-sand/40">
+          <span className="flex items-center gap-1 text-emerald-400/80">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> online now
+          </span>
+          {presence.online.map((p) => (
+            <span key={p.slug} className="text-brand-sand/60">
+              {p.displayName}
+            </span>
+          ))}
+        </div>
+      )}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -388,6 +434,15 @@ export function ChatRoomClient({
           </p>
         )}
         {messages.map((m) => {
+          if (m.authorIsSystem) {
+            return (
+              <div key={m.id} className="flex items-center justify-center gap-2 py-0.5">
+                <span className="rounded-full border border-brand-cyan/25 bg-brand-cyan/10 px-3 py-1 font-terminal text-[10px] uppercase tracking-wide text-brand-cyan/80">
+                  {m.body}
+                </span>
+              </div>
+            );
+          }
           const mentionsMe = mentionsSlug(m.body, currentSlug);
           const canDelete = isAdmin || m.employeeSlug === currentSlug;
           const isRogue = m.authorIsRogue;
@@ -455,6 +510,13 @@ export function ChatRoomClient({
           );
         })}
       </div>
+
+      {presence.typing.length > 0 && (
+        <p className="-mt-2 mb-2 px-1 font-terminal text-[10px] italic text-brand-sand/40">
+          {presence.typing.map((p) => p.displayName).join(", ")}
+          {presence.typing.length === 1 ? " is" : " are"} typing...
+        </p>
+      )}
 
       {error && <div className="mb-2 rounded-lg bg-brand-red/15 px-3 py-2 text-xs text-brand-red">{error}</div>}
 

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAgentIdentity, isAdminSession } from "@/lib/session";
 import { ChatRoomClient } from "@/components/ChatRoomClient";
 import { isCompromisedModeEnabled } from "@/lib/settings";
-import { buildReactionSummaries } from "@/lib/actions/chat";
+import { buildReactionSummaries, getPresence, heartbeatAction } from "@/lib/actions/chat";
 import { buildAgentRoster } from "@/lib/leaderboard";
 
 export const dynamic = "force-dynamic";
@@ -12,15 +12,18 @@ export default async function ChatRoomPage() {
   const identity = await getAgentIdentity();
   if (!identity) redirect("/identify?next=/chat");
 
-  const [recent, agentRoster, isAdmin, compromised] = await Promise.all([
+  await heartbeatAction();
+
+  const [recent, agentRoster, isAdmin, compromised, presence] = await Promise.all([
     prisma.chatMessage.findMany({
       orderBy: { createdAt: "desc" },
       take: 100,
-      include: { employee: { select: { email: true, displayName: true, rogueOverride: true } } },
+      include: { employee: { select: { email: true, displayName: true, rogueOverride: true, isSystemAccount: true } } },
     }),
     buildAgentRoster(),
     isAdminSession(),
     isCompromisedModeEnabled(),
+    getPresence(identity.email),
   ]);
 
   const viewer = await prisma.employee.findUnique({ where: { email: identity.email }, select: { id: true } });
@@ -34,6 +37,7 @@ export default async function ChatRoomPage() {
     employeeName: m.employee.displayName,
     reactions: reactionMap.get(m.id) ?? [],
     authorIsRogue: m.employee.rogueOverride,
+    authorIsSystem: m.employee.isSystemAccount,
   }));
 
   // Reuses buildAgentRoster() (same data the Leaderboard/badges use) rather
@@ -86,7 +90,13 @@ export default async function ChatRoomPage() {
           )}
         </p>
       </div>
-      <ChatRoomClient initialMessages={initialMessages} roster={roster} currentSlug={identity.email} isAdmin={isAdmin} />
+      <ChatRoomClient
+        initialMessages={initialMessages}
+        roster={roster}
+        currentSlug={identity.email}
+        isAdmin={isAdmin}
+        initialPresence={presence}
+      />
     </div>
   );
 }

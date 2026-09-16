@@ -8,6 +8,7 @@ import { encodeAdminCookie, ADMIN_COOKIE_NAME, isAdminSession, getAgentIdentity 
 import { IMAGE_TYPES, IMAGE_MAX_BYTES, AUDIO_TYPES, AUDIO_MAX_BYTES, VIDEO_TYPES, VIDEO_MAX_BYTES } from "@/lib/assetUpload";
 import { serializeAchievements } from "@/lib/flare";
 import { setCompromisedMode } from "@/lib/settings";
+import { postSystemMessage } from "@/lib/actions/chat";
 
 async function requireAdmin() {
   if (!(await isAdminSession())) {
@@ -211,6 +212,13 @@ export async function upsertChallengeAction(formData: FormData) {
     await prisma.challenge.update({ where: { id }, data: data as never });
   } else {
     await prisma.challenge.create({ data: data as never });
+    // Announce brand-new (not edited) challenges in the Chat Room activity
+    // feed - skipped for Manual Bonus records (synthetic per-employee audit
+    // entries, not real missions) and for challenges saved inactive/draft.
+    if (isActive && !slug.startsWith("manual-bonus-")) {
+      const xpNote = rewardMode === "UNLOCK" ? "unlocks a reward" : `+${xpValue} XP`;
+      await postSystemMessage(`📡 New challenge dropped: "${title}" (${xpNote})`);
+    }
   }
 
   revalidatePath("/admin/challenges");

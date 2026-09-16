@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
-import { buildReactionSummaries } from "@/lib/actions/chat";
+import { buildReactionSummaries, getPresence, heartbeatAction } from "@/lib/actions/chat";
 
 // Polled by ChatRoomClient.tsx every few seconds for anything newer than
 // the last message it already has - a deliberately simple "near real-time"
@@ -27,14 +27,20 @@ export async function GET(req: NextRequest) {
   const after = req.nextUrl.searchParams.get("after");
   const afterDate = after ? new Date(after) : null;
 
-  const [messages, recentForReactions] = await Promise.all([
+  // Every poll tick also refreshes this viewer's presence heartbeat - one
+  // fewer round trip than a separate dedicated endpoint, since the client
+  // is already hitting this route every 4s anyway.
+  await heartbeatAction();
+
+  const [messages, recentForReactions, presence] = await Promise.all([
     prisma.chatMessage.findMany({
       where: afterDate ? { createdAt: { gt: afterDate } } : undefined,
       orderBy: { createdAt: afterDate ? "asc" : "desc" },
       take: afterDate ? 200 : 100, // bounded either way - a burst of catch-up or the initial page
-      include: { employee: { select: { email: true, displayName: true, rogueOverride: true } } },
+      include: { employee: { select: { email: true, displayName: true, rogueOverride: true, isSystemAccount: true } } },
     }),
     prisma.chatMessage.findMany({ orderBy: { createdAt: "desc" }, take: 50, select: { id: true } }),
+    getPresence(identity.email),
   ]);
 
   const ordered = afterDate ? messages : [...messages].reverse();
@@ -52,7 +58,9 @@ export async function GET(req: NextRequest) {
       employeeName: m.employee.displayName,
       reactions: reactionMap.get(m.id) ?? [],
       authorIsRogue: m.employee.rogueOverride,
+      authorIsSystem: m.employee.isSystemAccount,
     })),
     reactionUpdates: Object.fromEntries(reactionMap),
+    presence,
   });
 }
