@@ -13,7 +13,7 @@ import {
   type ReactionSummary,
   type Presence,
 } from "@/lib/actions/chat";
-import { parseMentionSegments, mentionsSlug, CHAT_MAX_LENGTH, REACTION_EMOJIS } from "@/lib/chat";
+import { parseMentionSegments, mentionsSlug, parseSystemLink, CHAT_MAX_LENGTH, REACTION_EMOJIS } from "@/lib/chat";
 
 export interface RosterEntry {
   slug: string;
@@ -435,10 +435,21 @@ export function ChatRoomClient({
         )}
         {messages.map((m) => {
           if (m.authorIsSystem) {
+            const link = parseSystemLink(m.body);
             return (
               <div key={m.id} className="flex items-center justify-center gap-2 py-0.5">
                 <span className="rounded-full border border-brand-cyan/25 bg-brand-cyan/10 px-3 py-1 font-terminal text-[10px] uppercase tracking-wide text-brand-cyan/80">
-                  {m.body}
+                  {link ? (
+                    <>
+                      {link.before}
+                      <Link href={link.href} className="underline decoration-dotted hover:text-brand-cyan">
+                        {link.label}
+                      </Link>
+                      {link.after}
+                    </>
+                  ) : (
+                    m.body
+                  )}
                 </span>
               </div>
             );

@@ -217,7 +217,7 @@ export async function upsertChallengeAction(formData: FormData) {
     // entries, not real missions) and for challenges saved inactive/draft.
     if (isActive && !slug.startsWith("manual-bonus-")) {
       const xpNote = rewardMode === "UNLOCK" ? "unlocks a reward" : `+${xpValue} XP`;
-      await postSystemMessage(`📡 New challenge dropped: "${title}" (${xpNote})`);
+      await postSystemMessage(`📡 New challenge dropped: [[${title}]](/challenges/${slug}) (${xpNote})`);
     }
   }
 

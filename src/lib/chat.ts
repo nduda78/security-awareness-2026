@@ -60,6 +60,32 @@ export function mentionsSlug(body: string, slug: string): boolean {
   return re.test(body);
 }
 
+/// System-message-only link marker: "[[label]](challenges/slug)", used so
+/// e.g. the "New challenge dropped" announcement (see postSystemMessage in
+/// actions/chat.ts) can hyperlink straight to the challenge without a full
+/// markdown parser - just one narrow, deliberately simple pattern.
+const SYSTEM_LINK_RE = /\[\[(.+?)\]\]\((.+?)\)/;
+
+export interface SystemLinkParts {
+  before: string;
+  label: string;
+  href: string;
+  after: string;
+}
+
+/** Splits a system-message body around one embedded [[label]](href) marker, if present. */
+export function parseSystemLink(body: string): SystemLinkParts | null {
+  const match = body.match(SYSTEM_LINK_RE);
+  if (!match) return null;
+  const start = match.index ?? 0;
+  return {
+    before: body.slice(0, start),
+    label: match[1],
+    href: match[2],
+    after: body.slice(start + match[0].length),
+  };
+}
+
 export const CHAT_MAX_LENGTH = 2000;
 
 /** Fixed quick-react palette - kept small and on-theme rather than a full emoji picker. */
