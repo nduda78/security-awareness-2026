@@ -6,6 +6,7 @@ const LINKS = [
   { href: "/admin/submissions", label: "Audit Log", icon: "shield" },
   { href: "/admin/flare", label: "Badge Flare", icon: "trophy" },
   { href: "/admin/employees", label: "Employees", icon: "crown" },
+  { href: "/admin/settings", label: "Settings", icon: "lock" },
 ];
 
 export function AdminNav() {

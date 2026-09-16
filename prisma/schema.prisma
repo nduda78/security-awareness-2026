@@ -156,6 +156,15 @@ model BadgeFlare {
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }
 
+/// Generic singleton key-value settings row(s) - currently just the one
+/// site-wide "compromised/virus" cosmetic theme toggle (see
+/// src/lib/settings.ts), but kept generic in case more admin-wide toggles
+/// show up later rather than adding a new column per toggle.
+model AppSetting {
+  key   String @id
+  value String
+}
+
 model AdminAudit {
   id        String   @id @default(cuid())
   action    String

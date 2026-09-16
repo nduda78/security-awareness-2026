@@ -3,6 +3,8 @@ import { Space_Grotesk, Inter, JetBrains_Mono, Homemade_Apple } from "next/font/
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { VirusOverlay } from "@/components/VirusOverlay";
+import { isCompromisedModeEnabled } from "@/lib/settings";
 
 const displayFont = Space_Grotesk({
   variable: "--font-display-raw",
@@ -32,13 +34,19 @@ export const metadata: Metadata = {
   description: "Earn XP, unlock clearance levels, and climb the ranks all October long.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const compromised = await isCompromisedModeEnabled();
   return (
     <html
       lang="en"
-      className={`${displayFont.variable} ${sansFont.variable} ${monoFont.variable} ${scriptFont.variable} h-full antialiased`}
+      className={`${displayFont.variable} ${sansFont.variable} ${monoFont.variable} ${scriptFont.variable} h-full antialiased ${
+        compromised ? "site-compromised" : ""
+      }`}
     >
       <body className="grid-glow min-h-full flex flex-col">
+        {compromised && <VirusOverlay />}
         <Nav />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">{children}</main>
         <Footer />

@@ -23,13 +23,13 @@ export async function Nav() {
             alt="Dutchie"
             width={160}
             height={44}
-            className="h-9 w-auto sm:h-11"
+            className="site-logo h-9 w-auto sm:h-11"
             priority
           />
           <span className="hidden h-10 w-px bg-brand-sand/15 sm:block" />
           <div className="hidden sm:block">
             <div className="section-eyebrow whitespace-nowrap text-[11px] leading-none">Security Clearance Program</div>
-            <div className="whitespace-nowrap font-display text-lg font-semibold leading-tight text-brand-sand/90">
+            <div className="site-wordmark whitespace-nowrap font-display text-lg font-semibold leading-tight text-brand-sand/90">
               2026 Awareness Month
             </div>
           </div>

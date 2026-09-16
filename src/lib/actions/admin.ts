@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { encodeAdminCookie, ADMIN_COOKIE_NAME, isAdminSession } from "@/lib/session";
 import { IMAGE_TYPES, IMAGE_MAX_BYTES, AUDIO_TYPES, AUDIO_MAX_BYTES, VIDEO_TYPES, VIDEO_MAX_BYTES } from "@/lib/assetUpload";
 import { serializeAchievements } from "@/lib/flare";
+import { setCompromisedMode } from "@/lib/settings";
 
 async function requireAdmin() {
   if (!(await isAdminSession())) {
@@ -310,6 +311,15 @@ export async function toggleRogueAction(formData: FormData) {
   revalidatePath("/leaderboard");
   revalidatePath("/profile");
   redirect("/admin/employees?saved=1");
+}
+
+export async function toggleCompromisedModeAction(formData: FormData) {
+  await requireAdmin();
+  const enabled = formData.get("compromisedMode") === "on";
+  await setCompromisedMode(enabled);
+  await logAdminAudit("SITE_THEME", `Site-wide compromised theme: ${enabled ? "ENABLED" : "disabled"}`);
+  revalidatePath("/", "layout");
+  redirect("/admin/settings?saved=1");
 }
 
 // Nick Duda is a permanent admin - hardcoded on purpose, not editable via

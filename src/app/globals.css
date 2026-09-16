@@ -758,3 +758,141 @@ body.chaos-mode {
 .fade-in-up {
   animation: fade-in-up 0.5s ease both;
 }
+
+/* ==========================================================================
+   Site-wide "compromised" theme (admin toggle, /admin/settings).
+   Cosmetic only - "a virus took over the app". Applied via a .site-compromised
+   class on <html>, set server-side from the AppSetting DB row so there's no
+   flash of the normal theme, plus VirusOverlay.tsx for the periodic JS pulse.
+   ========================================================================== */
+
+/* Corrupted palette: the calm brand green shifts to a sickly, alarm-red
+   near-black. Overriding the CSS variables means every component that
+   already uses var(--brand-*) repaints automatically - no per-component
+   changes needed anywhere else in the app. */
+html.site-compromised {
+  --brand-dark-green: #170305;
+  --brand-medium-green: #2b0a0a;
+  --brand-light-green: #ff3b3b;
+  --brand-yellow: #ff9d1f;
+  --brand-red: #ff0044;
+  --brand-cyan: #ff2ad8;
+  --brand-sand: #e8e0d6;
+}
+
+html.site-compromised body {
+  padding-top: 28px; /* room for the fixed breach ticker above the sticky nav */
+}
+
+/* CRT scanlines + subtle static, fixed over the whole viewport */
+.virus-scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 0, 68, 0.05) 0px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0px, transparent 1px, transparent 5px);
+  mix-blend-mode: overlay;
+  animation: virus-static 8s steps(8) infinite;
+}
+@keyframes virus-static {
+  0%,
+  100% {
+    background-position: 0 0, 0 0;
+  }
+  50% {
+    background-position: 0 3px, 4px 0;
+  }
+}
+
+/* Fixed marquee ticker above the nav */
+.virus-ticker {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  height: 28px;
+  overflow: hidden;
+  background: linear-gradient(90deg, #3a0008, #170305, #3a0008);
+  border-bottom: 1px solid rgba(255, 0, 68, 0.5);
+}
+.virus-ticker span {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #ff3b3b;
+  line-height: 28px;
+  animation: virus-ticker-scroll 16s linear infinite;
+}
+@keyframes virus-ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Headings/wordmark get a permanent (slow, readable) RGB-split glitch */
+html.site-compromised h1,
+html.site-compromised h2,
+html.site-compromised .site-wordmark {
+  animation: glitch-rgb 3.6s infinite;
+}
+
+/* Periodic brief full-page glitch pulse, toggled on/off by VirusOverlay.tsx.
+   Deliberately much softer + shorter than the process420 chaos-shake
+   easter egg - this runs indefinitely in the background while someone is
+   using the site, so it can't be as intense as a one-off 3s gag. */
+@keyframes glitch-pulse-kf {
+  0% {
+    transform: translate(0, 0);
+    filter: hue-rotate(0deg) contrast(1);
+  }
+  30% {
+    transform: translate(-2px, 1px);
+    filter: hue-rotate(25deg) contrast(1.15);
+  }
+  60% {
+    transform: translate(2px, -1px);
+    filter: hue-rotate(-20deg) contrast(1.1);
+  }
+  100% {
+    transform: translate(0, 0);
+    filter: hue-rotate(0deg) contrast(1);
+  }
+}
+html.glitch-pulse body {
+  animation: glitch-pulse-kf 0.18s linear;
+}
+
+html.site-compromised .site-logo {
+  filter: hue-rotate(140deg) saturate(2.2) contrast(1.15);
+  animation: virus-logo-jitter 5s infinite;
+}
+@keyframes virus-logo-jitter {
+  0%,
+  92%,
+  100% {
+    transform: translate(0, 0) skewX(0deg);
+    opacity: 1;
+  }
+  93% {
+    transform: translate(-2px, 1px) skewX(-3deg);
+    opacity: 0.7;
+  }
+  95% {
+    transform: translate(2px, -1px) skewX(2deg);
+    opacity: 1;
+  }
+  97% {
+    transform: translate(0, 1px) skewX(0deg);
+    opacity: 0.85;
+  }
+}
