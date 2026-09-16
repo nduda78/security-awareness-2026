@@ -42,10 +42,30 @@ codename system, and visual language are carried over from that spec.
 
 ## Identity model
 
-Employees "identify" with just a name + `@dutchie.com` email (no SSO/password) —
-stored in a signed cookie. This is an internal engagement tool, not a real
-security boundary, per the team's decision. The lowercased email is the stable
-identity key used everywhere (profile URLs, dedup, flavor generation).
+Employees sign in with **First + Last name and a self-chosen 4-digit PIN** —
+no email, no SSO. This is an internal engagement tool, not a real security
+boundary, per the team's decision.
+
+- **New Agent** tab: creates an account. PIN is hashed with `bcryptjs`
+  (never stored in plaintext) via `src/lib/auth.ts`.
+- **Returning Agent** tab: name + PIN, verified against the stored hash.
+- The session cookie is signed (HMAC, `AGENT_SESSION_SECRET`) and set with a
+  ~10-year expiry — you stay signed in until you explicitly sign out, not
+  until some arbitrary cookie TTL elapses.
+- Internally, the app's stable identity key is a lowercase, hyphenated slug
+  derived from the full name (e.g. "Nick Duda" -> `nick-duda`) — stored in
+  the `Employee.email` column, a holdover field name from the pre-PIN
+  identity model that no longer holds a real email address (see the schema
+  comment in `prisma/schema.prisma`). Two people sharing a name collide on
+  registration and are told to sign in instead / disambiguate; there's no
+  separate chosen-username concept.
+- Employees migrated from the old email-cookie model have no PIN yet
+  (`pinHash` is null) — the first time they use the **New Agent** tab with
+  their name, they "claim" their existing profile (and its XP/badge
+  history) by setting a PIN for the first time, rather than getting a
+  "name taken" error.
+
+Demo/seed accounts (`npm run db:seed`) all use PIN `1234`.
 
 Admins get a separate passphrase-gated `/admin` area (`ADMIN_PASSPHRASE` env
 var) since they can grant XP and edit flare.

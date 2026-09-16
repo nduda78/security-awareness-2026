@@ -25,8 +25,21 @@ datasource db {
 
 model Employee {
   id             String    @id @default(cuid())
+  /// The stable identity key used everywhere in the app (profile URLs, photo
+  /// routes, deterministic flavor hashing, leaderboard grouping). Despite
+  /// the field name (kept to avoid a large mechanical rename across the
+  /// codebase), this no longer holds a real email address as of the
+  /// name+PIN auth migration - it holds a lowercase, hyphenated slug
+  /// derived from the employee's full name (see slugifyName in
+  /// src/lib/auth.ts), e.g. "nick-duda". Collisions on a shared name get a
+  /// numbered suffix ("nick-duda-2").
   email          String    @unique
   displayName    String
+  /// bcrypt hash of the employee's 4-digit PIN. Null means a legacy row
+  /// migrated from the old email-cookie identity model that hasn't been
+  /// "claimed" (had a PIN set) yet - see claimOrRegisterAction in
+  /// src/lib/actions/identify.ts.
+  pinHash        String?
   rogueOverride  Boolean   @default(false)
   createdAt      DateTime  @default(now())
   photo          Bytes?

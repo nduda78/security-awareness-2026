@@ -25,9 +25,17 @@ function unsign(signed: string): string | null {
 }
 
 export interface AgentIdentity {
+  /// The stable identity slug (see schema comment on Employee.email - no
+  /// longer a real email address as of the name+PIN auth migration).
   email: string;
   displayName: string;
 }
+
+// "Remain signed in until sign out" - a real password-gated account isn't
+// meaningfully safer with a short expiry, so this is long enough to never
+// practically expire on its own (~10 years) rather than silently bouncing
+// someone back to /identify after some arbitrary number of months.
+export const AGENT_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 10;
 
 /** Reads + verifies the employee identity cookie. Returns null if absent/invalid. */
 export async function getAgentIdentity(): Promise<AgentIdentity | null> {

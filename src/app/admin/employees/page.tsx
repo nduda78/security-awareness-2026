@@ -22,7 +22,7 @@ export default async function AdminEmployeesPage() {
           <thead>
             <tr className="border-b border-brand-sand/10 text-left font-terminal text-[11px] uppercase tracking-wide text-brand-sand/40">
               <th className="px-3 py-3">Name</th>
-              <th className="px-3 py-3">Email</th>
+              <th className="px-3 py-3">Handle</th>
               <th className="px-3 py-3">XP</th>
               <th className="px-3 py-3">Tier</th>
               <th className="px-3 py-3">ROGUE override</th>

@@ -1,13 +1,15 @@
 import Image from "next/image";
-import { identifyAction } from "@/lib/actions/identify";
+import Link from "next/link";
+import { registerAction, loginAction } from "@/lib/actions/identify";
 import { Icon } from "@/components/Icon";
 
 export default async function IdentifyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; mode?: string }>;
 }) {
-  const { next = "/leaderboard", error } = await searchParams;
+  const { next = "/leaderboard", error, mode } = await searchParams;
+  const isLogin = mode === "login";
 
   return (
     <div className="fade-in-up mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center">
@@ -19,31 +21,82 @@ export default async function IdentifyPage({
         </div>
         <h1 className="mb-3 font-display text-2xl font-semibold">Agent Identification Required</h1>
         <p className="mb-6 text-sm text-brand-sand/60">
-          Enter your name and Dutchie email to open your file. No password needed — this is an internal
-          engagement tool, not a real security boundary.
+          Sign in with your name and a 4-digit PIN. No password needed beyond that — this is an
+          internal engagement tool, not a real security boundary.
         </p>
+
+        <div className="mb-5 flex gap-2">
+          <Link
+            href={`/identify?mode=register&next=${encodeURIComponent(next)}`}
+            className={`flex-1 rounded-xl py-2 text-center text-sm font-semibold transition ${
+              !isLogin ? "bg-brand-light-green text-brand-dark-green" : "border border-brand-sand/15 text-brand-sand/50"
+            }`}
+          >
+            New Agent
+          </Link>
+          <Link
+            href={`/identify?mode=login&next=${encodeURIComponent(next)}`}
+            className={`flex-1 rounded-xl py-2 text-center text-sm font-semibold transition ${
+              isLogin ? "bg-brand-light-green text-brand-dark-green" : "border border-brand-sand/15 text-brand-sand/50"
+            }`}
+          >
+            Returning Agent
+          </Link>
+        </div>
 
         {error && <div className="mb-4 rounded-xl bg-brand-red/15 p-3 text-sm text-brand-red">{error}</div>}
 
-        <form action={identifyAction} className="space-y-4">
+        <form action={isLogin ? loginAction : registerAction} className="space-y-4">
           <input type="hidden" name="next" value={next} />
-          <div>
-            <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Full name</label>
-            <input name="name" required placeholder="Nick Duda" className="input-modern w-full" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+                First name
+              </label>
+              <input name="firstName" required placeholder="Nick" className="input-modern w-full" />
+            </div>
+            <div>
+              <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+                Last name
+              </label>
+              <input name="lastName" required placeholder="Duda" className="input-modern w-full" />
+            </div>
           </div>
           <div>
-            <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
-              Dutchie email
-            </label>
+            <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">4-digit PIN</label>
             <input
-              name="email"
+              name="pin"
               required
-              type="email"
-              placeholder="nick.duda@dutchie.com"
-              className="input-modern w-full"
+              type="password"
+              inputMode="numeric"
+              pattern="\d{4}"
+              maxLength={4}
+              placeholder="••••"
+              autoComplete={isLogin ? "current-password" : "new-password"}
+              className="input-modern w-full text-center font-terminal tracking-widest"
             />
           </div>
-          <button className="btn-primary w-full">Enter the Program</button>
+          {!isLogin && (
+            <div>
+              <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+                Confirm PIN
+              </label>
+              <input
+                name="confirmPin"
+                required
+                type="password"
+                inputMode="numeric"
+                pattern="\d{4}"
+                maxLength={4}
+                placeholder="••••"
+                autoComplete="new-password"
+                className="input-modern w-full text-center font-terminal tracking-widest"
+              />
+            </div>
+          )}
+          <button className="btn-primary w-full">
+            {isLogin ? "Sign In" : "Create Account"}
+          </button>
         </form>
       </div>
     </div>

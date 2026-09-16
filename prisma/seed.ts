@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { slugifyName, hashPin } from "../src/lib/auth";
 
 const prisma = new PrismaClient();
 
@@ -79,25 +80,29 @@ async function main() {
     }),
   ]);
 
-  const demoPeople: { name: string; email: string; rogue?: boolean }[] = [
-    { name: "Nick Duda", email: "nick.duda@dutchie.com" },
-    { name: "Priya Shah", email: "priya.shah@dutchie.com" },
-    { name: "Marcus Lee", email: "marcus.lee@dutchie.com" },
-    { name: "Ava Torres", email: "ava.torres@dutchie.com" },
-    { name: "Sam Okafor", email: "sam.okafor@dutchie.com" },
-    { name: "Jordan Kim", email: "jordan.kim@dutchie.com" },
-    { name: "Riley Chen", email: "riley.chen@dutchie.com" },
-    { name: "Devon Park", email: "devon.park@dutchie.com", rogue: true },
+  // Demo accounts all use PIN 1234 so you can sign in locally without the
+  // register flow - name-slug identity, not real email (see auth.ts).
+  const demoPeople: { name: string; rogue?: boolean }[] = [
+    { name: "Nick Duda" },
+    { name: "Priya Shah" },
+    { name: "Marcus Lee" },
+    { name: "Ava Torres" },
+    { name: "Sam Okafor" },
+    { name: "Jordan Kim" },
+    { name: "Riley Chen" },
+    { name: "Devon Park", rogue: true },
   ];
 
+  const demoPinHash = hashPin("1234");
   const employees = await Promise.all(
-    demoPeople.map((p) =>
-      prisma.employee.upsert({
-        where: { email: p.email },
+    demoPeople.map((p) => {
+      const slug = slugifyName(p.name);
+      return prisma.employee.upsert({
+        where: { email: slug },
         update: { rogueOverride: !!p.rogue },
-        create: { email: p.email, displayName: p.name, rogueOverride: !!p.rogue },
-      })
-    )
+        create: { email: slug, displayName: p.name, rogueOverride: !!p.rogue, pinHash: demoPinHash },
+      });
+    })
   );
 
   // Spread submissions across tiers.
