@@ -47,7 +47,7 @@ export default async function RulesPage() {
   const visibleTiers = [...TIERS].filter((t) => t.key !== "ROGUE").sort((a, b) => a.minXp - b.minXp);
 
   return (
-    <div className="fade-in-up max-w-3xl space-y-6">
+    <div className="fade-in-up mx-auto max-w-3xl space-y-6">
       <div className="mb-4">
         <div className="section-eyebrow mb-2">{compromised ? "Intercepted Transmission" : "Briefing Document"}</div>
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
