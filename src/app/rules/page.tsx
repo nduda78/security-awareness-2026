@@ -12,7 +12,7 @@ function Section({
 }: {
   id: string;
   title: string;
-  icon: IconKey;
+  icon: IconKey | "chat";
   children: React.ReactNode;
 }) {
   return (
@@ -31,6 +31,7 @@ const TOC: { id: string; label: string; corrupted: string }[] = [
   { id: "clearance", label: "Clearance Tiers", corrupted: "ACCESS_LEVELS.LOG" },
   { id: "challenge-types", label: "Challenge Types", corrupted: "EXPLOIT_CATALOG" },
   { id: "badges-flare", label: "Badges & Flare", corrupted: "IDENTITY_SPOOFING" },
+  { id: "chat-room", label: "Chat Room", corrupted: "COMMS_LEAK" },
   { id: "fair-play", label: "Fair Play", corrupted: "ANTI-TAMPER.CFG" },
 ];
 
@@ -276,6 +277,93 @@ export default async function RulesPage() {
               {compromised
                 ? "A handful of overrides — achievement chips, custom colors, a callout ribbon — are still being pushed directly by whoever currently controls the admin panel. That may still be Security. Keep watching your profile."
                 : "A few special touches — achievement chips, custom colors, a callout ribbon — are still handed out directly by the Security team for standout participation. Keep an eye on your profile."}
+            </span>
+          </li>
+        </ul>
+      </Section>
+
+      <Section id="chat-room" title={compromised ? "COMMS_LEAK" : "Chat Room"} icon="chat">
+        <p className="mb-3 text-brand-sand/75">
+          {compromised
+            ? "An unsecured channel is still active on this system. Everything typed there is visible to everyone, and to whoever else may be listening. Treat it as compromised by default."
+            : "There's a live channel for the whole event — trade banter, brag about your clearance, or call out whoever's still UNCLASSIFIED. Here's what it can do:"}
+        </p>
+        <ul className="space-y-2.5 text-brand-sand/75">
+          <li className="flex gap-2.5">
+            <Icon name="lightning" className="mt-0.5 h-4 w-4 shrink-0 text-brand-cyan" />
+            <span>
+              {compromised ? (
+                <>
+                  <strong className="text-brand-sand">Tag another operative with @.</strong> A dropdown of every
+                  known identity on the system appears as you type. Whoever you tag gets flagged next time
+                  they check in — assuming the flag itself hasn't been intercepted first.
+                </>
+              ) : (
+                <>
+                  <strong className="text-brand-sand">@mention anyone.</strong> Type @ and pick a name from the
+                  autocomplete dropdown — they&apos;ll see a red dot on Chat Room in the nav next time they check
+                  in, and their name lights up in the message.
+                </>
+              )}
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <Icon name="shield" className="mt-0.5 h-4 w-4 shrink-0 text-brand-light-green" />
+            <span>
+              {compromised
+                ? "Every identity file rendered in the channel matches its current tier color/icon, or whatever override it's carrying — hover one to pull up a condensed dossier (codename, tier, XP) without leaving the feed."
+                : "Names and @mentions are colored/icon-tagged with that agent's clearance tier (or their own badge flare override, if they've customized one) — hover any name for a quick preview card (codename, tier, XP)"}
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <Icon name="trophy" className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+            <span>
+              {compromised ? (
+                <>
+                  Typing{" "}
+                  <code className="rounded bg-brand-sand/10 px-1.5 py-0.5 font-terminal text-xs">/flex</code>{" "}
+                  auto-posts a formatted brag of your own tier/XP/codename. No idea who added that. Seems on-brand.
+                </>
+              ) : (
+                <>
+                  Typing{" "}
+                  <code className="rounded bg-brand-sand/10 px-1.5 py-0.5 font-terminal text-xs">/flex</code>{" "}
+                  and sending posts a formatted brag with your current tier, XP, and codename — built from your
+                  own stats, no typing required.
+                </>
+              )}
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <Icon name="file" className="mt-0.5 h-4 w-4 shrink-0 text-brand-sand/60" />
+            <span>
+              {compromised
+                ? "A live roster of who's currently connected sits above the feed, alongside a flicker whenever someone's actively composing — neither can be spoofed from this end."
+                : "An \"online now\" strip shows who's actively got the room open, and a small \"is typing...\" indicator appears while someone's composing a reply."}
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <Icon name="crown" className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+            <span>
+              {compromised
+                ? "An automated feed injects its own system-labeled transmissions into the channel — new exploits going live, and anyone whose clearance just escalated. Source: presumed still friendly."
+                : "A system feed automatically announces new challenges going live and anyone who just leveled up their clearance — no need to check the Challenges page or Leaderboard to catch it."}
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <Icon name="lock" className="mt-0.5 h-4 w-4 shrink-0 text-brand-cyan" />
+            <span>
+              {compromised
+                ? "React to any transmission with a tap-to-toggle emoji — counts update live for everyone watching, whether or not that's a good idea."
+                : "React to any message with a quick emoji — click to add, click again to remove, and everyone watching sees the count update live."}
+            </span>
+          </li>
+          <li className="flex gap-2.5">
+            <Icon name="skull" className="mt-0.5 h-4 w-4 shrink-0 text-brand-red" />
+            <span>
+              {compromised
+                ? "At least one identity in the channel is flagged ROGUE and cannot be traced back to Security. Its transmissions are visibly corrupted. Engage at your own risk."
+                : "Keep an eye out for anyone flagged ROGUE — their messages stand out for a reason, and they don't exactly play by the rules."}
             </span>
           </li>
         </ul>
