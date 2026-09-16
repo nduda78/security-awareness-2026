@@ -88,8 +88,8 @@ pod's ephemeral disk, though, so it still needs a backup strategy:
 
 - **`npm run db:backup`** dumps the live DB to a timestamped, git-friendly
   SQL text file under `db-backups/`. A supervised VAPE proc
-  (`security-awareness-2026-db-backup`) runs this automatically every 15
-  minutes — check `get_proc_status`/`get_proc_logs` for that proc.
+  (`security-awareness-2026-db-backup`) runs this automatically every 3
+  hours — check `get_proc_status`/`get_proc_logs` for that proc.
 - **`npm run db:restore`** rebuilds `prisma/data/security_awareness_2026.db`
   from the most recent dump in `db-backups/` (or pass a specific dump path).
   This is the full pod-wipe recovery procedure — no `apt-get install`, no
