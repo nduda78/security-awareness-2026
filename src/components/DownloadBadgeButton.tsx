@@ -22,31 +22,32 @@ export function DownloadBadgeButton({
     if (!node) return;
     setStatus("rendering");
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      // html-to-image serializes the live DOM into an SVG <foreignObject>
+      // and lets the browser itself rasterize it, rather than
+      // reimplementing CSS parsing/rendering (as html2canvas does) - that
+      // matters here because Tailwind v4 compiles opacity modifiers
+      // (e.g. /50) to color-mix()/oklch(), which html2canvas's parser
+      // can't read and which crashed the original implementation.
+      const { toJpeg } = await import("html-to-image");
       // 2x scale for a crisp download regardless of the on-screen card size;
-      // backgroundColor set explicitly since the card's own background can
-      // include transparency (e.g. no custom backgroundColor set), and a
-      // JPG can't represent transparency - falls back to the app's dark
-      // theme color instead of html2canvas's default white.
-      const canvas = await html2canvas(node, {
-        scale: 2,
+      // backgroundColor set explicitly since a JPG can't represent
+      // transparency - falls back to the app's dark theme color.
+      const dataUrl = await toJpeg(node, {
+        pixelRatio: 2,
         backgroundColor: "#042017",
-        useCORS: true,
+        quality: 0.95,
       });
-      const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.95));
-      if (!blob) throw new Error("Could not render the badge to an image.");
 
-      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = dataUrl;
       a.download = `${fileNameBase}-badge.jpg`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
       setStatus("done");
       setTimeout(() => setStatus("idle"), 2500);
-    } catch {
+    } catch (err) {
+      console.error("Badge download failed:", err);
       setStatus("error");
       setTimeout(() => setStatus("idle"), 3000);
     }

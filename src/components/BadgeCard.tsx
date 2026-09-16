@@ -290,6 +290,13 @@ interface CardVisualProps {
   onClick: (e: React.MouseEvent) => void;
   tiltEnabled?: boolean;
   large?: boolean;
+  /** Ref to just the front-face element - deliberately NOT the outer
+   * flip-scene/flip-card wrapper, since that wrapper stacks the front and
+   * back faces with a 3D rotateY transform + backface-visibility, which
+   * DOM-snapshot libraries (html-to-image, html2canvas) don't render the
+   * same way a real browser compositor does - capturing it directly
+   * grabbed the mirrored back face instead of the front. */
+  frontFaceRef?: React.Ref<HTMLDivElement>;
 }
 
 /** Derives the outline/icon/isRogue visual props shared by BadgeCard and any standalone CardVisual usage (e.g. the admin flare back-face preview). */
@@ -301,7 +308,17 @@ export function deriveBadgeVisualProps(card: ClientAgentCard) {
   };
 }
 
-export function CardVisual({ card, outline, icon, isRogue, flipped, onClick, tiltEnabled = true, large = false }: CardVisualProps) {
+export function CardVisual({
+  card,
+  outline,
+  icon,
+  isRogue,
+  flipped,
+  onClick,
+  tiltEnabled = true,
+  large = false,
+  frontFaceRef,
+}: CardVisualProps) {
   const outerRef = useRef<HTMLDivElement>(null);
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
@@ -341,6 +358,7 @@ export function CardVisual({ card, outline, icon, isRogue, flipped, onClick, til
       <div className={`flip-card ${flipped ? "is-flipped" : ""}`}>
         {/* front face */}
         <div
+          ref={frontFaceRef}
           className={`flip-face overflow-hidden rounded-[1.4rem] border backdrop-blur-xl ${
             isRogue ? "rogue-flicker" : ""
           } ${card.borderStyle ? `border-fx-${card.borderStyle}` : ""}`}
@@ -453,9 +471,8 @@ export function BadgeCard({
   card: ClientAgentCard;
   dimmed?: boolean;
   showProfileLink?: boolean;
-  /** Ref attached to a plain wrapper around just the front-face card (not
-   * the lanyard or the profile link) - used by DownloadBadgeButton to
-   * screenshot exactly the card art, nothing else, via html2canvas. */
+  /** Forwarded straight through to CardVisual's frontFaceRef - used by
+   * DownloadBadgeButton to screenshot exactly the front-face card art. */
   frontCaptureRef?: React.Ref<HTMLDivElement>;
 }) {
   const [spotlightOpen, setSpotlightOpen] = useState(false);
@@ -473,16 +490,15 @@ export function BadgeCard({
         <div className="absolute left-1/2 top-[4px] h-2 w-2 -translate-x-1/2 rounded-full bg-black/60" />
       </div>
 
-      <div ref={frontCaptureRef}>
-        <CardVisual
-          card={card}
-          outline={outline}
-          icon={icon}
-          isRogue={isRogue}
-          flipped={false}
-          onClick={() => setSpotlightOpen(true)}
-        />
-      </div>
+      <CardVisual
+        card={card}
+        outline={outline}
+        icon={icon}
+        isRogue={isRogue}
+        flipped={false}
+        onClick={() => setSpotlightOpen(true)}
+        frontFaceRef={frontCaptureRef}
+      />
 
       {showProfileLink && (
         <Link
