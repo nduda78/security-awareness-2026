@@ -1,0 +1,323 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { postChatMessageAction, deleteChatMessageAction, markChatReadAction, type PostedMessage } from "@/lib/actions/chat";
+import { parseMentionSegments, mentionsSlug, CHAT_MAX_LENGTH } from "@/lib/chat";
+
+export interface RosterEntry {
+  slug: string;
+  displayName: string;
+}
+
+const POLL_INTERVAL_MS = 4000;
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  if (sameDay) return time;
+  return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${time}`;
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
+}
+
+function Avatar({ slug, name }: { slug: string; name: string }) {
+  const [errored, setErrored] = useState(false);
+  if (errored) {
+    return (
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-sand/10 font-terminal text-xs text-brand-sand/50">
+        {initials(name)}
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
+    <img
+      src={`/api/photo/${encodeURIComponent(slug)}`}
+      alt=""
+      onError={() => setErrored(true)}
+      className="h-9 w-9 shrink-0 rounded-full bg-brand-sand/10 object-cover"
+    />
+  );
+}
+
+function MessageBody({ body, slugToName }: { body: string; slugToName: Map<string, string> }) {
+  const segments = useMemo(() => parseMentionSegments(body, slugToName), [body, slugToName]);
+  return (
+    <p className="whitespace-pre-wrap break-words text-sm text-brand-sand/90">
+      {segments.map((seg, i) =>
+        seg.type === "mention" ? (
+          <Link
+            key={i}
+            href={`/profile/${encodeURIComponent(seg.slug!)}`}
+            className="rounded bg-brand-cyan/15 px-1 py-0.5 font-medium text-brand-cyan hover:bg-brand-cyan/25"
+          >
+            @{seg.displayName}
+          </Link>
+        ) : (
+          <span key={i}>{seg.value}</span>
+        )
+      )}
+    </p>
+  );
+}
+
+export function ChatRoomClient({
+  initialMessages,
+  roster,
+  currentSlug,
+  isAdmin,
+}: {
+  initialMessages: PostedMessage[];
+  roster: RosterEntry[];
+  currentSlug: string;
+  isAdmin: boolean;
+}) {
+  const [messages, setMessages] = useState<PostedMessage[]>(initialMessages);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const stickToBottomRef = useRef(true);
+  const latestCreatedAtRef = useRef<string | null>(initialMessages.at(-1)?.createdAt ?? null);
+
+  const slugToName = useMemo(() => new Map(roster.map((r) => [r.slug, r.displayName])), [roster]);
+
+  const mentionSuggestions = useMemo(() => {
+    if (mentionQuery === null) return [];
+    const q = mentionQuery.toLowerCase();
+    return roster
+      .filter((r) => r.slug !== currentSlug)
+      .filter((r) => r.displayName.toLowerCase().includes(q) || r.slug.includes(q))
+      .slice(0, 6);
+  }, [mentionQuery, roster, currentSlug]);
+
+  function scrollToBottom() {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }
+
+  useEffect(() => {
+    if (stickToBottomRef.current) scrollToBottom();
+  }, [messages.length]);
+
+  useEffect(() => {
+    scrollToBottom();
+    void markChatReadAction();
+  }, []);
+
+  // Poll for messages from everyone else (and mark read again each cycle,
+  // so a mention that arrives while this tab is already open doesn't leave
+  // the Nav badge stuck on).
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const after = latestCreatedAtRef.current;
+        const res = await fetch(`/api/chat/messages${after ? `?after=${encodeURIComponent(after)}` : ""}`);
+        if (!res.ok) return;
+        const data: { messages: PostedMessage[] } = await res.json();
+        if (data.messages.length === 0) return;
+        setMessages((prev) => {
+          const seen = new Set(prev.map((m) => m.id));
+          const fresh = data.messages.filter((m) => !seen.has(m.id));
+          if (fresh.length === 0) return prev;
+          return [...prev, ...fresh];
+        });
+        latestCreatedAtRef.current = data.messages.at(-1)!.createdAt;
+        void markChatReadAction();
+      } catch {
+        // transient network hiccup - next tick tries again
+      }
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    stickToBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
+
+  function updateMentionState(value: string, caret: number) {
+    const upToCaret = value.slice(0, caret);
+    const match = upToCaret.match(/@([a-z0-9-]*)$/i);
+    setMentionQuery(match ? match[1] : null);
+    setMentionIndex(0);
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setText(e.target.value);
+    updateMentionState(e.target.value, e.target.selectionStart ?? e.target.value.length);
+  }
+
+  function insertMention(entry: RosterEntry) {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const caret = ta.selectionStart ?? text.length;
+    const upToCaret = text.slice(0, caret);
+    const replacedStart = upToCaret.replace(/@([a-z0-9-]*)$/i, `@${entry.slug} `);
+    const next = replacedStart + text.slice(caret);
+    setText(next);
+    setMentionQuery(null);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const pos = replacedStart.length;
+      ta.setSelectionRange(pos, pos);
+    });
+  }
+
+  async function send() {
+    const body = text.trim();
+    if (!body || sending) return;
+    setSending(true);
+    setError(null);
+    const result = await postChatMessageAction(body);
+    setSending(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setText("");
+    setMentionQuery(null);
+    stickToBottomRef.current = true;
+    setMessages((prev) => (prev.some((m) => m.id === result.message.id) ? prev : [...prev, result.message]));
+    latestCreatedAtRef.current = result.message.createdAt;
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (mentionQuery !== null && mentionSuggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setMentionIndex((i) => (i + 1) % mentionSuggestions.length);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setMentionIndex((i) => (i - 1 + mentionSuggestions.length) % mentionSuggestions.length);
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        insertMention(mentionSuggestions[mentionIndex]);
+        return;
+      }
+      if (e.key === "Escape") {
+        setMentionQuery(null);
+        return;
+      }
+    }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void send();
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this message?")) return;
+    const result = await deleteChatMessageAction(id);
+    if (result.ok) {
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+    } else {
+      alert(result.error);
+    }
+  }
+
+  return (
+    <div className="flex h-[calc(100vh-260px)] min-h-[420px] flex-col">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="surface-card mb-3 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5"
+      >
+        {messages.length === 0 && (
+          <p className="py-10 text-center text-sm text-brand-sand/40">
+            Nobody&apos;s said anything yet. Break the ice.
+          </p>
+        )}
+        {messages.map((m) => {
+          const mentionsMe = mentionsSlug(m.body, currentSlug);
+          const canDelete = isAdmin || m.employeeSlug === currentSlug;
+          return (
+            <div
+              key={m.id}
+              className={`group flex gap-3 rounded-xl p-2 -m-2 ${
+                mentionsMe ? "bg-brand-cyan/10 ring-1 ring-brand-cyan/30" : ""
+              }`}
+            >
+              <Avatar slug={m.employeeSlug} name={m.employeeName} />
+              <div className="min-w-0 flex-1">
+                <div className="mb-0.5 flex items-baseline gap-2">
+                  <Link
+                    href={`/profile/${encodeURIComponent(m.employeeSlug)}`}
+                    className="text-sm font-semibold text-brand-sand hover:text-brand-yellow"
+                  >
+                    {m.employeeName}
+                  </Link>
+                  <span className="font-terminal text-[10px] text-brand-sand/35">{formatTime(m.createdAt)}</span>
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDelete(m.id)}
+                      className="ml-auto font-terminal text-[10px] uppercase text-brand-sand/0 transition group-hover:text-brand-red/70 hover:!text-brand-red"
+                    >
+                      delete
+                    </button>
+                  )}
+                </div>
+                <MessageBody body={m.body} slugToName={slugToName} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {error && <div className="mb-2 rounded-lg bg-brand-red/15 px-3 py-2 text-xs text-brand-red">{error}</div>}
+
+      <div className="relative">
+        {mentionQuery !== null && mentionSuggestions.length > 0 && (
+          <div className="absolute bottom-full left-0 z-10 mb-1.5 w-64 overflow-hidden rounded-xl border border-brand-sand/15 bg-brand-dark-green shadow-xl">
+            {mentionSuggestions.map((entry, i) => (
+              <button
+                key={entry.slug}
+                type="button"
+                onClick={() => insertMention(entry)}
+                className={`block w-full px-3 py-2 text-left text-sm ${
+                  i === mentionIndex ? "bg-brand-cyan/15 text-brand-sand" : "text-brand-sand/70 hover:bg-brand-sand/5"
+                }`}
+              >
+                {entry.displayName} <span className="text-brand-sand/35">@{entry.slug}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="surface-card flex items-end gap-2 p-2">
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onClick={(e) => updateMentionState(text, e.currentTarget.selectionStart ?? text.length)}
+            rows={2}
+            maxLength={CHAT_MAX_LENGTH}
+            placeholder="Say something... type @ to mention someone. Enter to send, Shift+Enter for a new line."
+            className="input-modern w-full flex-1 resize-none"
+          />
+          <button
+            onClick={() => void send()}
+            disabled={sending || !text.trim()}
+            className="btn-primary shrink-0 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {sending ? "..." : "Send"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -2,14 +2,37 @@ import Image from "next/image";
 import Link from "next/link";
 import { getAgentIdentity, isAdminSession } from "@/lib/session";
 import { signOutAction } from "@/lib/actions/identify";
+import { prisma } from "@/lib/prisma";
+import { mentionsSlug } from "@/lib/chat";
 import { Icon } from "./Icon";
 
 const LINKS = [
   { href: "/leaderboard", label: "Leaderboard", corrupted: "DATA_LEAK", icon: "shield" },
   { href: "/challenges", label: "Challenges", corrupted: "EXPLOITS", icon: "lightning" },
+  { href: "/chat", label: "Chat Room", corrupted: "COMMS_LEAK", icon: "chat" },
   { href: "/rules", label: "Rules", corrupted: "README.SYS", icon: "file" },
   { href: "/profile", label: "My Profile", corrupted: "MY_DOSSIER", icon: "crown" },
 ];
+
+/**
+ * True if the signed-in employee has an unread @mention waiting in the
+ * Chat Room - i.e. any message created after their lastChatReadAt that
+ * mentions their slug. The DB `contains` filter is just a coarse
+ * pre-filter to keep the row count small; mentionsSlug() does the real
+ * word-boundary check in JS afterward (a plain substring match could
+ * false-positive on "@nick-duda" matching a mention of "@nick-duda-2").
+ */
+async function hasUnreadMention(email: string): Promise<boolean> {
+  const employee = await prisma.employee.findUnique({ where: { email }, select: { lastChatReadAt: true } });
+  if (!employee) return false;
+  const since = employee.lastChatReadAt ?? new Date(0);
+  const candidates = await prisma.chatMessage.findMany({
+    where: { createdAt: { gt: since }, body: { contains: `@${email}` } },
+    select: { body: true },
+    take: 200,
+  });
+  return candidates.some((c) => mentionsSlug(c.body, email));
+}
 
 // Text-only reflavoring for the site-wide "compromised" theme (see
 // VirusOverlay.tsx / settings.ts) - never touches badge or challenge
@@ -19,6 +42,7 @@ const LINKS = [
 export async function Nav({ compromised = false }: { compromised?: boolean }) {
   const identity = await getAgentIdentity();
   const isAdmin = await isAdminSession();
+  const unreadMention = identity ? await hasUnreadMention(identity.email) : false;
   return (
     <header className="sticky top-0 z-40 border-b border-brand-sand/10 bg-brand-dark-green/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-y-3 gap-x-4 px-4 py-5 sm:px-6 sm:py-6">
@@ -49,7 +73,12 @@ export async function Nav({ compromised = false }: { compromised?: boolean }) {
               href={l.href}
               className="flex items-center gap-1.5 rounded-full px-3.5 py-2 font-terminal text-sm font-medium uppercase tracking-wide text-brand-sand/65 transition hover:bg-brand-sand/8 hover:text-brand-sand"
             >
-              <Icon name={l.icon} className="h-4 w-4 opacity-70" />
+              <span className="relative">
+                <Icon name={l.icon} className="h-4 w-4 opacity-70" />
+                {l.href === "/chat" && unreadMention && (
+                  <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-brand-red ring-2 ring-brand-dark-green" />
+                )}
+              </span>
               {compromised ? l.corrupted : l.label}
             </Link>
           ))}

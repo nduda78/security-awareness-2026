@@ -65,6 +65,12 @@ export function Icon({
           <path d="M20 20l-3.2-3.2" strokeLinecap="round" />
         </svg>
       );
+    case "chat":
+      return (
+        <svg {...common}>
+          <path d="M4 5h16v11H9l-4 4V5z" strokeLinejoin="round" />
+        </svg>
+      );
     case "file":
     default:
       return (

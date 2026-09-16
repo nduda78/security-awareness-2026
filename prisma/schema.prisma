@@ -57,9 +57,30 @@ model Employee {
   photo          Bytes?
   photoMimeType  String?
   photoUpdatedAt DateTime?
+  /// Last time this employee opened the Chat Room - compared against
+  /// ChatMessage.createdAt to compute the unread-@mention indicator in
+  /// Nav.tsx. Null means never opened it.
+  lastChatReadAt DateTime?
 
-  submissions Submission[]
-  flare       BadgeFlare?
+  submissions  Submission[]
+  flare        BadgeFlare?
+  chatMessages ChatMessage[]
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  employeeId String
+  /// Raw text as typed, with @mentions embedded as "@<employee-slug>"
+  /// (e.g. "@nick-duda") rather than display names, since slugs are
+  /// unique and hyphen-safe (no ambiguity from spaces in real names) - see
+  /// src/lib/chat.ts for parsing/rendering. Rendered client-side into a
+  /// styled mention chip showing the real display name.
+  body       String
+  createdAt  DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
 }
 
 model Challenge {
