@@ -121,7 +121,7 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
   return (
     <div className={chaos ? "glitch-text" : ""}>
       <div className="glass-panel mb-6 flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
+        <div className="relative w-full sm:max-w-sm md:max-w-md">
           <Icon
             name="search"
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-sand/35"
