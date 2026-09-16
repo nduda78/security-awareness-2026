@@ -5,6 +5,7 @@ import { AdminNav } from "@/components/AdminNav";
 import { upsertChallengeAction, deleteChallengeAction } from "@/lib/actions/admin";
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
+import { ChallengeFileField } from "@/components/ChallengeFileField";
 import { TIER_BY_KEY } from "@/lib/tiers";
 
 export const dynamic = "force-dynamic";
@@ -82,47 +83,7 @@ function Field({
   );
 }
 
-function FileField({
-  label,
-  name,
-  removeName,
-  currentUrl,
-  hasCurrent,
-  accept,
-  hint,
-}: {
-  label: string;
-  name: string;
-  removeName: string;
-  currentUrl?: string;
-  hasCurrent?: boolean;
-  accept: string;
-  hint?: string;
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">{label}</label>
-      {hasCurrent && currentUrl && (
-        <div className="mb-2 flex items-center gap-3">
-          {accept === "audio/*" ? (
-            <audio controls src={currentUrl} className="h-8 max-w-[220px]" />
-          ) : accept === "video/*" ? (
-            <video controls src={currentUrl} className="h-24 w-auto rounded-lg border border-brand-sand/10 object-contain" />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
-            <img src={currentUrl} alt="" className="h-16 w-auto rounded-lg border border-brand-sand/10 object-contain" />
-          )}
-          <label className="flex items-center gap-1.5 text-xs text-brand-sand/50">
-            <input type="checkbox" name={removeName} className="accent-brand-red" />
-            Remove current
-          </label>
-        </div>
-      )}
-      <input name={name} type="file" accept={accept} className="text-xs text-brand-sand/70" />
-      {hint && <p className="mt-1 text-[11px] text-brand-sand/35">{hint}</p>}
-    </div>
-  );
-}
+
 
 function SelectField({
   label,
@@ -229,7 +190,7 @@ function ChallengeForm({
             hint="Shown above the answer form — e.g. a phishing screenshot to inspect. Uploads immediately, separately from Save."
           />
         ) : (
-          <FileField
+          <ChallengeFileField
             label="Question image (optional, any challenge)"
             name="questionImage"
             removeName="questionImageRemove"
@@ -280,9 +241,9 @@ function ChallengeForm({
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <FileField label="Audio" name="unlockAudio" removeName="unlockAudioRemove" accept="audio/*" />
-            <FileField label="Image" name="unlockImage" removeName="unlockImageRemove" accept="image/*" />
-            <FileField
+            <ChallengeFileField label="Audio" name="unlockAudio" removeName="unlockAudioRemove" accept="audio/*" />
+            <ChallengeFileField label="Image" name="unlockImage" removeName="unlockImageRemove" accept="image/*" />
+            <ChallengeFileField
               label="Video"
               name="unlockVideo"
               removeName="unlockVideoRemove"

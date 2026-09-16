@@ -120,7 +120,17 @@ export function AssetUploader({
         </div>
       )}
 
-      <input ref={inputRef} type="file" accept={accept} onChange={onFileChosen} className="text-xs text-brand-sand/70" />
+      <label className={`btn-secondary cursor-pointer !text-[11px] ${status === "uploading" ? "pointer-events-none opacity-50" : ""}`}>
+        Upload File
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          onChange={onFileChosen}
+          disabled={status === "uploading"}
+          className="hidden"
+        />
+      </label>
 
       {status === "uploading" && (
         <div className="mt-1.5">
