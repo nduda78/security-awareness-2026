@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { encodeAgentCookie, AGENT_COOKIE_NAME, AGENT_COOKIE_MAX_AGE } from "@/lib/session";
+import { encodeAgentCookie, AGENT_COOKIE_NAME, AGENT_COOKIE_MAX_AGE, ADMIN_COOKIE_NAME } from "@/lib/session";
 import { slugifyName, isValidPin, hashPin, verifyPin } from "@/lib/auth";
 
 function fail(mode: "register" | "login", next: string, message: string): never {
@@ -22,6 +22,15 @@ async function setSessionAndRedirect(email: string, displayName: string, next: s
     path: "/",
     maxAge: AGENT_COOKIE_MAX_AGE,
   });
+  // The legacy passphrase-unlock cookie is a separate, identity-independent
+  // grant - left alone, it would silently carry admin access over to
+  // whoever signs into this browser next, regardless of their own isAdmin
+  // flag (this is exactly the bug where a brand-new, non-admin-flagged
+  // agent inherited admin access from a PREVIOUS person's passphrase
+  // unlock in the same browser). Clearing it on every sign-in forces admin
+  // access to be re-derived fresh for whoever is actually signed in now:
+  // either their own isAdmin flag, or the passphrase again.
+  store.delete(ADMIN_COOKIE_NAME);
   redirect(next.startsWith("/") ? next : "/leaderboard");
 }
 
@@ -113,5 +122,9 @@ export async function loginAction(formData: FormData) {
 export async function signOutAction() {
   const store = await cookies();
   store.delete(AGENT_COOKIE_NAME);
+  // Same reasoning as setSessionAndRedirect above - signing out shouldn't
+  // leave a live admin unlock sitting around for the next person to pick
+  // up on this browser.
+  store.delete(ADMIN_COOKIE_NAME);
   redirect("/leaderboard");
 }
