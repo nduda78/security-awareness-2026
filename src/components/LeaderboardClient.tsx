@@ -18,16 +18,35 @@ export interface ClientTierSection {
 type FilterKey = "ALL" | "ROGUE" | "TOP_SECRET" | "SECRET" | "UNCLASSIFIED" | "WINNERS";
 type SortKey = "XP_DESC" | "XP_ASC" | "NAME_ASC" | "CLOSEST";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "ALL", label: "All" },
-  { key: "ROGUE", label: "Rogue" },
-  { key: "TOP_SECRET", label: "Top Secret" },
-  { key: "SECRET", label: "Secret" },
-  { key: "UNCLASSIFIED", label: "Unclassified" },
-  { key: "WINNERS", label: "🏆 Winners" },
+const FILTERS: { key: FilterKey; label: string; corrupted: string }[] = [
+  { key: "ALL", label: "All", corrupted: "ALL_NODES" },
+  { key: "ROGUE", label: "Rogue", corrupted: "R0GUE" },
+  { key: "TOP_SECRET", label: "Top Secret", corrupted: "T0P_SECRET" },
+  { key: "SECRET", label: "Secret", corrupted: "S3CRET" },
+  { key: "UNCLASSIFIED", label: "Unclassified", corrupted: "UNCL4SSIFIED" },
+  { key: "WINNERS", label: "🏆 Winners", corrupted: "🏆 W1NNERS" },
 ];
 
-export function LeaderboardClient({ sections }: { sections: ClientTierSection[] }) {
+const SORT_LABELS: Record<SortKey, { label: string; corrupted: string }> = {
+  XP_DESC: { label: "XP: High to Low", corrupted: "THREAT LEVEL: HIGH → LOW" },
+  XP_ASC: { label: "XP: Low to High", corrupted: "THREAT LEVEL: LOW → HIGH" },
+  NAME_ASC: { label: "Name A-Z", corrupted: "ALPHA SWEEP" },
+  CLOSEST: { label: "Closest to leveling up", corrupted: "NEAREST BREACH POINT" },
+};
+
+// compromised is text-only reflavoring for the site-wide "compromised"
+// theme - filter/sort *behavior* is untouched (still keyed the same),
+// and tier names shown per-section (section.tierLabel) are deliberately
+// left alone here since they're the same strings shown right on each
+// agent's badge (see BadgeCard) - this only touches page chrome around
+// the badges, never the badges themselves.
+export function LeaderboardClient({
+  sections,
+  compromised = false,
+}: {
+  sections: ClientTierSection[];
+  compromised?: boolean;
+}) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterKey>("ALL");
   const [sort, setSort] = useState<SortKey>("XP_DESC");
@@ -131,7 +150,7 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Find your badge, codename, or agent ID..."
+            placeholder={compromised ? "root@breach:~$ locate --target ..." : "Find your badge, codename, or agent ID..."}
             className="input-modern input-with-icon w-full"
           />
         </div>
@@ -140,10 +159,11 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
           onChange={(e) => setSort(e.target.value as SortKey)}
           className="input-modern font-terminal text-xs uppercase tracking-wide"
         >
-          <option value="XP_DESC">XP: High to Low</option>
-          <option value="XP_ASC">XP: Low to High</option>
-          <option value="NAME_ASC">Name A-Z</option>
-          <option value="CLOSEST">Closest to leveling up</option>
+          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+            <option key={key} value={key}>
+              {compromised ? SORT_LABELS[key].corrupted : SORT_LABELS[key].label}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -154,7 +174,7 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
             onClick={() => setFilter(f.key)}
             className={`pill ${filter === f.key ? "pill-active" : ""}`}
           >
-            {f.label}
+            {compromised ? f.corrupted : f.label}
           </button>
         ))}
       </div>
@@ -179,7 +199,8 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
                 </h2>
                 <span className="font-terminal text-[11px] text-brand-sand/45">
                   {section.minXp}
-                  {section.maxXp !== null ? `–${section.maxXp}` : "+"} XP · {section.members.length} agent
+                  {section.maxXp !== null ? `–${section.maxXp}` : "+"} XP · {section.members.length}{" "}
+                  {compromised ? "compromised node" : "agent"}
                   {section.members.length === 1 ? "" : "s"}
                 </span>
               </div>

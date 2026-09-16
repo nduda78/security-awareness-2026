@@ -47,9 +47,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="grid-glow min-h-full flex flex-col">
         {compromised && <VirusOverlay />}
-        <Nav />
+        <Nav compromised={compromised} />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">{children}</main>
-        <Footer />
+        <Footer compromised={compromised} />
       </body>
     </html>
   );

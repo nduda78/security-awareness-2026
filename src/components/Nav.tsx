@@ -5,13 +5,18 @@ import { signOutAction } from "@/lib/actions/identify";
 import { Icon } from "./Icon";
 
 const LINKS = [
-  { href: "/leaderboard", label: "Leaderboard", icon: "shield" },
-  { href: "/challenges", label: "Challenges", icon: "lightning" },
-  { href: "/rules", label: "Rules", icon: "file" },
-  { href: "/profile", label: "My Profile", icon: "crown" },
+  { href: "/leaderboard", label: "Leaderboard", corrupted: "DATA_LEAK", icon: "shield" },
+  { href: "/challenges", label: "Challenges", corrupted: "EXPLOITS", icon: "lightning" },
+  { href: "/rules", label: "Rules", corrupted: "README.SYS", icon: "file" },
+  { href: "/profile", label: "My Profile", corrupted: "MY_DOSSIER", icon: "crown" },
 ];
 
-export async function Nav() {
+// Text-only reflavoring for the site-wide "compromised" theme (see
+// VirusOverlay.tsx / settings.ts) - never touches badge or challenge
+// content, just the surrounding site chrome. Nav is already a server
+// component (it needs the agent identity + admin session anyway), so this
+// is just a plain conditional swap - no client-side state needed.
+export async function Nav({ compromised = false }: { compromised?: boolean }) {
   const identity = await getAgentIdentity();
   const isAdmin = await isAdminSession();
   return (
@@ -28,9 +33,11 @@ export async function Nav() {
           />
           <span className="hidden h-10 w-px bg-brand-sand/15 sm:block" />
           <div className="hidden sm:block">
-            <div className="section-eyebrow whitespace-nowrap text-[11px] leading-none">Security Clearance Program</div>
+            <div className="section-eyebrow whitespace-nowrap text-[11px] leading-none">
+              {compromised ? "SYSTEM COMPROMISED" : "Security Clearance Program"}
+            </div>
             <div className="site-wordmark whitespace-nowrap font-display text-lg font-semibold leading-tight text-brand-sand/90">
-              2026 Awareness Month
+              {compromised ? "BREACH IN PROGRESS" : "2026 Awareness Month"}
             </div>
           </div>
         </Link>
@@ -43,7 +50,7 @@ export async function Nav() {
               className="flex items-center gap-1.5 rounded-full px-3.5 py-2 font-terminal text-sm font-medium uppercase tracking-wide text-brand-sand/65 transition hover:bg-brand-sand/8 hover:text-brand-sand"
             >
               <Icon name={l.icon} className="h-4 w-4 opacity-70" />
-              {l.label}
+              {compromised ? l.corrupted : l.label}
             </Link>
           ))}
           {isAdmin && (
@@ -52,7 +59,7 @@ export async function Nav() {
               className="flex items-center gap-1.5 rounded-full px-3.5 py-2 font-terminal text-sm font-medium uppercase tracking-wide text-brand-cyan transition hover:bg-brand-cyan/10"
             >
               <Icon name="lock" className="h-4 w-4 opacity-70" />
-              Admin
+              {compromised ? "ROOT_ACCESS" : "Admin"}
             </Link>
           )}
           {identity && (
@@ -61,7 +68,7 @@ export async function Nav() {
                 {identity.displayName}
               </span>
               <button className="rounded-full px-2.5 py-1.5 font-terminal text-sm uppercase text-brand-sand/40 transition hover:text-brand-red">
-                Sign out
+                {compromised ? "Disconnect" : "Sign out"}
               </button>
             </form>
           )}
