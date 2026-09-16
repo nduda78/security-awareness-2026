@@ -129,6 +129,7 @@ export function ChallengesBoard({ sections }: { sections: ClientChallengeSection
 
 function ChallengeCard({ challenge: c }: { challenge: ClientChallengeSection["challenges"][number] }) {
   const isDone = c.status === "CORRECT";
+  const isPendingReview = c.status === "PENDING_REVIEW";
   const isNotStarted = !c.status && c.isOpen;
   return (
     <div className="relative h-full">
@@ -144,7 +145,13 @@ function ChallengeCard({ challenge: c }: { challenge: ClientChallengeSection["ch
           Out of Attempts
         </div>
       )}
-      {!isDone && !c.outOfAttempts && isNotStarted && (
+      {!isDone && !c.outOfAttempts && isPendingReview && (
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-brand-cyan/50 bg-brand-cyan px-3 py-1.5 font-terminal text-[11px] font-bold uppercase tracking-wide text-brand-dark-green shadow-lg shadow-black/40">
+          <span>⏳</span>
+          Under Review
+        </div>
+      )}
+      {!isDone && !c.outOfAttempts && !isPendingReview && isNotStarted && (
         <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-brand-yellow/50 bg-brand-yellow px-3 py-1.5 font-terminal text-[11px] font-bold uppercase tracking-wide text-brand-dark-green shadow-lg shadow-black/40">
           Not Started
         </div>
@@ -170,26 +177,24 @@ function ChallengeCard({ challenge: c }: { challenge: ClientChallengeSection["ch
       </div>
       <p className="mb-3 line-clamp-2 text-sm text-brand-sand/55">{c.description}</p>
       {!c.isOpen && <div className="font-terminal text-xs text-brand-sand/40">Not currently open</div>}
-      {c.status && !isDone && !c.outOfAttempts && (
+      {c.status && !isDone && !c.outOfAttempts && !isPendingReview && (
         <div className="flex items-center gap-1.5 font-terminal text-xs text-brand-light-green">
           <Icon name="shield" className="h-3.5 w-3.5" />
           {c.answerType === "FREE_TEXT_REVIEW" ? (
             <>
-              {c.status === "PENDING_REVIEW" && "Submitted · under review by Security"}
               {/* FREE_TEXT_REVIEW is always one-shot (see submitAnswerAction) - INCORRECT here
                   means the Security team reviewed it and didn't approve it, not "wrong guess,
                   try again" like every other answer type, so it gets its own wording rather
-                  than the generic "Attempted". */}
+                  than the generic "Attempted". PENDING_REVIEW is handled by the "Under Review"
+                  pill above instead of text here. */}
               {c.status === "INCORRECT" && "Reviewed — not approved"}
             </>
           ) : c.rewardMode === "UNLOCK" ? (
             <>
-              {c.status === "PENDING_REVIEW" && "Submitted · pending review"}
               {c.status === "INCORRECT" && "Not yet — try again"}
             </>
           ) : (
             <>
-              {c.status === "PENDING_REVIEW" && "Submitted · pending review"}
               {c.status === "INCORRECT" && "Attempted"}
             </>
           )}
