@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// Serves a user-uploaded profile photo straight out of Postgres (stored as
-// bytea). No cloud storage bucket exists in this environment, and Postgres
-// is already the durable store for everything else in this app, so photos
-// live there too rather than adding a new infra dependency.
+// Serves a user-uploaded profile photo straight out of SQLite (stored as a
+// BLOB via Prisma's Bytes type). No cloud storage bucket exists in this
+// environment, and SQLite is already the durable store for everything else
+// in this app, so photos live there too rather than adding a new infra
+// dependency.
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ email: string }> }) {
   const { email: emailParam } = await params;
   const email = decodeURIComponent(emailParam).toLowerCase();

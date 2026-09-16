@@ -1,44 +1,26 @@
 // Prisma schema for Dutchie Security Awareness Month 2026
+//
+// SQLite, not Postgres. Postgres ran as a separately-installed system
+// service on this VAPE pod's own disk with no persistent volume - a pod
+// crash/restart wiped it out entirely once already (see db-backups/ history).
+// SQLite is a single file with no service to lose; combined with the
+// periodic backup practice in scripts/backup-db.ts, this survives a pod
+// wipe with a simple restore instead of a full reinstall + migrate + reseed.
+//
+// SQLite has no native enum or scalar-array type support in Prisma, so the
+// four enums and the one `String[]` field below are modeled as plain
+// String columns (JSON-encoded where the value is itself a list). Valid
+// values are documented in comments and enforced in application code
+// (src/lib/tiers.ts, src/lib/flare.ts) exactly the same way the equivalent
+// Flux/SQLite port already does.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-}
-
-enum AnswerType {
-  EXACT
-  CASE_INSENSITIVE
-  MULTIPLE_CHOICE
-  FREE_TEXT_REVIEW
-}
-
-enum SubmissionStatus {
-  CORRECT
-  INCORRECT
-  PENDING_REVIEW
-}
-
-enum RewardMode {
-  XP // completing it earns XP (and optionally badge flare / prize) as normal
-  UNLOCK // earns no XP — a correct answer reveals unlockAudio/unlockText/unlockLinkUrl/unlockImage instead. Unlimited retries.
-}
-
-// Mirrors TierKey in src/lib/tiers.ts. Gates who a challenge is even shown
-// to. UNCLASSIFIED/SECRET/TOP_SECRET form a ladder ("this level and any
-// level higher" — the higher clearance always sees the lower bar's
-// challenges too); ROGUE is a standalone flag, never implied by or
-// implying any ladder level, so a ROGUE-tagged challenge is only ever
-// visible to ROGUE employees, and ROGUE employees still see ladder
-// challenges per their real underlying XP tier.
-enum ClearanceLevel {
-  UNCLASSIFIED
-  SECRET
-  TOP_SECRET
-  ROGUE
 }
 
 model Employee {
@@ -56,15 +38,18 @@ model Employee {
 }
 
 model Challenge {
-  id            String     @id @default(cuid())
-  slug          String     @unique
-  title         String
-  description   String
-  answerType    AnswerType
+  id  String @id @default(cuid())
+  slug String @unique
+  title String
+  description String
+  /// One of: EXACT | CASE_INSENSITIVE | MULTIPLE_CHOICE | FREE_TEXT_REVIEW
+  answerType    String
   correctAnswer String? // null for FREE_TEXT_REVIEW
-  choices       Json? // string[] for MULTIPLE_CHOICE
+  /// JSON-encoded string[] for MULTIPLE_CHOICE (SQLite has no native Json type in this Prisma version)
+  choices       String?
   xpValue       Int
-  rewardMode    RewardMode @default(XP)
+  /// One of: XP | UNLOCK
+  rewardMode    String @default("XP")
 
   // Optional image shown alongside the question itself — e.g. a phishing
   // screenshot to inspect before picking a multiple-choice answer. Usable
@@ -99,7 +84,8 @@ model Challenge {
   rewardOutlineColorPicker    Boolean @default(false)
   rewardBackgroundColorPicker Boolean @default(false)
   rewardPrize            String? // freeform other prize, e.g. "Company hoodie", "Extra PTO day"
-  minClearance  ClearanceLevel @default(UNCLASSIFIED)
+  /// One of: UNCLASSIFIED | SECRET | TOP_SECRET | ROGUE
+  minClearance  String @default("UNCLASSIFIED")
   isActive      Boolean    @default(true)
   opensAt       DateTime?
   closesAt      DateTime?
@@ -110,13 +96,14 @@ model Challenge {
 }
 
 model Submission {
-  id           String           @id @default(cuid())
+  id           String   @id @default(cuid())
   employeeId   String
   challengeId  String
   answerRaw    String
-  status       SubmissionStatus
-  xpAwarded    Int              @default(0)
-  submittedAt  DateTime         @default(now())
+  /// One of: CORRECT | INCORRECT | PENDING_REVIEW
+  status       String
+  xpAwarded    Int      @default(0)
+  submittedAt  DateTime @default(now())
   reviewedBy   String?
   reviewedAt   DateTime?
 
@@ -130,7 +117,8 @@ model Submission {
 
 model BadgeFlare {
   employeeId       String    @id
-  achievements     String[]  @default([])
+  /// JSON-encoded string[] (SQLite has no native scalar-array type)
+  achievements     String    @default("[]")
   outlineColor     String?
   backgroundColor  String?
   backgroundEffect String?

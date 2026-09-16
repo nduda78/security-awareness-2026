@@ -184,7 +184,8 @@ function ChallengeForm({
     closesAt: Date | null;
   };
 }) {
-  const choicesText = Array.isArray(challenge?.choices) ? (challenge!.choices as string[]).join("\n") : "";
+  const parsedChoices: unknown = typeof challenge?.choices === "string" ? JSON.parse(challenge.choices) : null;
+  const choicesText = Array.isArray(parsedChoices) ? (parsedChoices as string[]).join("\n") : "";
   return (
     <form action={upsertChallengeAction} className="mt-4 space-y-4">
       {challenge && <input type="hidden" name="id" value={challenge.id} />}

@@ -210,6 +210,24 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
   };
 }
 
+// BadgeFlare.achievements is stored as a JSON-encoded string column (SQLite
+// has no native scalar-array type Prisma can map to, unlike the old Postgres
+// String[] column). These two helpers are the only place that (de)serializes
+// it, so every call site crosses the DB boundary the same safe way.
+export function parseAchievements(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((a): a is string => typeof a === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function serializeAchievements(achievements: string[]): string {
+  return JSON.stringify(achievements ?? []);
+}
+
 /** Logs flare warnings server-side (build/request time) without throwing. */
 export function logFlareWarnings(email: string, warnings: FlareWarning[]) {
   for (const w of warnings) {

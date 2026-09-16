@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { encodeAdminCookie, ADMIN_COOKIE_NAME, isAdminSession } from "@/lib/session";
 import { IMAGE_TYPES, IMAGE_MAX_BYTES, AUDIO_TYPES, AUDIO_MAX_BYTES, VIDEO_TYPES, VIDEO_MAX_BYTES } from "@/lib/assetUpload";
+import { serializeAchievements } from "@/lib/flare";
 
 async function requireAdmin() {
   if (!(await isAdminSession())) {
@@ -129,7 +130,7 @@ export async function upsertChallengeAction(formData: FormData) {
     description,
     answerType,
     correctAnswer: answerType === "FREE_TEXT_REVIEW" ? null : correctAnswer,
-    choices: answerType === "MULTIPLE_CHOICE" ? parseChoices(choicesRaw) : undefined,
+    choices: answerType === "MULTIPLE_CHOICE" ? JSON.stringify(parseChoices(choicesRaw)) : undefined,
     xpValue,
     rewardMode,
     minClearance,
@@ -260,7 +261,7 @@ export async function upsertFlareAction(formData: FormData) {
   const expiresAtRaw = String(formData.get("expiresAt") ?? "");
 
   const data = {
-    achievements,
+    achievements: serializeAchievements(achievements),
     outlineColor: String(formData.get("outlineColor") ?? "").trim() || null,
     backgroundColor: String(formData.get("backgroundColor") ?? "").trim() || null,
     backgroundEffect: String(formData.get("backgroundEffect") ?? "").trim() || null,

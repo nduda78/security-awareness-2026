@@ -1,7 +1,16 @@
 import { prisma } from "./prisma";
 import { computeClearanceIssuedDates, computeProgress, effectiveTier, TierKey, TIERS } from "./tiers";
 import { computeFlavorProfile, resolveUniqueCodenames, resolveUniqueFunFacts } from "./identity";
-import { resolveFlare, logFlareWarnings, ResolvedFlare } from "./flare";
+import { resolveFlare, logFlareWarnings, parseAchievements, ResolvedFlare, RawFlareInput } from "./flare";
+import type { BadgeFlare } from "@prisma/client";
+
+// BadgeFlare.achievements is a JSON-encoded string column (see flare.ts) -
+// this is the one place that crosses back from the raw Prisma row into the
+// string[] shape resolveFlare expects.
+function rawFlareInput(flare: BadgeFlare | null): RawFlareInput | null {
+  if (!flare) return null;
+  return { ...flare, achievements: parseAchievements(flare.achievements) };
+}
 
 export interface AgentCard {
   email: string;
@@ -51,14 +60,14 @@ export async function buildAgentRoster(): Promise<AgentCard[]> {
   const emailsInStableOrder = employees.map((e) => e.email).sort();
   const overrides = new Map<string, string>();
   for (const e of employees) {
-    const flare = resolveFlare(e.flare, new Date());
+    const flare = resolveFlare(rawFlareInput(e.flare), new Date());
     if (flare?.codenameOverride) overrides.set(e.email, flare.codenameOverride);
   }
   const codenames = resolveUniqueCodenames(emailsInStableOrder, overrides);
   const funFacts = resolveUniqueFunFacts(emailsInStableOrder);
 
   const cards: AgentCard[] = employees.map((e) => {
-    const flare = resolveFlare(e.flare, new Date());
+    const flare = resolveFlare(rawFlareInput(e.flare), new Date());
     if (flare) logFlareWarnings(e.email, flare.warnings);
 
     const xp = e.submissions.reduce((sum, s) => sum + s.xpAwarded, 0);

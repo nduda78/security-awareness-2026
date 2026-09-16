@@ -6,6 +6,7 @@ import { buildAgentRoster, rankWithinTier } from "@/lib/leaderboard";
 import { resolveUniqueCodenames } from "@/lib/identity";
 import { toClientCard } from "@/lib/client-types";
 import { FlareEditor } from "@/components/FlareEditor";
+import { parseAchievements } from "@/lib/flare";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +84,7 @@ export default async function AdminFlarePage({
               defaultCodename={editorProps.defaultCodename}
               photoStatus={{ uploaded: photoUploaded === "1", removed: photoRemoved === "1", error: photoError }}
               initial={{
-                achievements: selected.flare?.achievements.join("\n") ?? "",
+                achievements: parseAchievements(selected.flare?.achievements).join("\n"),
                 outlineColor: selected.flare?.outlineColor ?? "",
                 backgroundColor: selected.flare?.backgroundColor ?? "",
                 backgroundEffect: selected.flare?.backgroundEffect ?? "",

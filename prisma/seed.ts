@@ -28,12 +28,12 @@ async function main() {
         description: "Which of these is the strongest password practice?",
         answerType: "MULTIPLE_CHOICE",
         correctAnswer: "Use a password manager with unique passwords per site",
-        choices: [
+        choices: JSON.stringify([
           "Reuse one strong password everywhere",
           "Use a password manager with unique passwords per site",
           "Write passwords on a sticky note",
           "Use your pet's name + birth year",
-        ],
+        ]),
         xpValue: 75,
         isActive: true,
       },
@@ -142,7 +142,7 @@ async function main() {
     update: {},
     create: {
       employeeId: employees[0].id,
-      achievements: ["Won a MacBook", "October Champion"],
+      achievements: JSON.stringify(["Won a MacBook", "October Champion"]),
       outlineColor: "Hot Pink",
       backgroundEffect: "holo",
       motto: "Trust nothing. Verify everything.",
@@ -156,7 +156,7 @@ async function main() {
     update: {},
     create: {
       employeeId: employees[5].id,
-      achievements: ["Perfect Score"],
+      achievements: JSON.stringify(["Perfect Score"]),
       backgroundEffect: "starfield",
       borderStyle: "shimmer",
       iconOverride: "crown",

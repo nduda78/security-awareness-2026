@@ -55,7 +55,7 @@ export default async function ChallengeDetailPage({
     (!challenge.closesAt || challenge.closesAt >= now);
 
   const justSubmitted = submitted === "1";
-  const choices = (challenge.choices as string[] | null) ?? null;
+  const choices: string[] | null = challenge.choices ? JSON.parse(challenge.choices) : null;
   const isUnlock = challenge.rewardMode === "UNLOCK";
 
   const answerForm = (

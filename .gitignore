@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# SQLite live database + WAL/SHM sidecars — never commit the binary DB.
+# Durable backups live in db-backups/*.sql instead (see scripts/backup-db.sh).
+prisma/data/
+data/
+
+# One-off Postgres->SQLite migration exports contain raw employee data —
+# never commit; scripts/export-postgres-data.ts regenerates this if needed.
+scripts/postgres-export.json

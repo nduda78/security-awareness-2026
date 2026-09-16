@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// Serves the bytea-backed image/audio assets attached to a Challenge (question
+// Serves the BLOB-backed image/audio assets attached to a Challenge (question
 // image, unlock image, unlock audio) — same reasoning as /api/photo/[email]:
-// no cloud storage bucket in this environment, Postgres is already the
+// no cloud storage bucket in this environment, SQLite is already the
 // durable store for everything else here.
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string; kind: string }> }) {
   const { id, kind } = await params;
