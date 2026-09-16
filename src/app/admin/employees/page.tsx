@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
 import { toggleRogueAction, grantManualXpAction, toggleAdminAction } from "@/lib/actions/admin";
 import { ResetPinButton } from "@/components/ResetPinButton";
+import { DeleteEmployeeButton } from "@/components/DeleteEmployeeButton";
+import { getAgentIdentity } from "@/lib/session";
 
 const PERMANENT_ADMIN_EMAIL = "nick-duda";
 
@@ -20,6 +22,7 @@ export default async function AdminEmployeesPage({
 
   const roster = await buildAgentRoster();
   roster.sort((a, b) => b.xp - a.xp);
+  const currentIdentity = await getAgentIdentity();
 
   const employeeFlags = new Map(
     (await prisma.employee.findMany({ select: { email: true, pinHash: true, isAdmin: true } })).map((e) => [
@@ -47,6 +50,7 @@ export default async function AdminEmployeesPage({
               <th className="px-3 py-3">Manual XP grant</th>
               <th className="px-3 py-3">PIN</th>
               <th className="px-3 py-3">Admin</th>
+              <th className="px-3 py-3">Delete</th>
             </tr>
           </thead>
           <tbody>
@@ -98,6 +102,13 @@ export default async function AdminEmployeesPage({
                       />
                       <button className="btn-secondary !px-2 !py-0.5 !text-[10px]">Save</button>
                     </form>
+                  )}
+                </td>
+                <td className="px-3 py-2.5">
+                  {r.email === PERMANENT_ADMIN_EMAIL || r.email === currentIdentity?.email ? (
+                    <span className="font-terminal text-[10px] uppercase text-brand-sand/25">—</span>
+                  ) : (
+                    <DeleteEmployeeButton email={r.email} displayName={r.displayName} />
                   )}
                 </td>
               </tr>

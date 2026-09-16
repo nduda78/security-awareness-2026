@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { encodeAdminCookie, ADMIN_COOKIE_NAME, isAdminSession } from "@/lib/session";
+import { encodeAdminCookie, ADMIN_COOKIE_NAME, isAdminSession, getAgentIdentity } from "@/lib/session";
 import { IMAGE_TYPES, IMAGE_MAX_BYTES, AUDIO_TYPES, AUDIO_MAX_BYTES, VIDEO_TYPES, VIDEO_MAX_BYTES } from "@/lib/assetUpload";
 import { serializeAchievements } from "@/lib/flare";
 import { setCompromisedMode } from "@/lib/settings";
@@ -367,6 +367,41 @@ export async function resetPinAction(formData: FormData) {
   await prisma.employee.update({ where: { email }, data: { pinHash: null } });
   await logAdminAudit("PIN_RESET", `${employee!.displayName} (${email}): PIN reset - must re-claim via New Agent tab`);
   revalidatePath("/admin/employees");
+  redirect("/admin/employees?saved=1");
+}
+
+/**
+ * Permanently deletes an employee and everything tied to them - their
+ * submissions and badge flare cascade automatically (see the `onDelete:
+ * Cascade` relations in schema.prisma), which also wipes their XP history
+ * off the leaderboard. There's no undo short of restoring from a
+ * db-backups/*.sql dump, so this is guarded on both ends: the confirm()
+ * dialog on the client (DeleteEmployeeButton) and, more importantly, two
+ * hard server-side rejections here that no amount of client tampering can
+ * bypass - the permanent admin can't be deleted, and an admin can't delete
+ * the identity they're currently signed in as (both would strand the
+ * /admin panel or at least be almost certainly a misclick).
+ */
+export async function deleteEmployeeAction(formData: FormData) {
+  await requireAdmin();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  if (email === PERMANENT_ADMIN_EMAIL) {
+    redirect(`/admin/employees?error=${encodeURIComponent("Nick Duda is a permanent admin and can't be deleted.")}`);
+  }
+
+  const identity = await getAgentIdentity();
+  if (identity?.email === email) {
+    redirect(`/admin/employees?error=${encodeURIComponent("You can't delete the agent you're currently signed in as.")}`);
+  }
+
+  const employee = await prisma.employee.findUnique({ where: { email } });
+  if (!employee) redirect(`/admin/employees?error=${encodeURIComponent("Unknown employee")}`);
+
+  await prisma.employee.delete({ where: { email } });
+  await logAdminAudit("EMPLOYEE_DELETE", `${employee!.displayName} (${email}): agent deleted - submissions and badge flare removed`);
+  revalidatePath("/admin/employees");
+  revalidatePath("/leaderboard");
   redirect("/admin/employees?saved=1");
 }
 
