@@ -448,10 +448,15 @@ export function BadgeCard({
   card,
   dimmed = false,
   showProfileLink = true,
+  frontCaptureRef,
 }: {
   card: ClientAgentCard;
   dimmed?: boolean;
   showProfileLink?: boolean;
+  /** Ref attached to a plain wrapper around just the front-face card (not
+   * the lanyard or the profile link) - used by DownloadBadgeButton to
+   * screenshot exactly the card art, nothing else, via html2canvas. */
+  frontCaptureRef?: React.Ref<HTMLDivElement>;
 }) {
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const { isRogue, outline, icon } = deriveBadgeVisualProps(card);
@@ -468,14 +473,16 @@ export function BadgeCard({
         <div className="absolute left-1/2 top-[4px] h-2 w-2 -translate-x-1/2 rounded-full bg-black/60" />
       </div>
 
-      <CardVisual
-        card={card}
-        outline={outline}
-        icon={icon}
-        isRogue={isRogue}
-        flipped={false}
-        onClick={() => setSpotlightOpen(true)}
-      />
+      <div ref={frontCaptureRef}>
+        <CardVisual
+          card={card}
+          outline={outline}
+          icon={icon}
+          isRogue={isRogue}
+          flipped={false}
+          onClick={() => setSpotlightOpen(true)}
+        />
+      </div>
 
       {showProfileLink && (
         <Link

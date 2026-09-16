@@ -5,7 +5,7 @@ import { resolveUniqueCodenames } from "@/lib/identity";
 import { getUnlockedFlareOptions } from "@/lib/rewards";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
-import { BadgeCard } from "@/components/BadgeCard";
+import { ProfileBadgeWithDownload } from "@/components/ProfileBadgeWithDownload";
 import { Icon } from "@/components/Icon";
 import { uploadPhotoAction, removePhotoAction } from "@/lib/actions/photo";
 import { PhotoUploader } from "@/components/PhotoUploader";
@@ -61,7 +61,7 @@ export default async function ProfilePage({
     <div className="fade-in-up space-y-8">
       <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
         <div className="w-full max-w-[420px] shrink-0">
-          <BadgeCard card={clientCard} showProfileLink={!isOwnProfile} />
+          <ProfileBadgeWithDownload card={clientCard} showProfileLink={!isOwnProfile} />
         </div>
         <div className="w-full">
           <div className="section-eyebrow mb-1">Personnel Record</div>
