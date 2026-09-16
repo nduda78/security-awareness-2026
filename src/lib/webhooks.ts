@@ -57,6 +57,36 @@ export async function fireChallengeCompletedWebhook(
   });
 }
 
+/**
+ * Fired once, the moment a challenge actually becomes available to
+ * agents - immediately if it has no Opens At, or exactly when its
+ * scheduled Opens At time arrives otherwise. Uses the same webhookUrl as
+ * fireChallengeCompletedWebhook (one URL per challenge, two possible
+ * events) and the same trigger moment as the Chat Room's "New challenge
+ * dropped" announcement - see announceJustOpenedChallenges in
+ * challengeDrops.ts, which is the only caller.
+ */
+export async function fireChallengePostedWebhook(challenge: {
+  slug: string;
+  title: string;
+  xpValue: number;
+  rewardMode: string;
+  webhookUrl: string | null;
+}): Promise<void> {
+  const url = challenge.webhookUrl?.trim();
+  if (!url) return;
+  await postWebhook(url, {
+    event: "challenge_posted",
+    challenge: {
+      slug: challenge.slug,
+      title: challenge.title,
+      xpValue: challenge.xpValue,
+      rewardMode: challenge.rewardMode,
+    },
+    postedAt: new Date().toISOString(),
+  });
+}
+
 /** Fired when an agent's XP-derived clearance tier increases, if the admin has enabled + configured the global clearance webhook. */
 export async function fireClearanceUpgradedWebhook(
   employee: { email: string; displayName: string },

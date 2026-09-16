@@ -410,8 +410,9 @@ function ChallengeForm({
           placeholder="https://your-tines-webhook-url..."
         />
         <p className="mt-1 text-[11px] text-brand-sand/35">
-          POSTed once, the first time an agent actually completes this challenge - a JSON payload with the
-          agent, the challenge, and the XP awarded. Leave blank to send nothing.
+          Two events POST here: once when the challenge itself becomes available (immediately, or exactly
+          when its Opens At time arrives if scheduled), and once per agent who actually completes it. Leave
+          blank to send nothing.
         </p>
       </div>
       <label className="flex items-center gap-2 text-sm text-brand-sand/70">

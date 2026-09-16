@@ -103,13 +103,21 @@ async function getSystemAccountId(): Promise<string> {
 /**
  * Auto-posts an announcement into the Chat Room as the "Security System"
  * account - used for the activity feed (new challenge drops, tier-ups).
- * Called directly from other server actions (admin.ts, submit.ts), not
- * exposed to the client.
+ * Called from other real Server Actions (admin.ts, submit.ts) where
+ * that's fine, but ALSO from announceJustOpenedChallenges() during a
+ * plain Server Component render (challenges/page.tsx, chat/page.tsx) -
+ * revalidatePath() is illegal to call during a render (throws "used
+ * revalidatePath during render" and 500s the whole page, not just this
+ * feature) and unlike a Server Action, execution can't detect which
+ * context it's in. Deliberately does NOT call revalidatePath here at
+ * all: /chat already has `dynamic = "force-dynamic"`, so every request
+ * re-fetches messages fresh regardless, and the live Chat Room UI never
+ * depends on Next's router cache anyway - it polls its own Route Handler
+ * (api/chat/messages) which always queries the DB directly.
  */
 export async function postSystemMessage(body: string): Promise<void> {
   const employeeId = await getSystemAccountId();
   await prisma.chatMessage.create({ data: { employeeId, body } });
-  revalidatePath("/chat");
 }
 
 /** Aggregates ChatReaction rows for one message into emoji/count/mine. */

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { postSystemMessage } from "@/lib/actions/chat";
+import { fireChallengePostedWebhook } from "@/lib/webhooks";
 
 /**
  * Announces any active, non-Manual-Bonus challenge whose Opens At time has
@@ -19,6 +20,11 @@ import { postSystemMessage } from "@/lib/actions/chat";
  * nobody visits either page right at opens-at, the announcement is simply
  * a little late - same class of trade-off as the rest of the polling-based
  * Chat Room.
+ *
+ * Also fires the challenge's own webhookUrl (if set) with a
+ * "challenge_posted" event at this exact same moment - a challenge with a
+ * future Opens At fires it then, not at creation time, for the same
+ * surprise-preserving reason the chat announcement is deferred.
  */
 export async function announceJustOpenedChallenges(): Promise<void> {
   const now = new Date();
@@ -32,7 +38,7 @@ export async function announceJustOpenedChallenges(): Promise<void> {
       OR: [{ opensAt: null }, { opensAt: { lte: now } }],
       NOT: { slug: { startsWith: "manual-bonus-" } },
     },
-    select: { id: true, slug: true, title: true, xpValue: true, rewardMode: true },
+    select: { id: true, slug: true, title: true, xpValue: true, rewardMode: true, webhookUrl: true },
   });
 
   for (const c of candidates) {
@@ -43,5 +49,6 @@ export async function announceJustOpenedChallenges(): Promise<void> {
     if (count === 0) continue; // another concurrent caller already claimed this one
     const xpNote = c.rewardMode === "UNLOCK" ? "unlocks a reward" : `+${c.xpValue} XP`;
     await postSystemMessage(`📡 New challenge dropped: [[${c.title}]](/challenges/${c.slug}) (${xpNote})`);
+    await fireChallengePostedWebhook(c);
   }
 }
