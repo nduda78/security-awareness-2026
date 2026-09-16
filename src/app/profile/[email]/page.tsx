@@ -61,7 +61,7 @@ export default async function ProfilePage({
     <div className="fade-in-up space-y-8">
       <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
         <div className="w-full max-w-[420px] shrink-0">
-          <BadgeCard card={clientCard} />
+          <BadgeCard card={clientCard} showProfileLink={!isOwnProfile} />
         </div>
         <div className="w-full">
           <div className="section-eyebrow mb-1">Personnel Record</div>
@@ -103,32 +103,52 @@ export default async function ProfilePage({
             )}
           </div>
 
-          {isOwnProfile && (
-            <div className="surface-card mt-4 p-4">
-              <h3 className="mb-3 flex items-center gap-2 font-terminal text-xs uppercase tracking-wide text-brand-sand/50">
-                <Icon name="lock" className="h-3.5 w-3.5" />
-                Badge Photo
-              </h3>
-              {photoUploaded === "1" && (
-                <div className="mb-3 rounded-lg bg-brand-light-green/15 p-2.5 text-xs text-brand-light-green">
-                  Photo updated.
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {card.flare?.achievements.length ? (
+              <div className="surface-card p-4">
+                <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
+                  Achievements
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {card.flare.achievements.map((a, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-brand-yellow/30 bg-brand-yellow/10 px-3.5 py-1.5 text-sm text-brand-yellow"
+                    >
+                      <Icon name="trophy" className="h-4 w-4" /> {a}
+                    </span>
+                  ))}
                 </div>
-              )}
-              {photoRemoved === "1" && (
-                <div className="mb-3 rounded-lg bg-brand-sand/10 p-2.5 text-xs text-brand-sand/60">
-                  Photo removed.
-                </div>
-              )}
-              {photoError && (
-                <div className="mb-3 rounded-lg bg-brand-red/15 p-2.5 text-xs text-brand-red">{photoError}</div>
-              )}
-              <PhotoUploader
-                uploadAction={uploadPhotoAction}
-                removeAction={removePhotoAction}
-                hasPhoto={!!clientCard.photoUrl}
-              />
-            </div>
-          )}
+              </div>
+            ) : null}
+
+            {isOwnProfile && (
+              <div className="surface-card p-4">
+                <h3 className="mb-3 flex items-center gap-2 font-terminal text-xs uppercase tracking-wide text-brand-sand/50">
+                  <Icon name="lock" className="h-3.5 w-3.5" />
+                  Badge Photo
+                </h3>
+                {photoUploaded === "1" && (
+                  <div className="mb-3 rounded-lg bg-brand-light-green/15 p-2.5 text-xs text-brand-light-green">
+                    Photo updated.
+                  </div>
+                )}
+                {photoRemoved === "1" && (
+                  <div className="mb-3 rounded-lg bg-brand-sand/10 p-2.5 text-xs text-brand-sand/60">
+                    Photo removed.
+                  </div>
+                )}
+                {photoError && (
+                  <div className="mb-3 rounded-lg bg-brand-red/15 p-2.5 text-xs text-brand-red">{photoError}</div>
+                )}
+                <PhotoUploader
+                  uploadAction={uploadPhotoAction}
+                  removeAction={removePhotoAction}
+                  hasPhoto={!!clientCard.photoUrl}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -162,24 +182,6 @@ export default async function ProfilePage({
       )}
 
       <div className="space-y-6">
-        {card.flare?.achievements.length ? (
-          <div>
-            <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
-              Achievements
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {card.flare.achievements.map((a, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-brand-yellow/30 bg-brand-yellow/10 px-3.5 py-1.5 text-sm text-brand-yellow"
-                >
-                  <Icon name="trophy" className="h-4 w-4" /> {a}
-                </span>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
         <div>
           <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
             Challenge History
