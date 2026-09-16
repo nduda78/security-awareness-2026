@@ -4,6 +4,7 @@ import { getAgentIdentity, isAdminSession } from "@/lib/session";
 import { ChatRoomClient } from "@/components/ChatRoomClient";
 import { isCompromisedModeEnabled } from "@/lib/settings";
 import { buildReactionSummaries } from "@/lib/actions/chat";
+import { buildAgentRoster } from "@/lib/leaderboard";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,13 @@ export default async function ChatRoomPage() {
   const identity = await getAgentIdentity();
   if (!identity) redirect("/identify?next=/chat");
 
-  const [recent, employees, isAdmin, compromised] = await Promise.all([
+  const [recent, agentRoster, isAdmin, compromised] = await Promise.all([
     prisma.chatMessage.findMany({
       orderBy: { createdAt: "desc" },
       take: 100,
       include: { employee: { select: { email: true, displayName: true, rogueOverride: true } } },
     }),
-    prisma.employee.findMany({ select: { email: true, displayName: true }, orderBy: { displayName: "asc" } }),
+    buildAgentRoster(),
     isAdminSession(),
     isCompromisedModeEnabled(),
   ]);
@@ -35,7 +36,24 @@ export default async function ChatRoomPage() {
     authorIsRogue: m.employee.rogueOverride,
   }));
 
-  const roster = employees.map((e) => ({ slug: e.email, displayName: e.displayName }));
+  // Reuses buildAgentRoster() (same data the Leaderboard/badges use) rather
+  // than a plain employee list, so the composer's mention autocomplete AND
+  // the chat feed's name coloring/hover-preview/`/flex` (all in
+  // ChatRoomClient.tsx) can use each agent's tier color/icon/XP/codename
+  // without any extra per-message queries - it's fetched once per page
+  // load, same cost as before.
+  const roster = agentRoster.map((c) => ({
+    slug: c.email,
+    displayName: c.displayName,
+    tierColor: c.tier.color,
+    tierIcon: c.tier.icon,
+    tierLabel: c.tier.label,
+    outlineColor: c.flare?.outlineColor ?? null,
+    iconOverride: c.flare?.iconOverride ?? null,
+    xp: c.xp,
+    codename: c.codename,
+    photoUrl: c.photoUrl,
+  }));
 
   return (
     <div className="fade-in-up">

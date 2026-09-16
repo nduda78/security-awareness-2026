@@ -16,6 +16,14 @@ import { parseMentionSegments, mentionsSlug, CHAT_MAX_LENGTH, REACTION_EMOJIS } 
 export interface RosterEntry {
   slug: string;
   displayName: string;
+  tierColor: string;
+  tierIcon: string;
+  tierLabel: string;
+  outlineColor: string | null;
+  iconOverride: string | null;
+  xp: number;
+  codename: string;
+  photoUrl: string | null;
 }
 
 function Reactions({
@@ -112,19 +120,68 @@ function Avatar({ slug, name, isRogue }: { slug: string; name: string; isRogue?:
   );
 }
 
-function MessageBody({ body, slugToName }: { body: string; slugToName: Map<string, string> }) {
+/** Hover-preview popover shared by message-author names and @mention chips - reads straight off the roster already loaded client-side, no network round trip. */
+function AgentLink({
+  slug,
+  rosterBySlug,
+  className,
+  children,
+}: {
+  slug: string;
+  rosterBySlug: Map<string, RosterEntry>;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const [hover, setHover] = useState(false);
+  const entry = rosterBySlug.get(slug);
+  return (
+    <span className="relative inline-block" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <Link href={`/profile/${encodeURIComponent(slug)}`} className={className}>
+        {children}
+      </Link>
+      {hover && entry && (
+        <div className="absolute bottom-full left-0 z-30 mb-1.5 w-56 rounded-xl border border-brand-sand/15 bg-brand-dark-green p-3 shadow-xl">
+          <div className="flex items-center gap-2">
+            <Avatar slug={entry.slug} name={entry.displayName} />
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-brand-sand">{entry.displayName}</div>
+              <div className="truncate font-terminal text-[10px] text-brand-sand/40">"{entry.codename}"</div>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center justify-between font-terminal text-[10px]">
+            <span className="uppercase tracking-wide" style={{ color: entry.outlineColor ?? entry.tierColor }}>
+              {entry.tierLabel}
+            </span>
+            <span className="text-brand-yellow">{entry.xp} XP</span>
+          </div>
+        </div>
+      )}
+    </span>
+  );
+}
+
+function MessageBody({
+  body,
+  slugToName,
+  rosterBySlug,
+}: {
+  body: string;
+  slugToName: Map<string, string>;
+  rosterBySlug: Map<string, RosterEntry>;
+}) {
   const segments = useMemo(() => parseMentionSegments(body, slugToName), [body, slugToName]);
   return (
     <p className="whitespace-pre-wrap break-words text-sm text-brand-sand/90">
       {segments.map((seg, i) =>
         seg.type === "mention" ? (
-          <Link
+          <AgentLink
             key={i}
-            href={`/profile/${encodeURIComponent(seg.slug!)}`}
+            slug={seg.slug!}
+            rosterBySlug={rosterBySlug}
             className="rounded bg-brand-cyan/15 px-1 py-0.5 font-medium text-brand-cyan hover:bg-brand-cyan/25"
           >
             @{seg.displayName}
-          </Link>
+          </AgentLink>
         ) : (
           <span key={i}>{seg.value}</span>
         )
@@ -156,6 +213,7 @@ export function ChatRoomClient({
   const latestCreatedAtRef = useRef<string | null>(initialMessages.at(-1)?.createdAt ?? null);
 
   const slugToName = useMemo(() => new Map(roster.map((r) => [r.slug, r.displayName])), [roster]);
+  const rosterBySlug = useMemo(() => new Map(roster.map((r) => [r.slug, r])), [roster]);
 
   const mentionSuggestions = useMemo(() => {
     if (mentionQuery === null) return [];
@@ -246,8 +304,17 @@ export function ChatRoomClient({
   }
 
   async function send() {
-    const body = text.trim();
+    let body = text.trim();
     if (!body || sending) return;
+    // /flex: a fun slash command, not a real message the user typed -
+    // built entirely from the roster already loaded client-side, so it
+    // works instantly with no extra round trip.
+    if (/^\/flex$/i.test(body)) {
+      const me = rosterBySlug.get(currentSlug);
+      if (me) {
+        body = `🏆 ${me.displayName} ("${me.codename}") is flexing: ${me.tierLabel} clearance, ${me.xp} XP. Try to keep up.`;
+      }
+    }
     setSending(true);
     setError(null);
     const result = await postChatMessageAction(body);
@@ -324,10 +391,11 @@ export function ChatRoomClient({
           const mentionsMe = mentionsSlug(m.body, currentSlug);
           const canDelete = isAdmin || m.employeeSlug === currentSlug;
           const isRogue = m.authorIsRogue;
+          const authorEntry = rosterBySlug.get(m.employeeSlug);
           return (
             <div
               key={m.id}
-              className={`group relative flex gap-3 overflow-hidden rounded-xl p-2 -m-2 ${
+              className={`group relative flex gap-3 rounded-xl p-2 -m-2 ${
                 isRogue
                   ? "rogue-flicker border border-brand-red/40 bg-brand-red/[0.07] shadow-[0_0_18px_-4px_var(--brand-red)]"
                   : mentionsMe
@@ -335,19 +403,36 @@ export function ChatRoomClient({
                     : ""
               }`}
             >
-              {isRogue && <div className="process420-watermark text-[2.2rem] opacity-[0.08]">PROCESS_420</div>}
+              {isRogue && (
+                <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
+                  <div className="process420-watermark text-[2.2rem] opacity-[0.08]">PROCESS_420</div>
+                </div>
+              )}
               <Avatar slug={m.employeeSlug} name={m.employeeName} isRogue={isRogue} />
               <div className="relative min-w-0 flex-1">
                 <div className="mb-0.5 flex items-baseline gap-2">
-                  <Link
-                    href={`/profile/${encodeURIComponent(m.employeeSlug)}`}
-                    className={`text-sm font-semibold hover:text-brand-yellow ${
-                      isRogue ? "glitch-text text-brand-red" : "text-brand-sand"
+                  <AgentLink
+                    slug={m.employeeSlug}
+                    rosterBySlug={rosterBySlug}
+                    className={`flex items-center gap-1 text-sm font-semibold hover:text-brand-yellow ${
+                      isRogue ? "glitch-text text-brand-red" : ""
                     }`}
                   >
-                    {isRogue && <Icon name="skull" className="mr-1 inline h-3.5 w-3.5 -translate-y-px" />}
-                    {m.employeeName}
-                  </Link>
+                    {isRogue ? (
+                      <Icon name="skull" className="h-3.5 w-3.5" />
+                    ) : (
+                      authorEntry && (
+                        <Icon
+                          name={authorEntry.iconOverride ?? authorEntry.tierIcon}
+                          className="h-3.5 w-3.5"
+                          style={{ color: authorEntry.outlineColor ?? authorEntry.tierColor }}
+                        />
+                      )
+                    )}
+                    <span style={!isRogue && authorEntry ? { color: authorEntry.outlineColor ?? authorEntry.tierColor } : undefined}>
+                      {m.employeeName}
+                    </span>
+                  </AgentLink>
                   {isRogue && (
                     <span className="font-terminal text-[9px] uppercase tracking-widest text-brand-red/70">
                       ⚠ untraceable
@@ -363,7 +448,7 @@ export function ChatRoomClient({
                     </button>
                   )}
                 </div>
-                <MessageBody body={m.body} slugToName={slugToName} />
+                <MessageBody body={m.body} slugToName={slugToName} rosterBySlug={rosterBySlug} />
                 <Reactions messageId={m.id} reactions={m.reactions} onToggle={handleToggleReaction} />
               </div>
             </div>
