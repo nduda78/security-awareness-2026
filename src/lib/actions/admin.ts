@@ -12,6 +12,7 @@ import { parseEasternInputValue } from "@/lib/easternTime";
 import { handlePossibleTierUp, getCurrentXp } from "@/lib/tierUpEvents";
 import { fireChallengeCompletedWebhook } from "@/lib/webhooks";
 import { setClearanceWebhookConfig } from "@/lib/settings";
+import { announceJustOpenedChallenges } from "@/lib/challengeDrops";
 
 async function requireAdmin() {
   if (!(await isAdminSession())) {
@@ -232,12 +233,17 @@ export async function upsertChallengeAction(formData: FormData) {
     await prisma.challenge.update({ where: { id }, data: data as never });
   } else {
     await prisma.challenge.create({ data: data as never });
-    // Deliberately does NOT announce here even for an immediately-open
-    // challenge - announceJustOpenedChallenges() (called from the Chat
-    // Room and Challenges list pages) is the single mechanism for that,
-    // so a challenge scheduled with a future opensAt never leaks its
-    // title/link into chat before it's actually supposed to appear.
   }
+
+  // Immediately checks whether the challenge just saved (or any other
+  // pending one) is now eligible to announce/webhook - covers the common
+  // case of an immediately-open new challenge (no Opens At) right away,
+  // rather than depending on someone happening to load /challenges or
+  // /chat afterward for it to ever fire. A challenge scheduled with a
+  // future Opens At still won't qualify yet here, so the surprise is
+  // still preserved - this call is a no-op for those until their real
+  // open time, same as every other caller of this function.
+  await announceJustOpenedChallenges();
 
   revalidatePath("/admin/challenges");
   revalidatePath("/challenges");
