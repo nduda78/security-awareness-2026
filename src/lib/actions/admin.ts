@@ -311,6 +311,28 @@ export async function toggleRogueAction(formData: FormData) {
   redirect("/admin/employees?saved=1");
 }
 
+/**
+ * Clears an employee's PIN (sets pinHash back to null) rather than setting
+ * a new one directly - the admin never learns or transmits the employee's
+ * new PIN this way, which is both simpler and a bit safer than a
+ * "set-a-specific-PIN" flow. The employee just uses the New Agent tab with
+ * their name once more to pick a fresh PIN and reclaim their profile -
+ * exactly the same "claim a legacy account" path already used for the
+ * original email->PIN migration, so it's already tested and understood by
+ * the app (see registerAction in actions/identify.ts).
+ */
+export async function resetPinAction(formData: FormData) {
+  await requireAdmin();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const employee = await prisma.employee.findUnique({ where: { email } });
+  if (!employee) redirect(`/admin/employees?error=${encodeURIComponent("Unknown employee")}`);
+
+  await prisma.employee.update({ where: { email }, data: { pinHash: null } });
+  await logAdminAudit("PIN_RESET", `${employee!.displayName} (${email}): PIN reset - must re-claim via New Agent tab`);
+  revalidatePath("/admin/employees");
+  redirect("/admin/employees?saved=1");
+}
+
 export async function grantManualXpAction(formData: FormData) {
   await requireAdmin();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();

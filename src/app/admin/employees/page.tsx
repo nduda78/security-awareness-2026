@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { isAdminSession } from "@/lib/session";
 import { buildAgentRoster } from "@/lib/leaderboard";
+import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
 import { toggleRogueAction, grantManualXpAction } from "@/lib/actions/admin";
+import { ResetPinButton } from "@/components/ResetPinButton";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +13,13 @@ export default async function AdminEmployeesPage() {
 
   const roster = await buildAgentRoster();
   roster.sort((a, b) => b.xp - a.xp);
+
+  const pinStatusByEmail = new Map(
+    (await prisma.employee.findMany({ select: { email: true, pinHash: true } })).map((e) => [
+      e.email,
+      e.pinHash !== null,
+    ])
+  );
 
   return (
     <div className="fade-in-up">
@@ -27,6 +36,7 @@ export default async function AdminEmployeesPage() {
               <th className="px-3 py-3">Tier</th>
               <th className="px-3 py-3">ROGUE override</th>
               <th className="px-3 py-3">Manual XP grant</th>
+              <th className="px-3 py-3">PIN</th>
             </tr>
           </thead>
           <tbody>
@@ -54,6 +64,13 @@ export default async function AdminEmployeesPage() {
                     <input name="reason" placeholder="reason" className="input-modern w-24 !px-2 !py-1 !text-xs" />
                     <button className="btn-primary !px-2 !py-1 !text-[10px]">Grant</button>
                   </form>
+                </td>
+                <td className="px-3 py-2.5">
+                  {pinStatusByEmail.get(r.email) ? (
+                    <ResetPinButton email={r.email} displayName={r.displayName} />
+                  ) : (
+                    <span className="font-terminal text-[10px] uppercase text-brand-sand/35">Unclaimed</span>
+                  )}
                 </td>
               </tr>
             ))}
