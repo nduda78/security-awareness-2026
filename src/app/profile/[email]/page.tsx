@@ -187,7 +187,7 @@ export default async function ProfilePage({
         <div>
           <h3 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
             <Icon name="trophy" className="h-4 w-4" />
-            Badge Flare
+            Customize Agent Badge
           </h3>
           <SelfFlareEditor
             baseCard={clientCard}
