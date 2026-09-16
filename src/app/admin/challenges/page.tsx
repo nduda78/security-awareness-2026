@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { isAdminSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
@@ -7,7 +8,9 @@ import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
 import { ChallengeFileField } from "@/components/ChallengeFileField";
 import { RewardModeProvider, RewardModeSelect, UnlockOnly } from "@/components/RewardModeContext";
-import { TIER_BY_KEY } from "@/lib/tiers";
+import { TIER_BY_KEY, TIERS } from "@/lib/tiers";
+import { Icon } from "@/components/Icon";
+import type { IconKey } from "@/lib/flare";
 
 export const dynamic = "force-dynamic";
 
@@ -395,6 +398,81 @@ function ChallengeForm({
   );
 }
 
+// One classification area (mirrors the public Challenges page's section
+// headers: icon + color + label + a divider + a count) wrapped in its own
+// <details> so the whole area can be collapsed independently of the
+// individual challenge rows inside it.
+function ChallengeGroup({
+  icon,
+  color,
+  label,
+  count,
+  defaultOpen = true,
+  children,
+}: {
+  icon: IconKey;
+  color: string;
+  label: string;
+  count: number;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details className="group" open={defaultOpen}>
+      <summary className="mb-3 flex cursor-pointer items-center gap-2.5 py-1">
+        <Icon name={icon} className="h-4 w-4" style={{ color }} />
+        <h2 className="font-terminal text-sm font-semibold uppercase tracking-widest" style={{ color }}>
+          {label}
+        </h2>
+        <div className="h-px flex-1 bg-brand-sand/10" />
+        <span className="font-terminal text-[11px] text-brand-sand/35">{count}</span>
+      </summary>
+      <div className="space-y-3 pb-2">{children}</div>
+    </details>
+  );
+}
+
+function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof ChallengeForm>[0]["challenge"]>> }) {
+  return (
+    <details className="surface-card p-4">
+      <summary className="flex cursor-pointer items-center justify-between font-medium">
+        <span>
+          {c.title}{" "}
+          {c.rewardMode === "UNLOCK" ? (
+            <span className="font-terminal text-xs text-brand-cyan">
+              unlocks: {unlockTags(c).join(", ") || "nothing set yet"}
+            </span>
+          ) : (
+            <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>
+          )}{" "}
+          <span
+            className="font-terminal text-xs"
+            style={{ color: TIER_BY_KEY[c.minClearance as keyof typeof TIER_BY_KEY]?.color }}
+          >
+            • {TIER_BY_KEY[c.minClearance as keyof typeof TIER_BY_KEY]?.shortLabel ?? c.minClearance}
+            {c.minClearance !== "ROGUE" ? "+" : ""}
+          </span>{" "}
+          {rewardTags(c).map((tag, i) => (
+            <span key={i} className="font-terminal text-xs text-brand-purple">
+              {" "}
+              • {tag}
+            </span>
+          ))}{" "}
+          {!c.isActive && <span className="font-terminal text-xs text-brand-sand/40">(inactive)</span>}
+        </span>
+        <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>
+      </summary>
+      <ChallengeForm challenge={c} />
+      <form action={deleteChallengeAction} className="mt-3">
+        <input type="hidden" name="id" value={c.id} />
+        <button className="font-terminal text-xs uppercase text-brand-red hover:underline">
+          Delete challenge
+        </button>
+      </form>
+    </details>
+  );
+}
+
 export default async function AdminChallengesPage() {
   if (!(await isAdminSession())) redirect("/admin");
 
@@ -437,6 +515,23 @@ export default async function AdminChallengesPage() {
     },
   });
 
+  // Manual Bonus challenges (see grantManualXpAction) are synthetic,
+  // per-employee, inactive audit records - not real missions anyone
+  // browses or attempts - so they get pulled out of the normal clearance
+  // grouping entirely into their own always-there-but-collapsed area,
+  // rather than cluttering up whichever tier they happened to default to.
+  const isManualBonus = (c: (typeof challenges)[number]) => c.slug.startsWith("manual-bonus-");
+  const manualBonusChallenges = challenges.filter(isManualBonus);
+  const regularChallenges = challenges.filter((c) => !isManualBonus(c));
+
+  const infoChallenges = regularChallenges.filter((c) => c.rewardMode === "UNLOCK");
+  const xpChallenges = regularChallenges.filter((c) => c.rewardMode !== "UNLOCK");
+
+  const tierGroups = [...TIERS]
+    .sort((a, b) => a.order - b.order)
+    .map((tier) => ({ tier, members: xpChallenges.filter((c) => c.minClearance === tier.key) }))
+    .filter((g) => g.members.length > 0);
+
   return (
     <div className="fade-in-up">
       <AdminNav />
@@ -449,45 +544,42 @@ export default async function AdminChallengesPage() {
         <ChallengeForm />
       </details>
 
-      <div className="space-y-3">
-        {challenges.map((c) => (
-            <details key={c.id} className="surface-card p-4">
-            <summary className="flex cursor-pointer items-center justify-between font-medium">
-              <span>
-                {c.title}{" "}
-                {c.rewardMode === "UNLOCK" ? (
-                  <span className="font-terminal text-xs text-brand-cyan">
-                    unlocks: {unlockTags(c).join(", ") || "nothing set yet"}
-                  </span>
-                ) : (
-                  <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>
-                )}{" "}
-                <span
-                  className="font-terminal text-xs"
-                  style={{ color: TIER_BY_KEY[c.minClearance as keyof typeof TIER_BY_KEY]?.color }}
-                >
-                  • {TIER_BY_KEY[c.minClearance as keyof typeof TIER_BY_KEY]?.shortLabel ?? c.minClearance}
-                  {c.minClearance !== "ROGUE" ? "+" : ""}
-                </span>{" "}
-                {rewardTags(c).map((tag, i) => (
-                  <span key={i} className="font-terminal text-xs text-brand-purple">
-                    {" "}
-                    • {tag}
-                  </span>
-                ))}{" "}
-                {!c.isActive && <span className="font-terminal text-xs text-brand-sand/40">(inactive)</span>}
-              </span>
-              <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>
-            </summary>
-            <ChallengeForm challenge={c} />
-            <form action={deleteChallengeAction} className="mt-3">
-              <input type="hidden" name="id" value={c.id} />
-              <button className="font-terminal text-xs uppercase text-brand-red hover:underline">
-                Delete challenge
-              </button>
-            </form>
-          </details>
+      <div className="space-y-8">
+        {tierGroups.map(({ tier, members }) => (
+          <ChallengeGroup
+            key={tier.key}
+            icon={tier.icon as IconKey}
+            color={tier.color}
+            label={`${tier.label} Clearance`}
+            count={members.length}
+          >
+            {members.map((c) => (
+              <ChallengeRow key={c.id} c={c} />
+            ))}
+          </ChallengeGroup>
         ))}
+
+        {infoChallenges.length > 0 && (
+          <ChallengeGroup icon="file" color="var(--brand-cyan)" label="Info" count={infoChallenges.length}>
+            {infoChallenges.map((c) => (
+              <ChallengeRow key={c.id} c={c} />
+            ))}
+          </ChallengeGroup>
+        )}
+
+        {manualBonusChallenges.length > 0 && (
+          <ChallengeGroup
+            icon="crown"
+            color="var(--brand-purple)"
+            label="Manual Bonus"
+            count={manualBonusChallenges.length}
+            defaultOpen={false}
+          >
+            {manualBonusChallenges.map((c) => (
+              <ChallengeRow key={c.id} c={c} />
+            ))}
+          </ChallengeGroup>
+        )}
       </div>
     </div>
   );
