@@ -209,6 +209,17 @@ export async function upsertChallengeAction(formData: FormData) {
   }
 
   if (id) {
+    // If Opens At is being pushed out (or added where there wasn't one),
+    // this challenge's chat announcement - if it already fired - should
+    // fire again for the new open time, exactly like a fresh challenge:
+    // otherwise dropAnnouncedAt from the FIRST time it opened would
+    // permanently block announceJustOpenedChallenges() from ever posting
+    // about the new one. Only resets on an actual change, so touching
+    // unrelated fields on an already-open challenge doesn't re-announce.
+    const existing = await prisma.challenge.findUnique({ where: { id }, select: { opensAt: true } });
+    if (existing && existing.opensAt?.getTime() !== (data.opensAt as Date | null)?.getTime()) {
+      (data as Record<string, unknown>).dropAnnouncedAt = null;
+    }
     // data's exact shape is built dynamically (asset fields only present
     // when actually changed), so it doesn't line up with Prisma's precise
     // per-field input types — the runtime keys are all real Challenge
