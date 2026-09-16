@@ -5,7 +5,7 @@ import { selfUpdateFlareAction } from "@/lib/actions/selfFlare";
 import { applyFlareToCard, type ClientAgentCard } from "@/lib/client-types";
 import type { UnlockedFlareOptions } from "@/lib/rewards";
 import { ColorField } from "./ColorField";
-import { BadgeCard } from "./BadgeCard";
+import { BadgeCard, CardVisual, deriveBadgeVisualProps } from "./BadgeCard";
 
 const FIELD_LABELS: Record<string, string> = {
   backgroundEffect: "Background effect",
@@ -81,6 +81,8 @@ export function SelfFlareEditor({
     ]
   );
 
+  const { outline, icon, isRogue } = deriveBadgeVisualProps(previewCard);
+
   const totalUnlocked =
     unlocked.backgroundEffect.length +
     unlocked.borderStyle.length +
@@ -93,11 +95,22 @@ export function SelfFlareEditor({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
       <div className="lg:sticky lg:top-24 lg:self-start">
-        <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Live preview</div>
+        <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Live preview — front</div>
         <BadgeCard card={previewCard} />
-        <p className="mt-3 text-center text-xs text-brand-sand/35">
+        <p className="mb-6 mt-3 text-center text-xs text-brand-sand/35">
           Updates as you pick below — nothing is saved until you click Save.
         </p>
+
+        <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Back</div>
+        <CardVisual
+          card={previewCard}
+          outline={outline}
+          icon={icon}
+          isRogue={isRogue}
+          flipped
+          onClick={() => {}}
+          tiltEnabled={false}
+        />
       </div>
 
       <form action={selfUpdateFlareAction} className="surface-card space-y-4 p-5">
