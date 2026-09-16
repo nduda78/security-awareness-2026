@@ -444,7 +444,15 @@ function BadgeSpotlight({
   );
 }
 
-export function BadgeCard({ card, dimmed = false }: { card: ClientAgentCard; dimmed?: boolean }) {
+export function BadgeCard({
+  card,
+  dimmed = false,
+  showProfileLink = true,
+}: {
+  card: ClientAgentCard;
+  dimmed?: boolean;
+  showProfileLink?: boolean;
+}) {
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const { isRogue, outline, icon } = deriveBadgeVisualProps(card);
 
@@ -469,13 +477,15 @@ export function BadgeCard({ card, dimmed = false }: { card: ClientAgentCard; dim
         onClick={() => setSpotlightOpen(true)}
       />
 
-      <Link
-        href={`/profile/${encodeURIComponent(card.email)}`}
-        onClick={(e) => e.stopPropagation()}
-        className="mt-2 block font-terminal text-[10px] uppercase tracking-wide text-brand-sand/35 hover:text-brand-sand"
-      >
-        View Agents Profile →
-      </Link>
+      {showProfileLink && (
+        <Link
+          href={`/profile/${encodeURIComponent(card.email)}`}
+          onClick={(e) => e.stopPropagation()}
+          className="mt-2 block font-terminal text-[10px] uppercase tracking-wide text-brand-sand/35 hover:text-brand-sand"
+        >
+          View Agents Profile →
+        </Link>
+      )}
 
       {spotlightOpen && (
         <BadgeSpotlight

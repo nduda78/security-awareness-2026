@@ -73,6 +73,36 @@ export default async function ProfilePage({
             <Stat label="Challenges Done" value={String(card.challengesCompleted)} accent="var(--brand-light-green)" />
           </div>
 
+          <div className="surface-card mt-4 p-5">
+            <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
+              Progress
+            </h3>
+            {card.progress.next ? (
+              <>
+                <div className="mb-2 flex justify-between font-terminal text-xs uppercase tracking-wide">
+                  <span style={{ color: card.tier.color }}>{card.tier.label}</span>
+                  <span className="text-brand-sand/50">{card.progress.next.label}</span>
+                </div>
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/40">
+                  <div
+                    className="h-full rounded-full transition-all duration-700 ease-out"
+                    style={{
+                      width: `${card.progress.progressPct}%`,
+                      background: `linear-gradient(90deg, ${card.tier.color}, ${card.progress.next.color})`,
+                    }}
+                  />
+                </div>
+                <div className="mt-2 text-sm text-brand-sand/55">
+                  {card.progress.xpToNext} XP to {card.progress.next.label}
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-brand-sand/55">
+                {card.tier.key === "ROGUE" ? "Off the grid. No further progress tracked." : "Maximum clearance reached."}
+              </div>
+            )}
+          </div>
+
           {isOwnProfile && (
             <div className="surface-card mt-4 p-4">
               <h3 className="mb-3 flex items-center gap-2 font-terminal text-xs uppercase tracking-wide text-brand-sand/50">
@@ -132,36 +162,6 @@ export default async function ProfilePage({
       )}
 
       <div className="space-y-6">
-        <div className="surface-card p-5">
-          <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">
-            Progress
-          </h3>
-          {card.progress.next ? (
-            <>
-              <div className="mb-2 flex justify-between font-terminal text-xs uppercase tracking-wide">
-                <span style={{ color: card.tier.color }}>{card.tier.label}</span>
-                <span className="text-brand-sand/50">{card.progress.next.label}</span>
-              </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/40">
-                <div
-                  className="h-full rounded-full transition-all duration-700 ease-out"
-                  style={{
-                    width: `${card.progress.progressPct}%`,
-                    background: `linear-gradient(90deg, ${card.tier.color}, ${card.progress.next.color})`,
-                  }}
-                />
-              </div>
-              <div className="mt-2 text-sm text-brand-sand/55">
-                {card.progress.xpToNext} XP to {card.progress.next.label}
-              </div>
-            </>
-          ) : (
-            <div className="text-sm text-brand-sand/55">
-              {card.tier.key === "ROGUE" ? "Off the grid. No further progress tracked." : "Maximum clearance reached."}
-            </div>
-          )}
-        </div>
-
         {card.flare?.achievements.length ? (
           <div>
             <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-brand-sand/70">

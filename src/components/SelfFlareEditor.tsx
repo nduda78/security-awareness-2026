@@ -96,7 +96,7 @@ export function SelfFlareEditor({
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
       <div className="lg:sticky lg:top-24 lg:self-start">
         <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Live preview — front</div>
-        <BadgeCard card={previewCard} />
+        <BadgeCard card={previewCard} showProfileLink={false} />
 
         <div className="mb-2 mt-6 font-terminal text-xs uppercase text-brand-sand/45">Back</div>
         <CardVisual
