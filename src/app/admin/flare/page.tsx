@@ -7,6 +7,7 @@ import { resolveUniqueCodenames } from "@/lib/identity";
 import { toClientCard } from "@/lib/client-types";
 import { FlareEditor } from "@/components/FlareEditor";
 import { parseAchievements } from "@/lib/flare";
+import { toggleHiddenAction } from "@/lib/actions/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -70,11 +71,37 @@ export default async function AdminFlarePage({
             >
               {e.displayName}
               {e.flare && <span className="ml-2 text-brand-yellow">●</span>}
+              {e.isHidden && (
+                <span className="ml-2 font-terminal text-[9px] uppercase tracking-wide text-brand-cyan/70">hidden</span>
+              )}
             </a>
           ))}
         </div>
 
         <div>
+          {selected && (
+            <form
+              action={toggleHiddenAction}
+              className="surface-card mb-4 flex items-center justify-between gap-3 p-3"
+            >
+              <div>
+                <p className="font-terminal text-xs uppercase tracking-wide text-brand-cyan">
+                  Hide from Leaderboard
+                </p>
+                <p className="mt-0.5 text-[11px] text-brand-sand/45">
+                  Handy for building a “prop” agent (custom flare, fake stats) you want to reveal on your own
+                  schedule — hidden agents don&apos;t count toward anyone else&apos;s rank either.
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <input type="hidden" name="email" value={selected.email} />
+                <input type="checkbox" name="hidden" defaultChecked={selected.isHidden} className="accent-brand-cyan" />
+                <button className="btn-secondary !border-brand-cyan/30 !px-2 !py-0.5 !text-[10px] !text-brand-cyan">
+                  Save
+                </button>
+              </div>
+            </form>
+          )}
           {!selected || !editorProps ? (
             <p className="text-sm text-brand-sand/50">Pick an agent on the left to edit their flare.</p>
           ) : (

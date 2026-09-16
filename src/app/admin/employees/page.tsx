@@ -3,7 +3,7 @@ import { isAdminSession } from "@/lib/session";
 import { buildAgentRoster } from "@/lib/leaderboard";
 import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
-import { toggleRogueAction, grantManualXpAction, toggleAdminAction } from "@/lib/actions/admin";
+import { toggleRogueAction, grantManualXpAction, toggleAdminAction, toggleHiddenAction } from "@/lib/actions/admin";
 import { ResetPinButton } from "@/components/ResetPinButton";
 import { DeleteEmployeeButton } from "@/components/DeleteEmployeeButton";
 import { getAgentIdentity } from "@/lib/session";
@@ -23,6 +23,7 @@ export default async function AdminEmployeesPage({
   const roster = await buildAgentRoster();
   roster.sort((a, b) => b.xp - a.xp);
   const currentIdentity = await getAgentIdentity();
+  const hiddenByEmail = new Map((await prisma.employee.findMany({ select: { email: true, isHidden: true } })).map((e) => [e.email, e.isHidden]));
 
   const employeeFlags = new Map(
     (await prisma.employee.findMany({ select: { email: true, pinHash: true, isAdmin: true } })).map((e) => [
@@ -47,6 +48,7 @@ export default async function AdminEmployeesPage({
               <th className="px-3 py-3">XP</th>
               <th className="px-3 py-3">Tier</th>
               <th className="px-3 py-3">ROGUE override</th>
+              <th className="px-3 py-3">Hide from Leaderboard</th>
               <th className="px-3 py-3">Manual XP grant</th>
               <th className="px-3 py-3">PIN</th>
               <th className="px-3 py-3">Admin</th>
@@ -67,6 +69,20 @@ export default async function AdminEmployeesPage({
                     <input type="hidden" name="email" value={r.email} />
                     <input type="checkbox" name="rogue" defaultChecked={r.rogueOverride} className="accent-brand-red" />
                     <button className="btn-secondary !border-brand-red/30 !px-2 !py-0.5 !text-[10px] !text-brand-red">
+                      Save
+                    </button>
+                  </form>
+                </td>
+                <td className="px-3 py-2.5">
+                  <form action={toggleHiddenAction} className="flex items-center gap-1.5">
+                    <input type="hidden" name="email" value={r.email} />
+                    <input
+                      type="checkbox"
+                      name="hidden"
+                      defaultChecked={hiddenByEmail.get(r.email) ?? false}
+                      className="accent-brand-cyan"
+                    />
+                    <button className="btn-secondary !border-brand-cyan/30 !px-2 !py-0.5 !text-[10px] !text-brand-cyan">
                       Save
                     </button>
                   </form>

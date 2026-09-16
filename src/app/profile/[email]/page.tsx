@@ -30,12 +30,18 @@ export default async function ProfilePage({
   const email = decodeURIComponent(emailParam).toLowerCase();
   const { photoError, photoUploaded, photoRemoved, flareSaved, flareRejected } = await searchParams;
 
-  const roster = await buildAgentRoster();
-  const card = roster.find((c) => c.email === email);
+  const fullRoster = await buildAgentRoster();
+  const card = fullRoster.find((c) => c.email === email);
   if (!card) notFound();
 
   const identity = await getAgentIdentity();
   const isOwnProfile = identity?.email === email;
+
+  // Same rule as the public Leaderboard: hidden agents (Employee.isHidden)
+  // don't count toward anyone else's rank. Keep the viewed card itself in
+  // the pool even if it's hidden, so an admin previewing a hidden/prop
+  // agent's own profile still gets a sensible rank rather than "not found".
+  const roster = fullRoster.filter((c) => !c.isHidden || c.email === email);
 
   const { rank: overall, total: overallTotal } = overallRank(roster, email);
   const { rank: tierRank, total: tierTotal } = rankWithinTier(roster, card);

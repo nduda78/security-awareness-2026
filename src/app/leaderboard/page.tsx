@@ -6,7 +6,13 @@ import { isCompromisedModeEnabled } from "@/lib/settings";
 export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
-  const roster = await buildAgentRoster();
+  const fullRoster = await buildAgentRoster();
+  // Hidden agents (see Employee.isHidden) are completely excluded here -
+  // not just visually skipped - so a prop/placeholder badge with
+  // fabricated XP can never skew anyone else's real rank numbers. They're
+  // still fully manageable in /admin and still reachable by direct
+  // profile URL; this only affects the public Leaderboard.
+  const roster = fullRoster.filter((c) => !c.isHidden);
   const sections = groupByTier(roster);
   const compromised = await isCompromisedModeEnabled();
 

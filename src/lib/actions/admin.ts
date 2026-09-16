@@ -313,6 +313,31 @@ export async function toggleRogueAction(formData: FormData) {
   redirect("/admin/employees?saved=1");
 }
 
+/**
+ * Hides/unhides an agent from the public Leaderboard (and everyone else's
+ * rank calculations - see buildAgentRoster()/leaderboard.ts) without
+ * touching anything else about them. Meant for a "prop" agent an admin
+ * builds by hand (custom flare, fabricated stats, etc.) and wants to
+ * reveal on a schedule of their own choosing, or just take back down
+ * without deleting the whole account and losing the badge setup.
+ */
+export async function toggleHiddenAction(formData: FormData) {
+  await requireAdmin();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const hidden = formData.get("hidden") === "on";
+  const employee = await prisma.employee.findUnique({ where: { email } });
+  await prisma.employee.update({ where: { email }, data: { isHidden: hidden } });
+  await logAdminAudit(
+    "BADGE_VISIBILITY",
+    `${employee?.displayName ?? email} (${email}): ${hidden ? "hidden from Leaderboard" : "unhidden - visible on Leaderboard again"}`
+  );
+  revalidatePath("/admin/employees");
+  revalidatePath("/admin/flare");
+  revalidatePath("/leaderboard");
+  revalidatePath("/profile");
+  redirect("/admin/employees?saved=1");
+}
+
 export async function toggleCompromisedModeAction(formData: FormData) {
   await requireAdmin();
   const enabled = formData.get("compromisedMode") === "on";

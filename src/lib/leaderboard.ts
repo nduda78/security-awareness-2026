@@ -17,6 +17,7 @@ export interface AgentCard {
   displayName: string; // real name, for search/sort — never affected by nameSuffix
   renderedName: string; // displayName + nameSuffix (if any)
   rogueOverride: boolean;
+  isHidden: boolean;
   xp: number;
   tier: (typeof TIERS)[number];
   progress: ReturnType<typeof computeProgress>;
@@ -95,6 +96,7 @@ export async function buildAgentRoster(): Promise<AgentCard[]> {
       displayName,
       renderedName,
       rogueOverride: e.rogueOverride,
+      isHidden: e.isHidden,
       xp,
       tier,
       progress,

@@ -45,6 +45,14 @@ model Employee {
   /// isAdminSession() in src/lib/session.ts. "nick-duda" is a permanent
   /// admin, hardcoded and un-removable in toggleAdminAction (see admin.ts).
   isAdmin        Boolean   @default(false)
+  /// When true, this agent is completely omitted from the public
+  /// Leaderboard (and excluded from everyone else's rank calculations,
+  /// so a prop/placeholder agent with fabricated XP can't skew real
+  /// agents' ranks) - added so admins can build a "prop" agent badge
+  /// (custom flare, fake stats, etc.) and control exactly when it goes
+  /// live. Still fully visible/editable everywhere in /admin, and still
+  /// reachable by direct profile URL if you know the slug.
+  isHidden       Boolean   @default(false)
   createdAt      DateTime  @default(now())
   photo          Bytes?
   photoMimeType  String?
