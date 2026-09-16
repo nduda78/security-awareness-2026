@@ -557,7 +557,7 @@ export function ChatRoomClient({
             onClick={(e) => updateMentionState(text, e.currentTarget.selectionStart ?? text.length)}
             rows={2}
             maxLength={CHAT_MAX_LENGTH}
-            placeholder="Say something... type @ to mention someone. Enter to send, Shift+Enter for a new line."
+            placeholder="Say something... type @ to mention someone, /flex to brag about your clearance. Enter to send, Shift+Enter for a new line."
             className="input-modern w-full flex-1 resize-none"
           />
           <button
