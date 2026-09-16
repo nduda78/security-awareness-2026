@@ -255,6 +255,43 @@ export async function reviewSubmissionAction(formData: FormData) {
   redirect("/admin/submissions?reviewed=1");
 }
 
+/**
+ * Deletes a single submission outright - the fully general "let this
+ * person retake this specific challenge" tool (see /admin/answers). XP is
+ * never stored anywhere except as the sum of CORRECT submissions (see
+ * buildAgentRoster in leaderboard.ts), so deleting the row is all it takes
+ * to claw back whatever XP it awarded - there's no separate ledger entry
+ * to also clean up. Works on any status (CORRECT/INCORRECT/PENDING_REVIEW),
+ * not just completed ones, since the same tool doubles as a way to clear a
+ * stuck test submission while iterating on a new question.
+ */
+export async function resetSubmissionAction(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+
+  const submission = await prisma.submission.findUnique({
+    where: { id },
+    include: { employee: true, challenge: true },
+  });
+  if (!submission) redirect("/admin/answers?error=" + encodeURIComponent("That submission no longer exists."));
+
+  await prisma.submission.delete({ where: { id } });
+
+  await logAdminAudit(
+    "SUBMISSION_RESET",
+    `${submission!.employee.displayName} (${submission!.employee.email}): reset "${submission!.challenge.title}" — was ${submission!.status}${
+      submission!.xpAwarded ? `, -${submission!.xpAwarded} XP` : ""
+    }`
+  );
+
+  revalidatePath("/admin/answers");
+  revalidatePath("/admin/submissions");
+  revalidatePath("/leaderboard");
+  revalidatePath("/profile");
+  revalidatePath("/challenges");
+  redirect("/admin/answers?saved=1");
+}
+
 export async function upsertFlareAction(formData: FormData) {
   await requireAdmin();
 

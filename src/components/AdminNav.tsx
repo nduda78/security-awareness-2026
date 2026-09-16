@@ -3,6 +3,7 @@ import { Icon } from "./Icon";
 
 const LINKS = [
   { href: "/admin/challenges", label: "Challenges", icon: "lightning" },
+  { href: "/admin/answers", label: "Answers", icon: "file" },
   { href: "/admin/submissions", label: "Audit Log", icon: "shield" },
   { href: "/admin/flare", label: "Badge Flare", icon: "trophy" },
   { href: "/admin/employees", label: "Agents", icon: "crown" },
