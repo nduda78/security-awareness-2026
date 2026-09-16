@@ -8,7 +8,6 @@ import { encodeAdminCookie, ADMIN_COOKIE_NAME, isAdminSession, getAgentIdentity 
 import { IMAGE_TYPES, IMAGE_MAX_BYTES, AUDIO_TYPES, AUDIO_MAX_BYTES, VIDEO_TYPES, VIDEO_MAX_BYTES } from "@/lib/assetUpload";
 import { serializeAchievements } from "@/lib/flare";
 import { setCompromisedMode } from "@/lib/settings";
-import { postSystemMessage } from "@/lib/actions/chat";
 import { parseEasternInputValue } from "@/lib/easternTime";
 
 async function requireAdmin() {
@@ -217,13 +216,11 @@ export async function upsertChallengeAction(formData: FormData) {
     await prisma.challenge.update({ where: { id }, data: data as never });
   } else {
     await prisma.challenge.create({ data: data as never });
-    // Announce brand-new (not edited) challenges in the Chat Room activity
-    // feed - skipped for Manual Bonus records (synthetic per-employee audit
-    // entries, not real missions) and for challenges saved inactive/draft.
-    if (isActive && !slug.startsWith("manual-bonus-")) {
-      const xpNote = rewardMode === "UNLOCK" ? "unlocks a reward" : `+${xpValue} XP`;
-      await postSystemMessage(`📡 New challenge dropped: [[${title}]](/challenges/${slug}) (${xpNote})`);
-    }
+    // Deliberately does NOT announce here even for an immediately-open
+    // challenge - announceJustOpenedChallenges() (called from the Chat
+    // Room and Challenges list pages) is the single mechanism for that,
+    // so a challenge scheduled with a future opensAt never leaks its
+    // title/link into chat before it's actually supposed to appear.
   }
 
   revalidatePath("/admin/challenges");

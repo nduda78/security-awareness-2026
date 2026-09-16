@@ -174,6 +174,14 @@ model Challenge {
   isActive      Boolean    @default(true)
   opensAt       DateTime?
   closesAt      DateTime?
+  /// Set the moment this challenge's "New challenge dropped" Chat Room
+  /// announcement actually posts (see announceJustOpenedChallenges in
+  /// lib/challengeDrops.ts) - null means not announced yet. Deliberately
+  /// NOT set at creation time even for an immediately-open challenge, so
+  /// one mechanism handles every case (immediate, opens-at-scheduled, or
+  /// isActive flipped on later) without ever announcing a scheduled
+  /// "surprise" challenge's title/link before its opens-at time arrives.
+  dropAnnouncedAt DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 

@@ -5,6 +5,7 @@ import { ChatRoomClient } from "@/components/ChatRoomClient";
 import { isCompromisedModeEnabled } from "@/lib/settings";
 import { buildReactionSummaries, getPresence, heartbeatAction } from "@/lib/actions/chat";
 import { buildAgentRoster } from "@/lib/leaderboard";
+import { announceJustOpenedChallenges } from "@/lib/challengeDrops";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function ChatRoomPage() {
   if (!identity) redirect("/identify?next=/chat");
 
   await heartbeatAction();
+  await announceJustOpenedChallenges();
 
   const [recent, agentRoster, isAdmin, compromised, presence] = await Promise.all([
     prisma.chatMessage.findMany({

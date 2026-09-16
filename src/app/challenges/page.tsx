@@ -4,12 +4,14 @@ import { getViewerClearanceInfo } from "@/lib/leaderboard";
 import { groupChallengesForViewer } from "@/lib/challengeSections";
 import { ChallengesBoard } from "@/components/ChallengesBoard";
 import type { ClientChallengeSection } from "@/lib/client-types";
+import { announceJustOpenedChallenges } from "@/lib/challengeDrops";
 
 export const dynamic = "force-dynamic";
 
 export default async function ChallengesPage() {
   const identity = await getAgentIdentity();
   const now = new Date();
+  await announceJustOpenedChallenges();
 
   const allChallenges = await prisma.challenge.findMany({
     // Scheduled-for-the-future challenges are a deliberate surprise - kept

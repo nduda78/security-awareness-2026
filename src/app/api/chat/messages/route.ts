@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
 import { buildReactionSummaries, getPresence, heartbeatAction } from "@/lib/actions/chat";
+import { announceJustOpenedChallenges } from "@/lib/challengeDrops";
 
 // Polled by ChatRoomClient.tsx every few seconds for anything newer than
 // the last message it already has - a deliberately simple "near real-time"
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
   // fewer round trip than a separate dedicated endpoint, since the client
   // is already hitting this route every 4s anyway.
   await heartbeatAction();
+  await announceJustOpenedChallenges();
 
   const [messages, recentForReactions, presence] = await Promise.all([
     prisma.chatMessage.findMany({
