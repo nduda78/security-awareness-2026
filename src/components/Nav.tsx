@@ -49,7 +49,7 @@ export async function Nav() {
           {isAdmin && (
             <Link
               href="/admin/challenges"
-              className="flex items-center gap-1.5 rounded-full px-3.5 py-2 font-terminal text-sm font-medium uppercase tracking-wide text-brand-purple/80 transition hover:bg-brand-purple/10 hover:text-brand-purple"
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-2 font-terminal text-sm font-medium uppercase tracking-wide text-brand-cyan transition hover:bg-brand-cyan/10"
             >
               <Icon name="lock" className="h-4 w-4 opacity-70" />
               Admin
