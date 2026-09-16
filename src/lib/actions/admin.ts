@@ -540,6 +540,10 @@ export async function grantManualXpAction(formData: FormData) {
   const employee = await prisma.employee.findUnique({ where: { email } });
   if (!employee) redirect(`/admin/employees?error=${encodeURIComponent("Unknown employee")}`);
 
+  // Captured before the grant below - this employee's live XP total here
+  // already excludes whatever this bonus is about to add.
+  const xpBefore = await getCurrentXp(employee!.id);
+
   // Every manual grant gets its own synthetic, uniquely-slugged "Manual
   // Bonus" challenge so it's auditable through the same submission ledger
   // used for real challenges (no separate untracked XP path).
@@ -568,6 +572,13 @@ export async function grantManualXpAction(formData: FormData) {
   });
 
   await logAdminAudit("MANUAL_XP_GRANT", `${employee!.displayName} (${employee!.email}): +${xp} XP — ${reason}`);
+
+  // Manual bonuses are excluded from the Chat Room's "new challenge
+  // dropped" feed and the per-challenge webhook (they're a synthetic
+  // audit record, not a real challenge with its own webhookUrl to fire),
+  // but a tier-up is a tier-up regardless of how the XP arrived - same
+  // chat announcement and same clearance webhook as any other path.
+  await handlePossibleTierUp(employee!, xpBefore, xp);
 
   revalidatePath("/admin/employees");
   revalidatePath("/leaderboard");
