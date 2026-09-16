@@ -15,7 +15,7 @@ export default async function ChatRoomPage() {
     prisma.chatMessage.findMany({
       orderBy: { createdAt: "desc" },
       take: 100,
-      include: { employee: { select: { email: true, displayName: true } } },
+      include: { employee: { select: { email: true, displayName: true, rogueOverride: true } } },
     }),
     prisma.employee.findMany({ select: { email: true, displayName: true }, orderBy: { displayName: "asc" } }),
     isAdminSession(),
@@ -32,6 +32,7 @@ export default async function ChatRoomPage() {
     employeeSlug: m.employee.email,
     employeeName: m.employee.displayName,
     reactions: reactionMap.get(m.id) ?? [],
+    authorIsRogue: m.employee.rogueOverride,
   }));
 
   const roster = employees.map((e) => ({ slug: e.email, displayName: e.displayName }));

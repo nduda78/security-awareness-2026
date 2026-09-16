@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Icon } from "./Icon";
 import {
   postChatMessageAction,
   deleteChatMessageAction,
@@ -88,11 +89,14 @@ function initials(name: string): string {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
 }
 
-function Avatar({ slug, name }: { slug: string; name: string }) {
+function Avatar({ slug, name, isRogue }: { slug: string; name: string; isRogue?: boolean }) {
   const [errored, setErrored] = useState(false);
+  const ring = isRogue ? "ring-2 ring-brand-red rogue-flicker" : "";
   if (errored) {
     return (
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-sand/10 font-terminal text-xs text-brand-sand/50">
+      <div
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-sand/10 font-terminal text-xs text-brand-sand/50 ${ring}`}
+      >
         {initials(name)}
       </div>
     );
@@ -103,7 +107,7 @@ function Avatar({ slug, name }: { slug: string; name: string }) {
       src={`/api/photo/${encodeURIComponent(slug)}`}
       alt=""
       onError={() => setErrored(true)}
-      className="h-9 w-9 shrink-0 rounded-full bg-brand-sand/10 object-cover"
+      className={`h-9 w-9 shrink-0 rounded-full bg-brand-sand/10 object-cover ${ring}`}
     />
   );
 }
@@ -319,22 +323,36 @@ export function ChatRoomClient({
         {messages.map((m) => {
           const mentionsMe = mentionsSlug(m.body, currentSlug);
           const canDelete = isAdmin || m.employeeSlug === currentSlug;
+          const isRogue = m.authorIsRogue;
           return (
             <div
               key={m.id}
-              className={`group flex gap-3 rounded-xl p-2 -m-2 ${
-                mentionsMe ? "bg-brand-cyan/10 ring-1 ring-brand-cyan/30" : ""
+              className={`group relative flex gap-3 overflow-hidden rounded-xl p-2 -m-2 ${
+                isRogue
+                  ? "rogue-flicker border border-brand-red/40 bg-brand-red/[0.07] shadow-[0_0_18px_-4px_var(--brand-red)]"
+                  : mentionsMe
+                    ? "bg-brand-cyan/10 ring-1 ring-brand-cyan/30"
+                    : ""
               }`}
             >
-              <Avatar slug={m.employeeSlug} name={m.employeeName} />
-              <div className="min-w-0 flex-1">
+              {isRogue && <div className="process420-watermark text-[2.2rem] opacity-[0.08]">PROCESS_420</div>}
+              <Avatar slug={m.employeeSlug} name={m.employeeName} isRogue={isRogue} />
+              <div className="relative min-w-0 flex-1">
                 <div className="mb-0.5 flex items-baseline gap-2">
                   <Link
                     href={`/profile/${encodeURIComponent(m.employeeSlug)}`}
-                    className="text-sm font-semibold text-brand-sand hover:text-brand-yellow"
+                    className={`text-sm font-semibold hover:text-brand-yellow ${
+                      isRogue ? "glitch-text text-brand-red" : "text-brand-sand"
+                    }`}
                   >
+                    {isRogue && <Icon name="skull" className="mr-1 inline h-3.5 w-3.5 -translate-y-px" />}
                     {m.employeeName}
                   </Link>
+                  {isRogue && (
+                    <span className="font-terminal text-[9px] uppercase tracking-widest text-brand-red/70">
+                      ⚠ untraceable
+                    </span>
+                  )}
                   <span className="font-terminal text-[10px] text-brand-sand/35">{formatTime(m.createdAt)}</span>
                   {canDelete && (
                     <button

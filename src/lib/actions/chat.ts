@@ -19,6 +19,11 @@ export interface PostedMessage {
   employeeSlug: string;
   employeeName: string;
   reactions: ReactionSummary[];
+  /// True if the author is ROGUE-flagged (Employee.rogueOverride) -
+  /// "Process 420" and any future evil-agent persona get the same
+  /// visual treatment for free (see ChatRoomClient.tsx), same as ROGUE
+  /// already gets special styling on the badge/leaderboard.
+  authorIsRogue: boolean;
 }
 
 /** Aggregates ChatReaction rows for one message into emoji/count/mine. */
@@ -90,6 +95,7 @@ export async function postChatMessageAction(rawBody: string): Promise<{ ok: true
       employeeSlug: employee.email,
       employeeName: employee.displayName,
       reactions: [],
+      authorIsRogue: employee.rogueOverride,
     },
   };
 }

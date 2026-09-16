@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       where: afterDate ? { createdAt: { gt: afterDate } } : undefined,
       orderBy: { createdAt: afterDate ? "asc" : "desc" },
       take: afterDate ? 200 : 100, // bounded either way - a burst of catch-up or the initial page
-      include: { employee: { select: { email: true, displayName: true } } },
+      include: { employee: { select: { email: true, displayName: true, rogueOverride: true } } },
     }),
     prisma.chatMessage.findMany({ orderBy: { createdAt: "desc" }, take: 50, select: { id: true } }),
   ]);
@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
       employeeSlug: m.employee.email,
       employeeName: m.employee.displayName,
       reactions: reactionMap.get(m.id) ?? [],
+      authorIsRogue: m.employee.rogueOverride,
     })),
     reactionUpdates: Object.fromEntries(reactionMap),
   });
