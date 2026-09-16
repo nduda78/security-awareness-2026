@@ -128,6 +128,23 @@ export default async function RulesPage() {
               )}
             </span>
           </li>
+          <li className="flex gap-2.5">
+            <Icon name="lock" className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+            <span>
+              {compromised ? (
+                <>
+                  One payload format — pattern-matched, origin unclear — does reveal right/wrong immediately and
+                  permits unlimited retries. No further details available.
+                </>
+              ) : (
+                <>
+                  <strong className="text-brand-sand">One exception: pattern-matched challenges</strong> (answers
+                  checked against a specific format, not an exact phrase) reveal right/wrong immediately and let
+                  you keep retrying until you get it.
+                </>
+              )}
+            </span>
+          </li>
         </ul>
       </Section>
 

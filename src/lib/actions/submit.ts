@@ -83,9 +83,21 @@ export async function submitAnswerAction(formData: FormData) {
   });
 
   if (existing) {
-    if (challenge.rewardMode === "UNLOCK") {
-      // UNLOCK challenges aren't scored, so there's no fairness reason to
-      // cap attempts at one — clear the old attempt and let them try again.
+    const canRetry =
+      challenge.rewardMode === "UNLOCK" ||
+      // REGEX challenges get unlimited retries on a wrong answer too — a
+      // pattern is easy to almost-match (wrong format, off-by-one
+      // character, etc.), and immediately locking someone out on their
+      // first typo would be a bad experience for a type that's inherently
+      // more finicky than an exact/contains match. Only gate on a wrong
+      // answer, though — once actually CORRECT (XP already awarded),
+      // resubmitting is blocked same as every other XP-mode type.
+      (challenge.answerType === "REGEX" && existing.status !== "CORRECT");
+
+    if (canRetry) {
+      // Clear the old attempt and let them try again — for UNLOCK
+      // challenges this is unconditional (no XP at stake); for REGEX
+      // challenges it's already scoped to "not correct yet" above.
       await prisma.submission.delete({ where: { id: existing.id } });
     } else {
       redirect(`/challenges/${slug}?already=1`);

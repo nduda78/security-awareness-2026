@@ -57,6 +57,13 @@ export default async function ChallengeDetailPage({
   const justSubmitted = submitted === "1";
   const choices: string[] | null = challenge.choices ? JSON.parse(challenge.choices) : null;
   const isUnlock = challenge.rewardMode === "UNLOCK";
+  // REGEX challenges get unlimited retries on a wrong answer (see
+  // submitAnswerAction) - a pattern is easy to almost-match, and locking
+  // someone out after one typo would be a bad experience. That only works
+  // if they can actually tell it was wrong, though, so REGEX gets an
+  // immediate right/wrong reveal here, unlike every other XP-mode answer
+  // type (which deliberately withholds that per the Fair Play rules).
+  const isRegex = challenge.answerType === "REGEX";
 
   const answerForm = (
     <form action={submitAnswerAction} className="space-y-4">
@@ -151,13 +158,30 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {isOpen && !isUnlock && justSubmitted && (
+      {isOpen && !isUnlock && isRegex && existing?.status === "CORRECT" && (
+        <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
+          Correct! You earned +{existing.xpAwarded} XP.
+        </div>
+      )}
+
+      {isOpen && !isUnlock && isRegex && (!existing || existing.status === "INCORRECT") && (
+        <div className="space-y-4">
+          {existing?.status === "INCORRECT" && (
+            <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-3 text-sm text-brand-red">
+              Not quite — take another look and try again.
+            </div>
+          )}
+          {answerForm}
+        </div>
+      )}
+
+      {isOpen && !isUnlock && !isRegex && justSubmitted && (
         <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
           Thanks for the submission.
         </div>
       )}
 
-      {isOpen && !isUnlock && !justSubmitted && (already === "1" || !!existing) && (
+      {isOpen && !isUnlock && !isRegex && !justSubmitted && (already === "1" || !!existing) && (
         <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
           {existing?.status === "CORRECT" && `Already completed — you earned +${existing.xpAwarded} XP.`}
           {existing?.status === "PENDING_REVIEW" && "Already submitted — pending Security team review."}
@@ -166,7 +190,7 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {isOpen && !isUnlock && !justSubmitted && !(already === "1" || !!existing) && answerForm}
+      {isOpen && !isUnlock && !isRegex && !justSubmitted && !(already === "1" || !!existing) && answerForm}
     </div>
   );
 }
