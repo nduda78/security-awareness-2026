@@ -53,6 +53,9 @@ export interface ClientChallengeCard {
   status: "CORRECT" | "PENDING_REVIEW" | "INCORRECT" | null;
   xpAwarded: number;
   completed: boolean; // status === "CORRECT"
+  // null = unlimited attempts (or not applicable, e.g. Free text/no attempts used yet with no cap set)
+  attemptsRemaining: number | null;
+  outOfAttempts: boolean;
   reward: {
     rewardBackgroundEffect: string | null;
     rewardBorderStyle: string | null;

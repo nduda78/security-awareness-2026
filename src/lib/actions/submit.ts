@@ -82,26 +82,29 @@ export async function submitAnswerAction(formData: FormData) {
     where: { employeeId_challengeId: { employeeId: employee.id, challengeId: challenge.id } },
   });
 
-  if (existing) {
-    const canRetry =
-      challenge.rewardMode === "UNLOCK" ||
-      // REGEX challenges get unlimited retries on a wrong answer too — a
-      // pattern is easy to almost-match (wrong format, off-by-one
-      // character, etc.), and immediately locking someone out on their
-      // first typo would be a bad experience for a type that's inherently
-      // more finicky than an exact/contains match. Only gate on a wrong
-      // answer, though — once actually CORRECT (XP already awarded),
-      // resubmitting is blocked same as every other XP-mode type.
-      (challenge.answerType === "REGEX" && existing.status !== "CORRECT");
+  // FREE_TEXT_REVIEW is always one-shot, no matter what maxAttempts says -
+  // there's no auto-grading to retry against, just a human decision, and
+  // that decision is meant to be final.
+  const isFreeText = challenge.answerType === "FREE_TEXT_REVIEW";
 
-    if (canRetry) {
-      // Clear the old attempt and let them try again — for UNLOCK
-      // challenges this is unconditional (no XP at stake); for REGEX
-      // challenges it's already scoped to "not correct yet" above.
-      await prisma.submission.delete({ where: { id: existing.id } });
-    } else {
+  if (existing) {
+    // CORRECT (XP already awarded) or PENDING_REVIEW (awaiting the
+    // Security team) are always locked, same as before - retries only
+    // ever apply to a wrong (INCORRECT) attempt.
+    if (existing.status !== "INCORRECT") {
       redirect(`/challenges/${slug}?already=1`);
     }
+    if (isFreeText) {
+      redirect(`/challenges/${slug}?already=1`);
+    }
+    if (challenge.maxAttempts !== null && existing.attempts >= challenge.maxAttempts) {
+      // Used up every attempt without getting it right - permanently
+      // locked, distinct from the generic "already" message so the UI can
+      // show a clear "you're out of attempts" state.
+      redirect(`/challenges/${slug}?outOfAttempts=1`);
+    }
+    // Otherwise falls through and retries below - the existing row gets
+    // UPDATEd (not deleted+recreated) so the attempts counter persists.
   }
 
   if (!answerRaw) {
@@ -111,19 +114,27 @@ export async function submitAnswerAction(formData: FormData) {
   const status = grade(challenge.answerType, challenge.correctAnswer, answerRaw);
   const xpAwarded = challenge.rewardMode === "UNLOCK" ? 0 : status === "CORRECT" ? challenge.xpValue : 0;
 
-  try {
-    await prisma.submission.create({
-      data: {
-        employeeId: employee.id,
-        challengeId: challenge.id,
-        answerRaw,
-        status,
-        xpAwarded,
-      },
+  if (existing) {
+    await prisma.submission.update({
+      where: { id: existing.id },
+      data: { answerRaw, status, xpAwarded, attempts: existing.attempts + 1, submittedAt: new Date() },
     });
-  } catch {
-    // Unique constraint race — someone double-submitted concurrently.
-    redirect(`/challenges/${slug}?already=1`);
+  } else {
+    try {
+      await prisma.submission.create({
+        data: {
+          employeeId: employee.id,
+          challengeId: challenge.id,
+          answerRaw,
+          status,
+          xpAwarded,
+          attempts: 1,
+        },
+      });
+    } catch {
+      // Unique constraint race — someone double-submitted concurrently.
+      redirect(`/challenges/${slug}?already=1`);
+    }
   }
 
   revalidatePath("/leaderboard");

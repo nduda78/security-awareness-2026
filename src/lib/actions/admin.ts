@@ -107,6 +107,14 @@ export async function upsertChallengeAction(formData: FormData) {
   const correctAnswer = String(formData.get("correctAnswer") ?? "").trim() || null;
   const choicesRaw = String(formData.get("choices") ?? "");
   const xpValue = parseInt(String(formData.get("xpValue") ?? "0"), 10) || 0;
+  const maxAttemptsRaw = String(formData.get("maxAttempts") ?? "").trim();
+  // Blank = unlimited (null). Ignored entirely for FREE_TEXT_REVIEW, which
+  // is always one-shot regardless of whatever's typed here.
+  const maxAttemptsParsed = maxAttemptsRaw ? parseInt(maxAttemptsRaw, 10) : NaN;
+  const maxAttempts =
+    answerType === "FREE_TEXT_REVIEW" || !maxAttemptsRaw || !Number.isFinite(maxAttemptsParsed) || maxAttemptsParsed < 1
+      ? null
+      : maxAttemptsParsed;
   const rewardMode = String(formData.get("rewardMode") ?? "XP") === "UNLOCK" ? "UNLOCK" : "XP";
   const minClearanceRaw = String(formData.get("minClearance") ?? "UNCLASSIFIED");
   const minClearance = ["UNCLASSIFIED", "SECRET", "TOP_SECRET", "ROGUE"].includes(minClearanceRaw)
@@ -135,6 +143,7 @@ export async function upsertChallengeAction(formData: FormData) {
     correctAnswer: answerType === "FREE_TEXT_REVIEW" ? null : correctAnswer,
     choices: answerType === "MULTIPLE_CHOICE" ? JSON.stringify(parseChoices(choicesRaw)) : undefined,
     xpValue,
+    maxAttempts,
     rewardMode,
     minClearance,
     unlockText,

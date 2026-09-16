@@ -14,10 +14,10 @@ export default async function ChallengeDetailPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ submitted?: string; already?: string; error?: string }>;
+  searchParams: Promise<{ submitted?: string; already?: string; outOfAttempts?: string; error?: string }>;
 }) {
   const { slug } = await params;
-  const { submitted, already, error } = await searchParams;
+  const { error } = await searchParams;
   const identity = await getAgentIdentity();
 
   const challenge = await prisma.challenge.findUnique({ where: { slug } });
@@ -54,16 +54,24 @@ export default async function ChallengeDetailPage({
     (!challenge.opensAt || challenge.opensAt <= now) &&
     (!challenge.closesAt || challenge.closesAt >= now);
 
-  const justSubmitted = submitted === "1";
   const choices: string[] | null = challenge.choices ? JSON.parse(challenge.choices) : null;
   const isUnlock = challenge.rewardMode === "UNLOCK";
-  // REGEX challenges get unlimited retries on a wrong answer (see
-  // submitAnswerAction) - a pattern is easy to almost-match, and locking
-  // someone out after one typo would be a bad experience. That only works
-  // if they can actually tell it was wrong, though, so REGEX gets an
-  // immediate right/wrong reveal here, unlike every other XP-mode answer
-  // type (which deliberately withholds that per the Fair Play rules).
-  const isRegex = challenge.answerType === "REGEX";
+  const isFreeText = challenge.answerType === "FREE_TEXT_REVIEW";
+
+  // Every non-free-text answer type now supports a configurable attempts
+  // cap (Challenge.maxAttempts, null = unlimited) - all derived directly
+  // from the stored submission rather than the redirect's query params, so
+  // this renders correctly on any page load, not just right after
+  // submitting. Knowing your attempt count is meaningless without knowing
+  // whether you were right or wrong, so any challenge with room for a
+  // retry now reveals that immediately - a deliberate departure from the
+  // "no immediate reveal" rule that otherwise still applies once a
+  // challenge is truly one-shot (maxAttempts effectively 1, or free text).
+  const attemptsUsed = existing?.attempts ?? 0;
+  const attemptsRemaining = challenge.maxAttempts === null ? null : Math.max(0, challenge.maxAttempts - attemptsUsed);
+  const outOfAttempts =
+    !isFreeText && existing?.status === "INCORRECT" && challenge.maxAttempts !== null && attemptsUsed >= challenge.maxAttempts;
+  const canRetryNow = !isFreeText && !outOfAttempts && (!existing || existing.status === "INCORRECT");
 
   const answerForm = (
     <form action={submitAnswerAction} className="space-y-4">
@@ -139,58 +147,55 @@ export default async function ChallengeDetailPage({
         <div className="surface-card p-4 text-sm text-brand-sand/60">This mission isn&apos;t currently open.</div>
       )}
 
-      {isOpen && isUnlock && existing?.status === "CORRECT" && <UnlockedContent challenge={challenge} />}
+      {isOpen && existing?.status === "CORRECT" && (
+        isUnlock ? (
+          <UnlockedContent challenge={challenge} />
+        ) : (
+          <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
+            Correct! You earned +{existing.xpAwarded} XP.
+          </div>
+        )
+      )}
 
-      {isOpen && isUnlock && existing?.status === "PENDING_REVIEW" && (
+      {isOpen && existing?.status === "PENDING_REVIEW" && (
         <div className="rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 p-4 text-sm text-brand-yellow">
           Submitted — pending Security team review.
         </div>
       )}
 
-      {isOpen && isUnlock && (!existing || existing.status === "INCORRECT") && (
+      {isOpen && outOfAttempts && (
+        <div className="rounded-xl border border-brand-red/40 bg-brand-red/10 p-4 text-sm font-medium text-brand-red">
+          <Icon name="skull" className="mr-1.5 inline h-4 w-4" />
+          Out of attempts — you used all {challenge.maxAttempts} {challenge.maxAttempts === 1 ? "try" : "tries"}{" "}
+          without getting it right. This challenge is now locked.
+        </div>
+      )}
+
+      {isOpen && canRetryNow && (
         <div className="space-y-4">
           {existing?.status === "INCORRECT" && (
             <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-3 text-sm text-brand-red">
               Not quite — take another look and try again.
+              {attemptsRemaining !== null &&
+                ` You have ${attemptsRemaining} attempt${attemptsRemaining === 1 ? "" : "s"} left.`}
             </div>
+          )}
+          {!existing && attemptsRemaining !== null && (
+            <p className="font-terminal text-xs text-brand-sand/45">
+              You have {attemptsRemaining} attempt{attemptsRemaining === 1 ? "" : "s"} to get this right.
+            </p>
           )}
           {answerForm}
         </div>
       )}
 
-      {isOpen && !isUnlock && isRegex && existing?.status === "CORRECT" && (
-        <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
-          Correct! You earned +{existing.xpAwarded} XP.
+      {isOpen && isFreeText && !existing && answerForm}
+
+      {isOpen && isFreeText && existing?.status === "INCORRECT" && (
+        <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-4 text-sm text-brand-red">
+          Your submission wasn&apos;t approved by the Security team. This challenge is now closed for you.
         </div>
       )}
-
-      {isOpen && !isUnlock && isRegex && (!existing || existing.status === "INCORRECT") && (
-        <div className="space-y-4">
-          {existing?.status === "INCORRECT" && (
-            <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-3 text-sm text-brand-red">
-              Not quite — take another look and try again.
-            </div>
-          )}
-          {answerForm}
-        </div>
-      )}
-
-      {isOpen && !isUnlock && !isRegex && justSubmitted && (
-        <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
-          Thanks for the submission.
-        </div>
-      )}
-
-      {isOpen && !isUnlock && !isRegex && !justSubmitted && (already === "1" || !!existing) && (
-        <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
-          {existing?.status === "CORRECT" && `Already completed — you earned +${existing.xpAwarded} XP.`}
-          {existing?.status === "PENDING_REVIEW" && "Already submitted — pending Security team review."}
-          {existing?.status === "INCORRECT" && "You've already attempted this challenge."}
-          {!existing && "Already completed."}
-        </div>
-      )}
-
-      {isOpen && !isUnlock && !isRegex && !justSubmitted && !(already === "1" || !!existing) && answerForm}
     </div>
   );
 }

@@ -75,6 +75,12 @@ model Challenge {
   xpValue       Int
   /// One of: XP | UNLOCK
   rewardMode    String @default("XP")
+  /// Caps how many times an employee may (re)submit an answer before it's
+  /// permanently locked as failed (see Submission.attempts). Null means
+  /// unlimited attempts. Ignored for FREE_TEXT_REVIEW, which is always
+  /// one-shot (locked after the Security team's first review decision)
+  /// regardless of this value.
+  maxAttempts   Int?
 
   // Optional image shown alongside the question itself — e.g. a phishing
   // screenshot to inspect before picking a multiple-choice answer. Usable
@@ -128,6 +134,11 @@ model Submission {
   /// One of: CORRECT | INCORRECT | PENDING_REVIEW
   status       String
   xpAwarded    Int      @default(0)
+  /// How many times this employee has submitted an answer to this
+  /// challenge so far (starts at 1 on the first submission, incremented
+  /// on each retry). Compared against Challenge.maxAttempts to decide
+  /// whether another retry is still allowed.
+  attempts     Int      @default(1)
   submittedAt  DateTime @default(now())
   reviewedBy   String?
   reviewedAt   DateTime?

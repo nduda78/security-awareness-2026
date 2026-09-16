@@ -133,14 +133,16 @@ export default async function RulesPage() {
             <span>
               {compromised ? (
                 <>
-                  One payload format — pattern-matched, origin unclear — does reveal right/wrong immediately and
-                  permits unlimited retries. No further details available.
+                  Retry allowance: unverifiable per-payload. Some let you keep trying, some don&apos;t — origin
+                  of that setting is unclear. Once exhausted, a payload locks itself and says so.
                 </>
               ) : (
                 <>
-                  <strong className="text-brand-sand">One exception: pattern-matched challenges</strong> (answers
-                  checked against a specific format, not an exact phrase) reveal right/wrong immediately and let
-                  you keep retrying until you get it.
+                  <strong className="text-brand-sand">Some challenges allow more than one try.</strong> If a
+                  challenge has a limited number of attempts, you&apos;ll see how many you have left right on the
+                  page — and any challenge with room for a retry reveals right/wrong immediately (otherwise you
+                  couldn&apos;t know to try again). Run out without getting it right and it locks for good, clearly
+                  marked as out of attempts.
                 </>
               )}
             </span>

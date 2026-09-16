@@ -138,7 +138,13 @@ function ChallengeCard({ challenge: c }: { challenge: ClientChallengeSection["ch
           {c.rewardMode === "UNLOCK" ? "Unlocked" : `Completed · +${c.xpAwarded} XP`}
         </div>
       )}
-      {isNotStarted && (
+      {!isDone && c.outOfAttempts && (
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-brand-red/50 bg-brand-red px-3 py-1.5 font-terminal text-[11px] font-bold uppercase tracking-wide text-white shadow-lg shadow-black/40">
+          <span>✗</span>
+          Out of Attempts
+        </div>
+      )}
+      {!isDone && !c.outOfAttempts && isNotStarted && (
         <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-brand-yellow/50 bg-brand-yellow px-3 py-1.5 font-terminal text-[11px] font-bold uppercase tracking-wide text-brand-dark-green shadow-lg shadow-black/40">
           Not Started
         </div>
@@ -146,7 +152,7 @@ function ChallengeCard({ challenge: c }: { challenge: ClientChallengeSection["ch
       <Link
         href={`/challenges/${c.slug}`}
         className={`surface-card group relative flex h-full flex-col overflow-hidden p-5 transition-opacity ${
-          c.completed ? "opacity-45 saturate-[0.4] hover:opacity-75" : ""
+          c.completed || c.outOfAttempts ? "opacity-45 saturate-[0.4] hover:opacity-75" : ""
         }`}
       >
       <h3 className="mb-1.5 pr-8 font-display font-semibold text-brand-sand transition group-hover:text-brand-yellow">
@@ -164,7 +170,7 @@ function ChallengeCard({ challenge: c }: { challenge: ClientChallengeSection["ch
       </div>
       <p className="mb-3 line-clamp-2 text-sm text-brand-sand/55">{c.description}</p>
       {!c.isOpen && <div className="font-terminal text-xs text-brand-sand/40">Not currently open</div>}
-      {c.status && !isDone && (
+      {c.status && !isDone && !c.outOfAttempts && (
         <div className="flex items-center gap-1.5 font-terminal text-xs text-brand-light-green">
           <Icon name="shield" className="h-3.5 w-3.5" />
           {c.rewardMode === "UNLOCK" ? (
@@ -177,6 +183,11 @@ function ChallengeCard({ challenge: c }: { challenge: ClientChallengeSection["ch
               {c.status === "PENDING_REVIEW" && "Submitted · pending review"}
               {c.status === "INCORRECT" && "Attempted"}
             </>
+          )}
+          {c.status === "INCORRECT" && c.attemptsRemaining !== null && (
+            <span className="text-brand-yellow">
+              · {c.attemptsRemaining} attempt{c.attemptsRemaining === 1 ? "" : "s"} left
+            </span>
           )}
         </div>
       )}

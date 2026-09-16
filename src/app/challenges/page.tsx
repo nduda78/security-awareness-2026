@@ -29,8 +29,13 @@ export default async function ChallengesPage() {
     icon: section.tier?.icon ?? "file",
     challenges: section.challenges.map((c) => {
       const isOpen = (!c.opensAt || c.opensAt <= now) && (!c.closesAt || c.closesAt >= now);
-      const mine = "submissions" in c ? (c.submissions as { status: string; xpAwarded: number }[]) : [];
+      const mine = "submissions" in c ? (c.submissions as { status: string; xpAwarded: number; attempts: number }[]) : [];
       const status = mine.length > 0 ? mine[0] : null;
+      const isFreeText = c.answerType === "FREE_TEXT_REVIEW";
+      const attemptsUsed = status?.attempts ?? 0;
+      const attemptsRemaining = c.maxAttempts === null ? null : Math.max(0, c.maxAttempts - attemptsUsed);
+      const outOfAttempts =
+        !isFreeText && status?.status === "INCORRECT" && c.maxAttempts !== null && attemptsUsed >= c.maxAttempts;
       return {
         id: c.id,
         slug: c.slug,
@@ -42,6 +47,8 @@ export default async function ChallengesPage() {
         status: (status?.status as "CORRECT" | "PENDING_REVIEW" | "INCORRECT" | undefined) ?? null,
         xpAwarded: status?.xpAwarded ?? 0,
         completed: status?.status === "CORRECT",
+        attemptsRemaining: isFreeText ? null : attemptsRemaining,
+        outOfAttempts: !!outOfAttempts,
         reward: {
           rewardBackgroundEffect: c.rewardBackgroundEffect,
           rewardBorderStyle: c.rewardBorderStyle,

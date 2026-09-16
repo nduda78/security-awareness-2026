@@ -124,6 +124,7 @@ function ChallengeForm({
     correctAnswer: string | null;
     choices: unknown;
     xpValue: number;
+    maxAttempts?: number | null;
     minClearance?: string;
     rewardBackgroundEffect: string | null;
     rewardBorderStyle: string | null;
@@ -362,6 +363,19 @@ function ChallengeForm({
         />
       </div>
       <div>
+        <Field
+          label="Max attempts (blank = unlimited)"
+          name="maxAttempts"
+          type="number"
+          defaultValue={challenge?.maxAttempts != null ? String(challenge.maxAttempts) : ""}
+          placeholder="e.g. 5"
+        />
+        <p className="mt-1 text-[11px] text-brand-sand/35">
+          How many times someone can (re)submit before it's permanently marked failed. Leave blank for
+          unlimited retries. Ignored for Free text (manual review) — that type is always one-shot regardless.
+        </p>
+      </div>
+      <div>
         <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
           Choices (multiple choice only, one per line)
         </label>
@@ -398,6 +412,7 @@ export default async function AdminChallengesPage() {
       correctAnswer: true,
       choices: true,
       xpValue: true,
+      maxAttempts: true,
       rewardMode: true,
       minClearance: true,
       questionImageMimeType: true,
