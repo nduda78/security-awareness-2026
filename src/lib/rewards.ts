@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "./flare";
 
 export interface UnlockedFlareOptions {
   backgroundEffect: string[];
@@ -31,6 +32,32 @@ const EMPTY: UnlockedFlareOptions = {
  * every field until they complete a challenge that rewards it.
  */
 export async function getUnlockedFlareOptions(employeeId: string): Promise<UnlockedFlareOptions> {
+  const employee = await prisma.employee.findUnique({ where: { id: employeeId }, select: { isAdmin: true } });
+
+  // Game-master perk: admins get every badge customization option
+  // unlocked outright, rather than needing to actually complete
+  // challenges (which would falsely inflate their XP/leaderboard rank).
+  // backgroundEffect/borderStyle/icon have a fixed, enumerable catalog
+  // (see flare.ts), so "all" means the full catalog. ribbonText/
+  // nameSuffix are freeform text with no closed set - "all" there means
+  // every distinct value any challenge in the game currently grants.
+  if (employee?.isAdmin) {
+    const allChallenges = await prisma.challenge.findMany({
+      select: { rewardRibbonText: true, rewardNameSuffix: true },
+    });
+    const ribbonText = [...new Set(allChallenges.map((c) => c.rewardRibbonText).filter((v): v is string => !!v))];
+    const nameSuffix = [...new Set(allChallenges.map((c) => c.rewardNameSuffix).filter((v): v is string => !!v))];
+    return {
+      backgroundEffect: [...BACKGROUND_EFFECTS],
+      borderStyle: [...BORDER_STYLES],
+      icon: [...ICONS],
+      ribbonText,
+      nameSuffix,
+      canPickOutlineColor: true,
+      canPickBackgroundColor: true,
+    };
+  }
+
   const correct = await prisma.submission.findMany({
     where: { employeeId, status: "CORRECT" },
     include: { challenge: true },
