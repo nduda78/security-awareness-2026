@@ -311,6 +311,32 @@ export async function toggleRogueAction(formData: FormData) {
   redirect("/admin/employees?saved=1");
 }
 
+// Nick Duda is a permanent admin - hardcoded on purpose, not editable via
+// the UI, so the admin panel can never be locked out by someone
+// accidentally revoking every admin's access.
+const PERMANENT_ADMIN_EMAIL = "nick-duda";
+
+export async function toggleAdminAction(formData: FormData) {
+  await requireAdmin();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const admin = formData.get("admin") === "on";
+
+  if (email === PERMANENT_ADMIN_EMAIL && !admin) {
+    redirect(`/admin/employees?error=${encodeURIComponent("Nick Duda is a permanent admin and can't be removed.")}`);
+  }
+
+  const employee = await prisma.employee.findUnique({ where: { email } });
+  if (!employee) redirect(`/admin/employees?error=${encodeURIComponent("Unknown employee")}`);
+
+  await prisma.employee.update({ where: { email }, data: { isAdmin: admin } });
+  await logAdminAudit(
+    "ADMIN_FLAG",
+    `${employee!.displayName} (${email}): ${admin ? "granted" : "revoked"} admin access`
+  );
+  revalidatePath("/admin/employees");
+  redirect("/admin/employees?saved=1");
+}
+
 /**
  * Clears an employee's PIN (sets pinHash back to null) rather than setting
  * a new one directly - the admin never learns or transmits the employee's

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getAgentIdentity } from "@/lib/session";
+import { getAgentIdentity, isAdminSession } from "@/lib/session";
 import { signOutAction } from "@/lib/actions/identify";
 import { Icon } from "./Icon";
 
@@ -13,9 +13,10 @@ const LINKS = [
 
 export async function Nav() {
   const identity = await getAgentIdentity();
+  const isAdmin = await isAdminSession();
   return (
     <header className="sticky top-0 z-40 border-b border-brand-sand/10 bg-brand-dark-green/70 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-3 gap-x-4 px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-y-3 gap-x-4 px-4 py-5 sm:px-6 sm:py-6">
         <Link href="/leaderboard" className="flex shrink-0 items-center gap-4">
           <Image
             src="/brand/dutchie-logo.png"
@@ -45,6 +46,15 @@ export async function Nav() {
               {l.label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              href="/admin/challenges"
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-2 font-terminal text-sm font-medium uppercase tracking-wide text-brand-purple/80 transition hover:bg-brand-purple/10 hover:text-brand-purple"
+            >
+              <Icon name="lock" className="h-4 w-4 opacity-70" />
+              Admin
+            </Link>
+          )}
           {identity && (
             <form action={signOutAction} className="ml-1 flex items-center gap-2.5 border-l border-brand-sand/10 pl-3">
               <span className="hidden font-terminal text-sm text-brand-sand/40 md:inline">

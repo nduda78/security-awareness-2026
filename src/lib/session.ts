@@ -62,11 +62,25 @@ export function encodeAgentCookie(identity: AgentIdentity): string {
 
 export const AGENT_COOKIE_NAME = AGENT_COOKIE;
 
+/**
+ * True if either the legacy passphrase-gated admin_session cookie is
+ * valid, OR the currently signed-in employee (agent_session) has been
+ * flagged isAdmin=true - flagged admins skip the passphrase entirely.
+ */
 export async function isAdminSession(): Promise<boolean> {
   const store = await cookies();
   const raw = store.get(ADMIN_COOKIE)?.value;
-  if (!raw) return false;
-  return unsign(raw) === "ok";
+  if (raw && unsign(raw) === "ok") return true;
+
+  const identity = await getAgentIdentity();
+  if (!identity) return false;
+
+  const { prisma } = await import("./prisma");
+  const employee = await prisma.employee.findUnique({
+    where: { email: identity.email },
+    select: { isAdmin: true },
+  });
+  return !!employee?.isAdmin;
 }
 
 export function encodeAdminCookie(): string {

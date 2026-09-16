@@ -41,6 +41,10 @@ model Employee {
   /// src/lib/actions/identify.ts.
   pinHash        String?
   rogueOverride  Boolean   @default(false)
+  /// Grants full /admin panel access with no passphrase needed - see
+  /// isAdminSession() in src/lib/session.ts. "nick-duda" is a permanent
+  /// admin, hardcoded and un-removable in toggleAdminAction (see admin.ts).
+  isAdmin        Boolean   @default(false)
   createdAt      DateTime  @default(now())
   photo          Bytes?
   photoMimeType  String?

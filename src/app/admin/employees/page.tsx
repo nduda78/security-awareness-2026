@@ -3,21 +3,28 @@ import { isAdminSession } from "@/lib/session";
 import { buildAgentRoster } from "@/lib/leaderboard";
 import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
-import { toggleRogueAction, grantManualXpAction } from "@/lib/actions/admin";
+import { toggleRogueAction, grantManualXpAction, toggleAdminAction } from "@/lib/actions/admin";
 import { ResetPinButton } from "@/components/ResetPinButton";
+
+const PERMANENT_ADMIN_EMAIL = "nick-duda";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminEmployeesPage() {
+export default async function AdminEmployeesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string; error?: string }>;
+}) {
   if (!(await isAdminSession())) redirect("/admin");
+  const { saved, error } = await searchParams;
 
   const roster = await buildAgentRoster();
   roster.sort((a, b) => b.xp - a.xp);
 
-  const pinStatusByEmail = new Map(
-    (await prisma.employee.findMany({ select: { email: true, pinHash: true } })).map((e) => [
+  const employeeFlags = new Map(
+    (await prisma.employee.findMany({ select: { email: true, pinHash: true, isAdmin: true } })).map((e) => [
       e.email,
-      e.pinHash !== null,
+      { claimed: e.pinHash !== null, isAdmin: e.isAdmin },
     ])
   );
 
@@ -25,6 +32,8 @@ export default async function AdminEmployeesPage() {
     <div className="fade-in-up">
       <AdminNav />
       <h1 className="mb-6 font-display text-2xl font-semibold">Employees</h1>
+      {saved && <div className="mb-4 rounded-xl bg-brand-light-green/15 p-3 text-sm text-brand-light-green">Saved.</div>}
+      {error && <div className="mb-4 rounded-xl bg-brand-red/15 p-3 text-sm text-brand-red">{error}</div>}
 
       <div className="surface-card overflow-x-auto p-2">
         <table className="w-full text-sm">
@@ -37,6 +46,7 @@ export default async function AdminEmployeesPage() {
               <th className="px-3 py-3">ROGUE override</th>
               <th className="px-3 py-3">Manual XP grant</th>
               <th className="px-3 py-3">PIN</th>
+              <th className="px-3 py-3">Admin</th>
             </tr>
           </thead>
           <tbody>
@@ -66,10 +76,28 @@ export default async function AdminEmployeesPage() {
                   </form>
                 </td>
                 <td className="px-3 py-2.5">
-                  {pinStatusByEmail.get(r.email) ? (
+                  {employeeFlags.get(r.email)?.claimed ? (
                     <ResetPinButton email={r.email} displayName={r.displayName} />
                   ) : (
                     <span className="font-terminal text-[10px] uppercase text-brand-sand/35">Unclaimed</span>
+                  )}
+                </td>
+                <td className="px-3 py-2.5">
+                  {r.email === PERMANENT_ADMIN_EMAIL ? (
+                    <span className="font-terminal text-[10px] uppercase text-brand-light-green/80">
+                      Permanent
+                    </span>
+                  ) : (
+                    <form action={toggleAdminAction} className="flex items-center gap-1.5">
+                      <input type="hidden" name="email" value={r.email} />
+                      <input
+                        type="checkbox"
+                        name="admin"
+                        defaultChecked={employeeFlags.get(r.email)?.isAdmin ?? false}
+                        className="accent-brand-light-green"
+                      />
+                      <button className="btn-secondary !px-2 !py-0.5 !text-[10px]">Save</button>
+                    </form>
                   )}
                 </td>
               </tr>
