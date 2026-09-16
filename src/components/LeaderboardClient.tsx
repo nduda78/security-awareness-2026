@@ -82,9 +82,15 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
     }
   }
 
+  function matchesQuery(card: ClientAgentCard, q: string): boolean {
+    if (!q) return true;
+    const needle = q.toLowerCase();
+    return card.displayName.toLowerCase().includes(needle) || card.codename.toLowerCase().includes(needle);
+  }
+
   function isDimmed(card: ClientAgentCard): boolean {
     if (!matchesFilter(card, filter)) return true;
-    if (query.trim() && !card.displayName.toLowerCase().includes(query.trim().toLowerCase())) return true;
+    if (query.trim() && !matchesQuery(card, query.trim())) return true;
     return false;
   }
 
@@ -92,7 +98,7 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
     if (e.key !== "Enter") return;
     const q = query.trim().toLowerCase();
     if (!q) return;
-    const match = allMembers.find((m) => m.displayName.toLowerCase().includes(q));
+    const match = allMembers.find((m) => matchesQuery(m, q));
     if (match) {
       const el = document.getElementById(`badge-${match.email.replace(/[^a-z0-9]/gi, "-")}`);
       if (el) {
@@ -121,7 +127,7 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Find your badge..."
+            placeholder="Find your badge or codename..."
             className="input-modern input-with-icon w-full"
           />
         </div>
