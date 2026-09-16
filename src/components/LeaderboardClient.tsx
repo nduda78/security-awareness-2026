@@ -85,7 +85,11 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
   function matchesQuery(card: ClientAgentCard, q: string): boolean {
     if (!q) return true;
     const needle = q.toLowerCase();
-    return card.displayName.toLowerCase().includes(needle) || card.codename.toLowerCase().includes(needle);
+    return (
+      card.displayName.toLowerCase().includes(needle) ||
+      card.codename.toLowerCase().includes(needle) ||
+      card.agentId.toLowerCase().includes(needle)
+    );
   }
 
   function isDimmed(card: ClientAgentCard): boolean {
@@ -127,7 +131,7 @@ export function LeaderboardClient({ sections }: { sections: ClientTierSection[] 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Find your badge or codename..."
+            placeholder="Find your badge, codename, or agent ID..."
             className="input-modern input-with-icon w-full"
           />
         </div>
