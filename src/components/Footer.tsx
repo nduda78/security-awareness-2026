@@ -1,6 +1,10 @@
-import Image from "next/image";
+"use client";
 
-export function Footer({ compromised = false }: { compromised?: boolean }) {
+import Image from "next/image";
+import { useCompromisedRoute } from "./CompromisedRouteContext";
+
+export function Footer() {
+  const compromised = useCompromisedRoute();
   return (
     <footer className="border-t border-brand-sand/10 bg-black/20 py-6">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-center sm:flex-row sm:text-left">

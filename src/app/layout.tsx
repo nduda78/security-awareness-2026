@@ -5,6 +5,7 @@ import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { VirusOverlay } from "@/components/VirusOverlay";
 import { isCompromisedModeEnabled } from "@/lib/settings";
+import { CompromisedRouteProvider, CompromisedOnly } from "@/components/CompromisedRouteContext";
 
 const displayFont = Space_Grotesk({
   variable: "--font-display-raw",
@@ -37,6 +38,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // The real global admin toggle (settings.ts) - still drives the SSR
+  // class here exactly as before (no flash-of-normal-theme on first
+  // paint when it's actually on). CompromisedRouteProvider layers a
+  // second, per-viewer/per-route source on top of it client-side (see
+  // CompromisedRouteContext.tsx) without this base value ever changing.
   const compromised = await isCompromisedModeEnabled();
   return (
     <html
@@ -46,10 +52,14 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       }`}
     >
       <body className="grid-glow min-h-full flex flex-col">
-        {compromised && <VirusOverlay />}
-        <Nav compromised={compromised} />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">{children}</main>
-        <Footer compromised={compromised} />
+        <CompromisedRouteProvider baseCompromised={compromised}>
+          <CompromisedOnly>
+            <VirusOverlay />
+          </CompromisedOnly>
+          <Nav />
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">{children}</main>
+          <Footer />
+        </CompromisedRouteProvider>
       </body>
     </html>
   );
