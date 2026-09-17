@@ -549,15 +549,42 @@ body.chaos-mode {
   pointer-events: none;
 }
 
-@keyframes marching-ants {
-  to {
-    background-position: 40px 0, 40px 40px, 0 40px, 0 0;
-  }
-}
+/* Actually-moving dashed border (the old version only set a static
+   border-style: dashed with a keyframe that referenced a
+   background-position no element ever set, so nothing animated). Real
+   "marching ants" needs a separate painted layer, since a native CSS
+   border can't animate its own dash offset - so the border itself is
+   made transparent (kept for consistent layout sizing across border
+   styles) and a ::after overlay draws four edge-hugging gradient
+   strips, each tiled and slid along its own edge in the same rotational
+   direction to read as ants marching around the perimeter. Uses the
+   --pulse-color custom property (already set on the badge's outer
+   wrapper for the pulse border style) so the ants match the badge's own
+   outline color instead of a hardcoded one. */
 .border-fx-marching-ants {
   border-style: dashed !important;
   border-width: 3px !important;
-  animation: marching-ants 1.5s linear infinite;
+  border-color: transparent !important;
+}
+.border-fx-marching-ants::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: linear-gradient(90deg, var(--pulse-color, var(--brand-light-green)) 50%, transparent 50%),
+    linear-gradient(90deg, var(--pulse-color, var(--brand-light-green)) 50%, transparent 50%),
+    linear-gradient(0deg, var(--pulse-color, var(--brand-light-green)) 50%, transparent 50%),
+    linear-gradient(0deg, var(--pulse-color, var(--brand-light-green)) 50%, transparent 50%);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: 18px 3px, 18px 3px, 3px 18px, 3px 18px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  animation: marching-ants-move 0.7s linear infinite;
+}
+@keyframes marching-ants-move {
+  to {
+    background-position: 18px 0, -18px 100%, 0 -18px, 100% 18px;
+  }
 }
 
 /* Glowing neon sign pulse. */
