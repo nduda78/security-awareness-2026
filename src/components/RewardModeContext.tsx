@@ -36,3 +36,10 @@ export function UnlockOnly({ children }: { children: ReactNode }) {
   if (ctx?.mode !== "UNLOCK") return null;
   return <>{children}</>;
 }
+
+/** Renders children only while Reward Mode is XP (the mirror of UnlockOnly) - unmounts (not just visually hides) otherwise. */
+export function XpOnly({ children }: { children: ReactNode }) {
+  const ctx = useContext(RewardModeContext);
+  if (ctx?.mode === "UNLOCK") return null;
+  return <>{children}</>;
+}

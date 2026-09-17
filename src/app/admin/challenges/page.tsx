@@ -7,7 +7,7 @@ import { upsertChallengeAction, deleteChallengeAction } from "@/lib/actions/admi
 import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
 import { ChallengeFileField } from "@/components/ChallengeFileField";
-import { RewardModeProvider, RewardModeSelect, UnlockOnly } from "@/components/RewardModeContext";
+import { RewardModeProvider, RewardModeSelect, UnlockOnly, XpOnly } from "@/components/RewardModeContext";
 import { AnswerTypeProvider, AnswerTypeSelect, ConnectionsOnly } from "@/components/AnswerTypeContext";
 import { TIERS } from "@/lib/tiers";
 import { Icon } from "@/components/Icon";
@@ -420,6 +420,20 @@ function ChallengeForm({
               </div>
             ))}
           </div>
+          <XpOnly>
+            <div>
+              <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+                Completion message (optional)
+              </label>
+              <textarea
+                name="unlockText"
+                rows={4}
+                defaultValue={challenge?.unlockText ?? ""}
+                placeholder="Shown to the player once they solve all 4 groups, in addition to the XP earned."
+                className="input-modern w-full"
+              />
+            </div>
+          </XpOnly>
         </div>
       </ConnectionsOnly>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

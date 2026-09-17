@@ -188,6 +188,7 @@ export default async function ChallengeDetailPage({
           xpValue={challenge.xpValue}
           isUnlock={isUnlock}
           unlockContent={isUnlock ? <UnlockedContent challenge={challenge} /> : undefined}
+          completionMessage={!isUnlock ? challenge.unlockText : undefined}
         />
       )}
 
