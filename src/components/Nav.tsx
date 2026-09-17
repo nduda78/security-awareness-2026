@@ -9,6 +9,7 @@ import { Icon } from "./Icon";
 const LINKS = [
   { href: "/leaderboard", label: "Leaderboard", corrupted: "DATA_LEAK", icon: "shield" },
   { href: "/challenges", label: "Challenges", corrupted: "EXPLOITS", icon: "lightning" },
+  { href: "/prizes", label: "Prizes", corrupted: "LOOT_CACHE", icon: "trophy" },
   { href: "/chat", label: "Chat Room", corrupted: "COMMS_LEAK", icon: "chat" },
   { href: "/rules", label: "Rules", corrupted: "README.SYS", icon: "file" },
   { href: "/profile", label: "My Profile", corrupted: "MY_DOSSIER", icon: "crown" },
