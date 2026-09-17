@@ -556,6 +556,7 @@ body.chaos-mode {
 }
 .border-fx-marching-ants {
   border-style: dashed !important;
+  border-width: 3px !important;
   animation: marching-ants 1.5s linear infinite;
 }
 
