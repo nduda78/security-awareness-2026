@@ -468,8 +468,18 @@ function ChallengeGroup({
  * past its closes-at is "Closed", and everything else time-gated but
  * currently reachable is "Live".
  */
-function SchedulePill({ opensAt, closesAt }: { opensAt: Date | null; closesAt: Date | null }) {
-  if (!opensAt && !closesAt) return null;
+function SchedulePill({
+  isActive,
+  opensAt,
+  closesAt,
+}: {
+  isActive: boolean;
+  opensAt: Date | null;
+  closesAt: Date | null;
+}) {
+  // Inactive already gets its own "(inactive)" text right next to this -
+  // no need for a second, possibly-conflicting pill on top of it.
+  if (!isActive) return null;
   const now = new Date();
   const notYetOpen = opensAt && opensAt > now;
   const closed = closesAt && closesAt < now;
@@ -534,7 +544,7 @@ function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof Challen
             </span>
           ))}{" "}
           {!c.isActive && <span className="font-terminal text-xs text-brand-sand/40">(inactive)</span>}{" "}
-          <SchedulePill opensAt={c.opensAt} closesAt={c.closesAt} />
+          <SchedulePill isActive={c.isActive} opensAt={c.opensAt} closesAt={c.closesAt} />
         </span>
         <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>
       </summary>
