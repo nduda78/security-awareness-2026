@@ -8,6 +8,7 @@ import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
 import { ChallengeFileField } from "@/components/ChallengeFileField";
 import { RewardModeProvider, RewardModeSelect, UnlockOnly } from "@/components/RewardModeContext";
+import { AnswerTypeProvider, AnswerTypeSelect, ConnectionsOnly } from "@/components/AnswerTypeContext";
 import { TIERS } from "@/lib/tiers";
 import { Icon } from "@/components/Icon";
 import type { IconKey } from "@/lib/flare";
@@ -163,6 +164,7 @@ function ChallengeForm({
   return (
     <form action={upsertChallengeAction} className="mt-4 space-y-4">
       <RewardModeProvider defaultValue={challenge?.rewardMode ?? "XP"}>
+      <AnswerTypeProvider defaultValue={challenge?.answerType ?? "EXACT"}>
       {challenge && <input type="hidden" name="id" value={challenge.id} />}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Slug (URL-safe)" name="slug" defaultValue={challenge?.slug} required />
@@ -353,15 +355,7 @@ function ChallengeForm({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Answer type</label>
-          <select name="answerType" defaultValue={challenge?.answerType ?? "EXACT"} className="input-modern w-full">
-            <option value="EXACT">Exact match</option>
-            <option value="CASE_INSENSITIVE">Case-insensitive match</option>
-            <option value="CONTAINS">Contains (substring)</option>
-            <option value="REGEX">Regex</option>
-            <option value="MULTIPLE_CHOICE">Multiple choice</option>
-            <option value="FREE_TEXT_REVIEW">Free text (manual review)</option>
-            <option value="CONNECTIONS">Security Connections (word-grouping game)</option>
-          </select>
+          <AnswerTypeSelect />
           <p className="mt-1 text-[11px] text-brand-sand/35">
             Contains: correct if the submitted answer includes this text anywhere (case-insensitive). Regex: this
             field is a JS regex pattern (no slashes/flags) tested case-insensitively against the submitted answer.
@@ -396,38 +390,38 @@ function ChallengeForm({
         </label>
         <textarea name="choices" rows={3} defaultValue={choicesText} className="input-modern w-full" />
       </div>
-      <div className="surface-card space-y-3 p-4">
-        <div className="font-terminal text-xs uppercase text-brand-cyan/70">
-          Security Connections groups (only used when Answer type = Security Connections)
-        </div>
-        <p className="text-[11px] text-brand-sand/35">
-          Exactly 4 groups, exactly 4 words each, all 16 words unique. The grid order players see is shuffled
-          fresh every time this challenge is saved.
-        </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="space-y-2">
-              <Field
-                label={`Group ${i + 1} label`}
-                name={`connGroup${i + 1}Label`}
-                defaultValue={connectionsGroups[i]?.label ?? ""}
-                placeholder={`e.g. ${CONNECTIONS_GROUP_PLACEHOLDERS[i]}`}
-              />
-              <div>
-                <label className="mb-1.5 block font-terminal text-[11px] uppercase text-brand-sand/40">
-                  Words (one per line, exactly 4)
-                </label>
-                <textarea
-                  name={`connGroup${i + 1}Words`}
-                  rows={4}
-                  defaultValue={connectionsGroups[i]?.words.join("\n") ?? ""}
-                  className="input-modern w-full"
+      <ConnectionsOnly>
+        <div className="surface-card space-y-3 p-4">
+          <div className="font-terminal text-xs uppercase text-brand-cyan/70">Security Connections groups</div>
+          <p className="text-[11px] text-brand-sand/35">
+            Exactly 4 groups, exactly 4 words each, all 16 words unique. The grid order players see is shuffled
+            fresh every time this challenge is saved.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="space-y-2">
+                <Field
+                  label={`Group ${i + 1} label`}
+                  name={`connGroup${i + 1}Label`}
+                  defaultValue={connectionsGroups[i]?.label ?? ""}
+                  placeholder={`e.g. ${CONNECTIONS_GROUP_PLACEHOLDERS[i]}`}
                 />
+                <div>
+                  <label className="mb-1.5 block font-terminal text-[11px] uppercase text-brand-sand/40">
+                    Words (one per line, exactly 4)
+                  </label>
+                  <textarea
+                    name={`connGroup${i + 1}Words`}
+                    rows={4}
+                    defaultValue={connectionsGroups[i]?.words.join("\n") ?? ""}
+                    className="input-modern w-full"
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </ConnectionsOnly>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field
           label="Opens at (Eastern Time)"
@@ -461,6 +455,7 @@ function ChallengeForm({
         Active
       </label>
       <button className="btn-primary">Save challenge</button>
+      </AnswerTypeProvider>
       </RewardModeProvider>
     </form>
   );
