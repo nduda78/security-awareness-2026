@@ -467,7 +467,7 @@ export function ChatRoomClient({
               key={m.id}
               className={`group relative flex gap-3 rounded-xl p-2 ${
                 isRogue
-                  ? "my-1.5 rogue-flicker border border-brand-red/40 bg-brand-red/[0.07] shadow-[0_0_18px_-4px_var(--brand-red)]"
+                  ? "-m-2 rogue-flicker bg-brand-red/[0.07]"
                   : mentionsMe
                     ? "-m-2 bg-brand-cyan/10 ring-1 ring-brand-cyan/30"
                     : "-m-2"
