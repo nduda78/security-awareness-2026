@@ -52,7 +52,7 @@ export default async function PrizesPage() {
     const wonAt = f.updatedAt.toISOString();
 
     for (const prize of achievements) {
-      entries.push({ prize, wonAt, sourceChallengeTitle: null, sourceChallengeSlug: null });
+      entries.push({ prize, wonAt, source: "achievement", sourceChallengeTitle: null, sourceChallengeSlug: null });
     }
 
     if (f.ribbonText || f.nameSuffix) {
@@ -66,6 +66,7 @@ export default async function PrizesPage() {
         entries.push({
           prize: f.ribbonText,
           wonAt,
+          source: "flare",
           sourceChallengeTitle: source?.challenge.title ?? null,
           sourceChallengeSlug: source?.challenge.slug ?? null,
         });
@@ -75,6 +76,7 @@ export default async function PrizesPage() {
         entries.push({
           prize: f.nameSuffix,
           wonAt,
+          source: "flare",
           sourceChallengeTitle: source?.challenge.title ?? null,
           sourceChallengeSlug: source?.challenge.slug ?? null,
         });

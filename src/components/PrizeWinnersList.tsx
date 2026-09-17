@@ -7,6 +7,12 @@ import { formatEasternShortDate } from "@/lib/easternTime";
 export interface PrizeWinnerEntry {
   prize: string;
   wonAt: string; // ISO
+  /// "achievement" = a freeform Achievements entry (real-world prize,
+  /// e.g. "Won a MacBook"). "flare" = a granted ribbon/name-suffix badge
+  /// flare field - styled distinctly (cyan, matching the Challenges
+  /// page's own "unlocks: ..." cyan) since it's a cosmetic badge reward
+  /// rather than a literal physical/real-world prize.
+  source: "achievement" | "flare";
   sourceChallengeTitle: string | null;
   sourceChallengeSlug: string | null;
 }
@@ -92,33 +98,44 @@ export function PrizeWinnersList({ groups }: { groups: PrizeWinnerGroup[] }) {
             </summary>
 
             <div className="mt-3 space-y-2 border-t border-brand-sand/10 pt-3">
-              {g.entries.map((e, i) => (
-                <div
-                  key={i}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-brand-sand/[0.03] px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <div className="rounded-full border border-brand-yellow/40 bg-brand-yellow/10 px-3 py-1 font-terminal text-xs font-bold uppercase tracking-wide text-brand-yellow">
-                      🏆 {e.prize}
+              {g.entries.map((e, i) => {
+                const isFlare = e.source === "flare";
+                return (
+                  <div
+                    key={i}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-brand-sand/[0.03] px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div
+                        className={
+                          isFlare
+                            ? "rounded-full border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-1 font-terminal text-xs font-bold uppercase tracking-wide text-brand-cyan"
+                            : "rounded-full border border-brand-yellow/40 bg-brand-yellow/10 px-3 py-1 font-terminal text-xs font-bold uppercase tracking-wide text-brand-yellow"
+                        }
+                      >
+                        {isFlare ? "✨" : "🏆"} {e.prize}
+                      </div>
+                      <div className="mt-1 font-terminal text-[11px] text-brand-sand/35">
+                        {isFlare && <span className="text-brand-cyan/70">Badge Flare</span>}
+                        {isFlare && " · "}
+                        {e.sourceChallengeTitle ? (
+                          <>
+                            won for{" "}
+                            <Link href={`/challenges/${e.sourceChallengeSlug}`} className="text-brand-cyan hover:underline">
+                              {e.sourceChallengeTitle}
+                            </Link>
+                          </>
+                        ) : (
+                          "manually awarded"
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-1 font-terminal text-[11px] text-brand-sand/35">
-                      {e.sourceChallengeTitle ? (
-                        <>
-                          won for{" "}
-                          <Link href={`/challenges/${e.sourceChallengeSlug}`} className="text-brand-cyan hover:underline">
-                            {e.sourceChallengeTitle}
-                          </Link>
-                        </>
-                      ) : (
-                        "manually awarded"
-                      )}
+                    <div className="shrink-0 font-terminal text-[11px] text-brand-sand/30">
+                      {formatEasternShortDate(new Date(e.wonAt))}
                     </div>
                   </div>
-                  <div className="shrink-0 font-terminal text-[11px] text-brand-sand/30">
-                    {formatEasternShortDate(new Date(e.wonAt))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </details>
         ))}
