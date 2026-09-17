@@ -251,6 +251,27 @@ export default async function RulesPage() {
               )}
             </span>
           </li>
+          <li className="flex gap-2.5">
+            <Icon name="lightning" className="mt-0.5 h-4 w-4 shrink-0 text-brand-cyan" />
+            <span>
+              {compromised ? (
+                <>
+                  <strong className="text-brand-sand">Corrupted lexicon probes</strong> hide a scrambled token
+                  behind six blind attempts. Each probe returns a partial match signature — exact position,
+                  present elsewhere, or absent — but the token itself stays encrypted until you land it or burn
+                  your last attempt, at which point it's dumped in the clear regardless.
+                </>
+              ) : (
+                <>
+                  <strong className="text-brand-sand">Securdle</strong> is a Wordle-style word guess — a hidden
+                  word, 6 guesses, letter tiles that turn green (right letter, right spot), yellow (right letter,
+                  wrong spot), or gray (not in the word) after each guess. Guess it in 6 or fewer and you win; run
+                  out of guesses and the answer is revealed either way. Once it's over — win or lose — that's it,
+                  no retry.
+                </>
+              )}
+            </span>
+          </li>
         </ul>
       </Section>
 

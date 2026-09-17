@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { resetSubmissionAction } from "@/lib/actions/admin";
 import { summarizeConnectionsSubmission } from "@/lib/connections";
+import { summarizeSecurdleSubmission } from "@/lib/securdle";
 
 export interface AnswerRow {
   id: string;
@@ -15,6 +16,8 @@ export interface AnswerRow {
   xpAwarded: number;
   attempts: number;
   answerRaw: string;
+  /** The challenge's real correctAnswer - only used to name the missed word on a Securdle loss. */
+  correctAnswer: string | null;
   submittedAt: string; // pre-formatted server-side
 }
 
@@ -96,7 +99,11 @@ export function AgentAnswersTable({ rows }: { rows: AnswerRow[] }) {
                 <td className="px-3 py-2.5 font-terminal">{r.attempts}</td>
                 <td className="max-w-[220px] px-3 py-2.5 text-brand-sand/60">
                   <span className="line-clamp-2 break-words">
-                    {r.answerType === "CONNECTIONS" ? summarizeConnectionsSubmission(r.status, r.answerRaw) : r.answerRaw}
+                    {r.answerType === "CONNECTIONS"
+                      ? summarizeConnectionsSubmission(r.status, r.answerRaw)
+                      : r.answerType === "SECURDLE"
+                        ? summarizeSecurdleSubmission(r.status, r.answerRaw, r.correctAnswer ?? "")
+                        : r.answerRaw}
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5 font-terminal text-[11px] text-brand-sand/40">

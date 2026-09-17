@@ -34,7 +34,7 @@ export default async function AdminAnswersPage({
     orderBy: { submittedAt: "desc" },
     include: {
       employee: { select: { displayName: true, email: true } },
-      challenge: { select: { title: true, slug: true, answerType: true } },
+      challenge: { select: { title: true, slug: true, answerType: true, correctAnswer: true } },
     },
   });
 
@@ -49,6 +49,7 @@ export default async function AdminAnswersPage({
     xpAwarded: s.xpAwarded,
     attempts: s.attempts,
     answerRaw: s.answerRaw,
+    correctAnswer: s.challenge.correctAnswer,
     submittedAt: formatDateTime(s.submittedAt),
   }));
 

@@ -9,6 +9,8 @@ import { Icon } from "@/components/Icon";
 import { Linkify } from "@/components/Linkify";
 import { ConnectionsBoard } from "@/components/ConnectionsBoard";
 import { parseConnectionsGroups, parseConnectionsProgress } from "@/lib/connections";
+import { SecurdleBoard } from "@/components/SecurdleBoard";
+import { computeLetterStatuses, parseSecurdleProgress } from "@/lib/securdle";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +86,20 @@ export default async function ChallengeDetailPage({
   const connectionsSolvedGroups = connectionsProgress
     ? connectionsProgress.solvedGroupIndexes.map((i) => connectionsGroups[i]).filter(Boolean)
     : [];
+
+  // SECURDLE, likewise, never goes through the generic answer form -
+  // it's a real Wordle board with its own dedicated action/state (see
+  // lib/actions/securdle.ts). Historical guesses' colors are computed
+  // HERE, server-side, where the real answer is safely available - the
+  // client component only ever receives the raw answer once the game
+  // has actually ended (win or loss), never mid-game.
+  const isSecurdle = challenge.answerType === "SECURDLE";
+  const securdleAnswer = isSecurdle ? (challenge.correctAnswer ?? "").trim().toUpperCase() : "";
+  const securdleProgress = isSecurdle ? parseSecurdleProgress(existing?.answerRaw) : null;
+  const securdleGuessResults = securdleProgress
+    ? securdleProgress.guesses.map((g) => ({ word: g, statuses: computeLetterStatuses(g, securdleAnswer) }))
+    : [];
+  const securdleGameOver = existing?.status === "CORRECT" || existing?.status === "INCORRECT";
 
   // Every non-free-text answer type now supports a configurable attempts
   // cap (Challenge.maxAttempts, null = unlimited) - all derived directly
@@ -192,7 +208,20 @@ export default async function ChallengeDetailPage({
         />
       )}
 
-      {!isConnections && isOpen && existing?.status === "CORRECT" && (
+      {isOpen && isSecurdle && (
+        <SecurdleBoard
+          slug={challenge.slug}
+          answerLength={securdleAnswer.length}
+          initialGuessResults={securdleGuessResults}
+          initialStatus={(existing?.status as "IN_PROGRESS" | "CORRECT" | "INCORRECT") ?? "IN_PROGRESS"}
+          xpValue={challenge.xpValue}
+          isUnlock={isUnlock}
+          unlockContent={isUnlock ? <UnlockedContent challenge={challenge} /> : undefined}
+          revealedAnswer={securdleGameOver ? securdleAnswer : null}
+        />
+      )}
+
+      {!isConnections && !isSecurdle && isOpen && existing?.status === "CORRECT" && (
         isUnlock ? (
           <UnlockedContent challenge={challenge} />
         ) : (
@@ -202,13 +231,13 @@ export default async function ChallengeDetailPage({
         )
       )}
 
-      {!isConnections && isOpen && existing?.status === "PENDING_REVIEW" && (
+      {!isConnections && !isSecurdle && isOpen && existing?.status === "PENDING_REVIEW" && (
         <div className="rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 p-4 text-sm text-brand-yellow">
           Submitted — pending Security team review.
         </div>
       )}
 
-      {!isConnections && isOpen && outOfAttempts && (
+      {!isConnections && !isSecurdle && isOpen && outOfAttempts && (
         <div className="rounded-xl border border-brand-red/40 bg-brand-red/10 p-4 text-sm font-medium text-brand-red">
           <Icon name="skull" className="mr-1.5 inline h-4 w-4" />
           Out of attempts — you used all {challenge.maxAttempts} {challenge.maxAttempts === 1 ? "try" : "tries"}{" "}
@@ -216,7 +245,7 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {!isConnections && isOpen && canRetryNow && (
+      {!isConnections && !isSecurdle && isOpen && canRetryNow && (
         <div className="space-y-4">
           {existing?.status === "INCORRECT" && (
             <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-3 text-sm text-brand-red">
@@ -234,9 +263,9 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {!isConnections && isOpen && isFreeText && !existing && answerForm}
+      {!isConnections && !isSecurdle && isOpen && isFreeText && !existing && answerForm}
 
-      {!isConnections && isOpen && isFreeText && existing?.status === "INCORRECT" && (
+      {!isConnections && !isSecurdle && isOpen && isFreeText && existing?.status === "INCORRECT" && (
         <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-4 text-sm text-brand-red">
           Your submission wasn&apos;t approved by the Security team. This challenge is now closed for you.
         </div>

@@ -32,6 +32,7 @@ export function AnswerTypeSelect() {
       <option value="MULTIPLE_CHOICE">Multiple choice</option>
       <option value="FREE_TEXT_REVIEW">Free text (manual review)</option>
       <option value="CONNECTIONS">Security Connections (word-grouping game)</option>
+      <option value="SECURDLE">Securdle (Wordle-style word game)</option>
     </select>
   );
 }
@@ -40,5 +41,12 @@ export function AnswerTypeSelect() {
 export function ConnectionsOnly({ children }: { children: ReactNode }) {
   const ctx = useContext(AnswerTypeContext);
   if (ctx?.type !== "CONNECTIONS") return null;
+  return <>{children}</>;
+}
+
+/** Renders children only while Answer type is SECURDLE - unmounts (not just visually hides) otherwise. */
+export function SecurdleOnly({ children }: { children: ReactNode }) {
+  const ctx = useContext(AnswerTypeContext);
+  if (ctx?.type !== "SECURDLE") return null;
   return <>{children}</>;
 }

@@ -8,7 +8,7 @@ import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
 import { ChallengeFileField } from "@/components/ChallengeFileField";
 import { RewardModeProvider, RewardModeSelect, UnlockOnly, XpOnly } from "@/components/RewardModeContext";
-import { AnswerTypeProvider, AnswerTypeSelect, ConnectionsOnly } from "@/components/AnswerTypeContext";
+import { AnswerTypeProvider, AnswerTypeSelect, ConnectionsOnly, SecurdleOnly } from "@/components/AnswerTypeContext";
 import { TIERS } from "@/lib/tiers";
 import { Icon } from "@/components/Icon";
 import type { IconKey } from "@/lib/flare";
@@ -360,14 +360,25 @@ function ChallengeForm({
             Contains: correct if the submitted answer includes this text anywhere (case-insensitive). Regex: this
             field is a JS regex pattern (no slashes/flags) tested case-insensitively against the submitted answer.
             Security Connections ignores Correct answer/Choices below entirely — configure its 4 groups further down.
+            Securdle uses Correct answer as the target word - its length sets the board width automatically.
           </p>
         </div>
-        <Field
-          label="Correct answer (blank for review type)"
-          name="correctAnswer"
-          defaultValue={challenge?.correctAnswer ?? ""}
-          placeholder="e.g. phishing, or a pattern like ^\\d{4}$ for Regex"
-        />
+        <div>
+          <Field
+            label="Correct answer (blank for review type)"
+            name="correctAnswer"
+            defaultValue={challenge?.correctAnswer ?? ""}
+            placeholder="e.g. phishing, or a pattern like ^\\d{4}$ for Regex"
+          />
+          <SecurdleOnly>
+            <p className="mt-1 text-[11px] text-brand-sand/35">
+              This is the Securdle target word - any casing is fine, it&apos;s normalized automatically. Word length
+              sets the board width. Always exactly 6 guesses (not configurable), no hints, no dictionary check on
+              guesses (any string of the right length is accepted), and the answer is always revealed on a loss.
+              Once someone wins or uses all 6 guesses, that&apos;s final - no retry.
+            </p>
+          </SecurdleOnly>
+        </div>
       </div>
       <div>
         <Field
@@ -381,7 +392,8 @@ function ChallengeForm({
           How many times someone can (re)submit before it's permanently marked failed. Leave blank for
           unlimited retries. Ignored for Free text (manual review) — that type is always one-shot regardless.
           For Security Connections, this instead caps how many <em>wrong group guesses</em> are allowed before
-          the puzzle locks — blank = unlimited guesses.
+          the puzzle locks — blank = unlimited guesses. Ignored for Securdle too — that type is always exactly 6
+          guesses regardless of what's set here.
         </p>
       </div>
       <div>
