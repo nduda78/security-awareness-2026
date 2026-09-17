@@ -67,6 +67,7 @@ export default async function PrizesPage() {
           prize: f.ribbonText,
           wonAt,
           source: "flare",
+          flareField: "Ribbon Text",
           sourceChallengeTitle: source?.challenge.title ?? null,
           sourceChallengeSlug: source?.challenge.slug ?? null,
         });
@@ -77,6 +78,7 @@ export default async function PrizesPage() {
           prize: f.nameSuffix,
           wonAt,
           source: "flare",
+          flareField: "Name Suffix",
           sourceChallengeTitle: source?.challenge.title ?? null,
           sourceChallengeSlug: source?.challenge.slug ?? null,
         });

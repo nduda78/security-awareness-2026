@@ -13,6 +13,11 @@ export interface PrizeWinnerEntry {
   /// page's own "unlocks: ..." cyan) since it's a cosmetic badge reward
   /// rather than a literal physical/real-world prize.
   source: "achievement" | "flare";
+  /// Which specific BadgeFlare field this came from - only set when
+  /// source === "flare" (e.g. "Ribbon Text", "Name Suffix") - shown
+  /// alongside the generic "Badge Flare" tag so it's clear exactly what
+  /// kind of flare was issued, not just that some flare was.
+  flareField?: string;
   sourceChallengeTitle: string | null;
   sourceChallengeSlug: string | null;
 }
@@ -116,7 +121,11 @@ export function PrizeWinnersList({ groups }: { groups: PrizeWinnerGroup[] }) {
                         {isFlare ? "✨" : "🏆"} {e.prize}
                       </div>
                       <div className="mt-1 font-terminal text-[11px] text-brand-sand/35">
-                        {isFlare && <span className="text-brand-cyan/70">Badge Flare</span>}
+                        {isFlare && (
+                          <span className="text-brand-cyan/70">
+                            Badge Flare{e.flareField ? ` — ${e.flareField}` : ""}
+                          </span>
+                        )}
                         {isFlare && " · "}
                         {e.sourceChallengeTitle ? (
                           <>
