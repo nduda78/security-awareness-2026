@@ -10,12 +10,18 @@ export interface ScheduleEvent {
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// The event itself is "2026 Cybersecurity Awareness Month" - October
+// 2026 - so that's the default view every time the calendar loads with
+// no explicit ?cal= param, regardless of the server/viewer's actual
+// current month. Prev/Next (via ?cal=yyyy-MM) still browse away from it
+// freely - this only affects the initial default.
+const DEFAULT_YEAR = 2026;
+const DEFAULT_MONTH = 10;
+
 function parseMonthParam(cal: string | undefined): { year: number; month: number } {
   const match = cal?.match(/^(\d{4})-(\d{2})$/);
   if (match) return { year: Number(match[1]), month: Number(match[2]) };
-  const now = new Date();
-  const [year, month] = formatEasternDayKey(now).split("-").map(Number);
-  return { year, month };
+  return { year: DEFAULT_YEAR, month: DEFAULT_MONTH };
 }
 
 function monthParam(year: number, month: number): string {
