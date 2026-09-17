@@ -11,7 +11,7 @@ import { RewardModeProvider, RewardModeSelect, UnlockOnly } from "@/components/R
 import { TIER_BY_KEY, TIERS } from "@/lib/tiers";
 import { Icon } from "@/components/Icon";
 import type { IconKey } from "@/lib/flare";
-import { toEasternInputValue } from "@/lib/easternTime";
+import { toEasternInputValue, formatEasternDateTime } from "@/lib/easternTime";
 
 export const dynamic = "force-dynamic";
 
@@ -485,7 +485,21 @@ function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof Challen
               • {tag}
             </span>
           ))}{" "}
-          {!c.isActive && <span className="font-terminal text-xs text-brand-sand/40">(inactive)</span>}
+          {!c.isActive && <span className="font-terminal text-xs text-brand-sand/40">(inactive)</span>}{" "}
+          {(c.opensAt || c.closesAt) && (
+            <span
+              className="ml-1 inline-flex items-center gap-1 rounded-full border border-brand-cyan/50 bg-brand-cyan px-2 py-0.5 font-terminal text-[10px] font-bold uppercase tracking-wide text-brand-dark-green"
+              title={[
+                c.opensAt ? `Opens ${formatEasternDateTime(c.opensAt)}` : null,
+                c.closesAt ? `Closes ${formatEasternDateTime(c.closesAt)}` : null,
+              ]
+                .filter(Boolean)
+                .join(" — ")}
+            >
+              <span>⏰</span>
+              Scheduled
+            </span>
+          )}
         </span>
         <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>
       </summary>
