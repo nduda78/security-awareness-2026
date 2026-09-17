@@ -8,7 +8,7 @@ import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
 import { ChallengeFileField } from "@/components/ChallengeFileField";
 import { RewardModeProvider, RewardModeSelect, UnlockOnly } from "@/components/RewardModeContext";
-import { TIER_BY_KEY, TIERS } from "@/lib/tiers";
+import { TIERS } from "@/lib/tiers";
 import { Icon } from "@/components/Icon";
 import type { IconKey } from "@/lib/flare";
 import { toEasternInputValue, formatEasternDateTime } from "@/lib/easternTime";
@@ -459,6 +459,61 @@ function ChallengeGroup({
   );
 }
 
+/**
+ * Same button-badge visual language as the real Challenges page's
+ * Completed/Under Review/Out of Attempts pills - shown only when either
+ * Opens At or Closes At is actually set, and reflects the CURRENT state
+ * against real time (this page is force-dynamic, so it's evaluated fresh
+ * on every load): not yet reached its opens-at is "Scheduled", already
+ * past its closes-at is "Closed", and everything else time-gated but
+ * currently reachable is "Live".
+ */
+function SchedulePill({ opensAt, closesAt }: { opensAt: Date | null; closesAt: Date | null }) {
+  if (!opensAt && !closesAt) return null;
+  const now = new Date();
+  const notYetOpen = opensAt && opensAt > now;
+  const closed = closesAt && closesAt < now;
+
+  const title = [
+    opensAt ? `Opens ${formatEasternDateTime(opensAt)}` : null,
+    closesAt ? `Closes ${formatEasternDateTime(closesAt)}` : null,
+  ]
+    .filter(Boolean)
+    .join(" — ");
+
+  if (notYetOpen) {
+    return (
+      <span
+        className="ml-1 inline-flex items-center gap-1 rounded-full border border-brand-cyan/50 bg-brand-cyan px-2 py-0.5 font-terminal text-[10px] font-bold uppercase tracking-wide text-brand-dark-green"
+        title={title}
+      >
+        <span>⏰</span>
+        Scheduled
+      </span>
+    );
+  }
+  if (closed) {
+    return (
+      <span
+        className="ml-1 inline-flex items-center gap-1 rounded-full border border-brand-red/50 bg-brand-red px-2 py-0.5 font-terminal text-[10px] font-bold uppercase tracking-wide text-white"
+        title={title}
+      >
+        <span>✗</span>
+        Closed
+      </span>
+    );
+  }
+  return (
+    <span
+      className="ml-1 inline-flex items-center gap-1 rounded-full border border-brand-light-green/50 bg-brand-light-green px-2 py-0.5 font-terminal text-[10px] font-bold uppercase tracking-wide text-brand-dark-green"
+      title={title}
+    >
+      <span>●</span>
+      Live
+    </span>
+  );
+}
+
 function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof ChallengeForm>[0]["challenge"]>> }) {
   return (
     <details className="surface-card p-4">
@@ -472,13 +527,6 @@ function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof Challen
           ) : (
             <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>
           )}{" "}
-          <span
-            className="font-terminal text-xs"
-            style={{ color: TIER_BY_KEY[c.minClearance as keyof typeof TIER_BY_KEY]?.color }}
-          >
-            • {TIER_BY_KEY[c.minClearance as keyof typeof TIER_BY_KEY]?.shortLabel ?? c.minClearance}
-            {c.minClearance !== "ROGUE" ? "+" : ""}
-          </span>{" "}
           {rewardTags(c).map((tag, i) => (
             <span key={i} className="font-terminal text-xs text-brand-purple">
               {" "}
@@ -486,20 +534,7 @@ function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof Challen
             </span>
           ))}{" "}
           {!c.isActive && <span className="font-terminal text-xs text-brand-sand/40">(inactive)</span>}{" "}
-          {(c.opensAt || c.closesAt) && (
-            <span
-              className="ml-1 inline-flex items-center gap-1 rounded-full border border-brand-cyan/50 bg-brand-cyan px-2 py-0.5 font-terminal text-[10px] font-bold uppercase tracking-wide text-brand-dark-green"
-              title={[
-                c.opensAt ? `Opens ${formatEasternDateTime(c.opensAt)}` : null,
-                c.closesAt ? `Closes ${formatEasternDateTime(c.closesAt)}` : null,
-              ]
-                .filter(Boolean)
-                .join(" — ")}
-            >
-              <span>⏰</span>
-              Scheduled
-            </span>
-          )}
+          <SchedulePill opensAt={c.opensAt} closesAt={c.closesAt} />
         </span>
         <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>
       </summary>
