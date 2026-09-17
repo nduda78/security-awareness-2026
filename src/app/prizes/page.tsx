@@ -4,19 +4,29 @@ import { parseAchievements } from "@/lib/flare";
 
 export const dynamic = "force-dynamic";
 
+function titleCase(s: string): string {
+  return s
+    .split(/[\s-]+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
 /**
  * Registry of who's won what — grouped by person. Real prizes here come
  * from what's actually been issued to an agent's badge - not the unused
  * Challenge.rewardPrize field (nothing grants that in practice) - so this
- * reads each employee's BadgeFlare row and surfaces:
+ * reads each employee's BadgeFlare row and surfaces every field an admin
+ * can actually grant on it:
  *  - every freeform Achievements entry (the same list shown on their
- *    profile badge, e.g. "Won a MacBook") as its own prize, and
- *  - the two freeform, reward-flavored badge flare fields - ribbon
- *    text and name suffix (e.g. "Legendary", "the O.G.") - as their
- *    own "badge flare" prize. Purely cosmetic/technical flare (border
- *    style, background effect, badge icon, unlocked color pickers)
- *    is deliberately excluded - those are customization capabilities,
- *    not something that reads as a named prize.
+ *    profile badge, e.g. "Won a MacBook")
+ *  - ribbon text / name suffix (freeform, e.g. "Legendary", "the O.G.")
+ *  - border style / background effect / icon override (picked from the
+ *    fixed catalogs in flare.ts, e.g. "Rainbow", "Fireflies", "Crown")
+ *  - the holographic cursor sheen toggle, and the outline/background
+ *    color-picker capability unlocks
+ * All of the above genuinely got issued to someone by an admin (or, for
+ * the two color pickers, unlocked as a capability) - there's no flare
+ * field left out anymore; if an admin grants it, it shows up here.
  * BadgeFlare has no per-entry timestamp, so `updatedAt` on the row
  * (last time any of it was edited) is used as the "won" date for
  * everything from that employee - an approximation, not a precise
@@ -24,13 +34,14 @@ export const dynamic = "force-dynamic";
  *
  * "Why" attribution: there's no persisted link recording which specific
  * challenge caused a given flare grant (they're issued by hand in
- * /admin/flare) — so ribbon/suffix prizes are attributed by matching the
- * granted value against that same employee's own completed challenges'
+ * /admin/flare) — so most fields are attributed by matching the granted
+ * value against that same employee's own completed challenges'
  * advertised reward fields (same idea as getUnlockedFlareOptions in
- * rewards.ts). If a completed challenge advertises the exact ribbon/
- * suffix text they now have, that's almost certainly why they have it.
- * Freeform Achievements entries have no matching field to correlate
- * against at all, so those are always unattributed ("Manually awarded").
+ * rewards.ts). The two color pickers are a capability flag rather than a
+ * specific value, so they're attributed to any completed challenge that
+ * advertises unlocking that capability. Freeform Achievements entries
+ * have no matching field to correlate against at all, so those are
+ * always unattributed ("manually awarded").
  */
 export default async function PrizesPage() {
   const flares = await prisma.badgeFlare.findMany({
@@ -58,33 +69,75 @@ export default async function PrizesPage() {
       });
     }
 
-    if (f.ribbonText || f.nameSuffix) {
+    const hasAnyFlareGrant =
+      f.ribbonText ||
+      f.nameSuffix ||
+      f.borderStyle ||
+      f.backgroundEffect ||
+      f.iconOverride ||
+      f.holoSheen ||
+      f.outlineColor ||
+      f.backgroundColor;
+
+    if (hasAnyFlareGrant) {
       const correct = await prisma.submission.findMany({
         where: { employeeId: f.employeeId, status: "CORRECT" },
-        include: { challenge: { select: { title: true, slug: true, rewardRibbonText: true, rewardNameSuffix: true } } },
+        include: {
+          challenge: {
+            select: {
+              title: true,
+              slug: true,
+              rewardRibbonText: true,
+              rewardNameSuffix: true,
+              rewardBorderStyle: true,
+              rewardBackgroundEffect: true,
+              rewardIcon: true,
+              rewardOutlineColorPicker: true,
+              rewardBackgroundColorPicker: true,
+            },
+          },
+        },
       });
 
-      if (f.ribbonText) {
-        const source = correct.find((s) => s.challenge.rewardRibbonText === f.ribbonText);
+      function pushFlareEntry(
+        prize: string,
+        flareField: string,
+        matcher: (rewards: (typeof correct)[number]["challenge"]) => boolean
+      ) {
+        const source = correct.find((s) => matcher(s.challenge));
         entries.push({
-          prize: f.ribbonText,
+          prize,
           wonAt,
           source: "flare",
-          flareField: "Ribbon Text",
+          flareField,
           sourceChallengeTitle: source?.challenge.title ?? null,
           sourceChallengeSlug: source?.challenge.slug ?? null,
         });
       }
+
+      if (f.ribbonText) {
+        pushFlareEntry(f.ribbonText, "Ribbon Text", (r) => r.rewardRibbonText === f.ribbonText);
+      }
       if (f.nameSuffix) {
-        const source = correct.find((s) => s.challenge.rewardNameSuffix === f.nameSuffix);
-        entries.push({
-          prize: f.nameSuffix,
-          wonAt,
-          source: "flare",
-          flareField: "Name Suffix",
-          sourceChallengeTitle: source?.challenge.title ?? null,
-          sourceChallengeSlug: source?.challenge.slug ?? null,
-        });
+        pushFlareEntry(f.nameSuffix, "Name Suffix", (r) => r.rewardNameSuffix === f.nameSuffix);
+      }
+      if (f.borderStyle) {
+        pushFlareEntry(titleCase(f.borderStyle), "Border Style", (r) => r.rewardBorderStyle === f.borderStyle);
+      }
+      if (f.backgroundEffect) {
+        pushFlareEntry(titleCase(f.backgroundEffect), "Background Effect", (r) => r.rewardBackgroundEffect === f.backgroundEffect);
+      }
+      if (f.iconOverride) {
+        pushFlareEntry(titleCase(f.iconOverride), "Badge Icon", (r) => r.rewardIcon === f.iconOverride);
+      }
+      if (f.holoSheen) {
+        pushFlareEntry("Holographic Cursor Sheen", "Holo Sheen", () => false);
+      }
+      if (f.outlineColor) {
+        pushFlareEntry("Custom Outline Color", "Outline Color", (r) => r.rewardOutlineColorPicker);
+      }
+      if (f.backgroundColor) {
+        pushFlareEntry("Custom Background Color", "Background Color", (r) => r.rewardBackgroundColorPicker);
       }
     }
 
