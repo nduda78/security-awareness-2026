@@ -40,6 +40,15 @@ model Employee {
   /// "claimed" (had a PIN set) yet - see claimOrRegisterAction in
   /// src/lib/actions/identify.ts.
   pinHash        String?
+  /// Optional second factor beyond the PIN, bcrypt-hashed same as pinHash.
+  /// Null (the default for every real agent) means PIN-only login, same
+  /// as always. When set, correctly guessing the PIN alone is NOT enough
+  /// to sign in as this identity - loginAction routes to a second "vault
+  /// password" step instead (see identify.ts/session.ts's pending-vault
+  /// cookie) before actually establishing the session. Generic on
+  /// purpose (not hardcoded to one account) even though only one agent
+  /// uses it today.
+  extraPasswordHash String?
   rogueOverride  Boolean   @default(false)
   /// Grants full /admin panel access with no passphrase needed - see
   /// isAdminSession() in src/lib/session.ts. "nick-duda" is a permanent

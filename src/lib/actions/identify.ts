@@ -3,7 +3,16 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { encodeAgentCookie, AGENT_COOKIE_NAME, AGENT_COOKIE_MAX_AGE, ADMIN_COOKIE_NAME } from "@/lib/session";
+import {
+  encodeAgentCookie,
+  AGENT_COOKIE_NAME,
+  AGENT_COOKIE_MAX_AGE,
+  ADMIN_COOKIE_NAME,
+  encodePendingVaultCookie,
+  getPendingVaultEmail,
+  PENDING_VAULT_COOKIE_NAME,
+  PENDING_VAULT_MAX_AGE,
+} from "@/lib/session";
 import { slugifyName, isValidPin, hashPin, verifyPin } from "@/lib/auth";
 
 function fail(mode: "register" | "login", next: string, message: string): never {
@@ -116,7 +125,50 @@ export async function loginAction(formData: FormData) {
     fail("login", next, "Incorrect PIN.");
   }
 
+  // Some identities need one more thing beyond the PIN - see the schema
+  // comment on Employee.extraPasswordHash. The PIN was genuinely correct
+  // (that's real progress, hence the taunt on the next screen instead of
+  // a generic "incorrect" error), but the session isn't established yet.
+  if (existing.extraPasswordHash) {
+    const store = await cookies();
+    store.set(PENDING_VAULT_COOKIE_NAME, encodePendingVaultCookie(existing.email), {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: PENDING_VAULT_MAX_AGE,
+    });
+    redirect(`/identify?step=vault&next=${encodeURIComponent(next)}`);
+  }
+
   await setSessionAndRedirect(existing.email, existing.displayName, next);
+}
+
+/**
+ * Second step for an identity with an extraPasswordHash set (see
+ * loginAction above) - reads WHO from the signed pending-vault cookie
+ * (never a client-suppliable field, so this can't be reached without
+ * already having passed the real PIN check), verifies the extra
+ * password, and only then actually establishes the session.
+ */
+export async function verifyVaultPasswordAction(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const next = String(formData.get("next") ?? "/leaderboard");
+
+  const email = await getPendingVaultEmail();
+  if (!email) {
+    fail("login", next, "That took too long - sign in again.");
+  }
+
+  const employee = await prisma.employee.findUnique({ where: { email } });
+  if (!employee || !employee.extraPasswordHash || !verifyPin(password, employee.extraPasswordHash)) {
+    redirect(
+      `/identify?step=vault&next=${encodeURIComponent(next)}&error=${encodeURIComponent("Thought you were clever, huh?")}`
+    );
+  }
+
+  const store = await cookies();
+  store.delete(PENDING_VAULT_COOKIE_NAME);
+  await setSessionAndRedirect(employee.email, employee.displayName, next);
 }
 
 export async function signOutAction() {

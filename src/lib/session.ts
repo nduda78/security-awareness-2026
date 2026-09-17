@@ -88,3 +88,27 @@ export function encodeAdminCookie(): string {
 }
 
 export const ADMIN_COOKIE_NAME = ADMIN_COOKIE;
+
+// Short-lived marker set right after a CORRECT PIN check for an identity
+// that also has an extraPasswordHash - proves "the PIN step already
+// passed" so the second step (verifyVaultPasswordAction in identify.ts)
+// only needs the extra password, without re-asking for the PIN or
+// trusting a client-suppliable email. Signed the same way as the other
+// cookies here so it can't be forged or edited client-side; a short
+// 10-minute expiry means walking away mid-flow just requires starting
+// over, not a lingering half-authenticated state.
+const PENDING_VAULT_COOKIE = "pending_vault";
+export const PENDING_VAULT_COOKIE_NAME = PENDING_VAULT_COOKIE;
+export const PENDING_VAULT_MAX_AGE = 60 * 10;
+
+export function encodePendingVaultCookie(email: string): string {
+  return sign(email);
+}
+
+/** The identity slug pending a vault-password check, or null if there isn't one (expired, never set, or tampered with). */
+export async function getPendingVaultEmail(): Promise<string | null> {
+  const store = await cookies();
+  const raw = store.get(PENDING_VAULT_COOKIE)?.value;
+  if (!raw) return null;
+  return unsign(raw);
+}
