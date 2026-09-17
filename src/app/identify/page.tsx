@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { registerAction, loginAction, verifyVaultPasswordAction } from "@/lib/actions/identify";
+import { registerAction, loginAction, verifyVaultPasswordAction, setupVaultPasswordAction } from "@/lib/actions/identify";
 import { Icon } from "@/components/Icon";
 
 export default async function IdentifyPage({
@@ -10,6 +10,57 @@ export default async function IdentifyPage({
 }) {
   const { next = "/leaderboard", error, mode, step } = await searchParams;
   const isLogin = mode === "login";
+
+  if (step === "setup-vault") {
+    return (
+      <div className="fade-in-up mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center">
+        <Image src="/brand/dutchie-logo.png" alt="Dutchie" width={140} height={38} className="mb-8 h-9 w-auto" />
+        <div className="glass-panel w-full rounded-2xl p-7">
+          <div className="mb-3 flex items-center gap-2 text-brand-cyan">
+            <Icon name="lock" className="h-4 w-4" />
+            <span className="section-eyebrow !text-brand-cyan">Admin Security Setup</span>
+          </div>
+          <h1 className="mb-3 font-display text-2xl font-semibold">Set Your Admin Password</h1>
+          <p className="mb-6 text-sm text-brand-sand/60">
+            Admin accounts need one more thing beyond the PIN. Pick a password below - you&apos;ll need it (along
+            with your PIN) every time you sign in from now on.
+          </p>
+          {error && <div className="mb-4 rounded-xl bg-brand-red/15 p-3 text-sm text-brand-red">{error}</div>}
+          <form action={setupVaultPasswordAction} className="space-y-4">
+            <input type="hidden" name="next" value={next} />
+            <div>
+              <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Password</label>
+              <input
+                name="password"
+                required
+                minLength={6}
+                type="password"
+                autoComplete="new-password"
+                placeholder="At least 6 characters"
+                className="input-modern w-full"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+                Confirm password
+              </label>
+              <input
+                name="confirmPassword"
+                required
+                minLength={6}
+                type="password"
+                autoComplete="new-password"
+                placeholder="At least 6 characters"
+                className="input-modern w-full"
+              />
+            </div>
+            <button className="btn-primary w-full">Set password &amp; continue</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (step === "vault") {
     return (

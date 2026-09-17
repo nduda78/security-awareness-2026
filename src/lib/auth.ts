@@ -40,3 +40,10 @@ export function verifyPin(pin: string, hash: string): boolean {
     return false;
   }
 }
+
+// Same bcrypt hash/verify plumbing as the PIN (hashPin/verifyPin), just a
+// looser length rule - the "vault" second-factor password (see the
+// Employee.extraPasswordHash schema comment) is free-text, not 4 digits.
+export function isValidVaultPassword(pw: string): boolean {
+  return pw.trim().length >= 6 && pw.length <= 100;
+}

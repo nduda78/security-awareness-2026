@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
-import { isAdminSession } from "@/lib/session";
+import { isAdminSession, getAgentIdentity } from "@/lib/session";
 import { isCompromisedModeEnabled, getClearanceWebhookConfig } from "@/lib/settings";
 import { toggleCompromisedModeAction, saveClearanceWebhookAction } from "@/lib/actions/admin";
+import { setOwnAdminPasswordAction } from "@/lib/actions/adminSecurity";
+import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
 import { Icon } from "@/components/Icon";
 
@@ -10,12 +12,22 @@ export const dynamic = "force-dynamic";
 export default async function AdminSettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; pwSaved?: string; pwError?: string }>;
 }) {
   if (!(await isAdminSession())) redirect("/admin");
-  const { saved } = await searchParams;
+  const { saved, pwSaved, pwError } = await searchParams;
   const compromised = await isCompromisedModeEnabled();
   const clearanceWebhook = await getClearanceWebhookConfig();
+
+  // Only a real signed-in agent identity flagged isAdmin has a password to
+  // set here - the legacy admin_session passphrase cookie alone has no
+  // employee row to attach one to.
+  const identity = await getAgentIdentity();
+  const selfEmployee = identity
+    ? await prisma.employee.findUnique({ where: { email: identity.email }, select: { isAdmin: true, extraPasswordHash: true } })
+    : null;
+  const showPasswordPanel = !!selfEmployee?.isAdmin;
+  const hasPasswordSet = !!selfEmployee?.extraPasswordHash;
 
   return (
     <div className="fade-in-up">
@@ -88,6 +100,80 @@ export default async function AdminSettingsPage({
           </span>
         </p>
       </div>
+
+      {showPasswordPanel && (
+        <div className="surface-card mt-6 max-w-xl space-y-4 p-5">
+          <div className="flex items-center gap-2 text-brand-cyan">
+            <Icon name="lock" className="h-4 w-4" />
+            <span className="section-eyebrow !text-brand-cyan">Your Account</span>
+          </div>
+          <h2 className="font-display text-lg font-semibold">
+            {hasPasswordSet ? "Change Your Admin Password" : "Set Your Admin Password"}
+          </h2>
+          <p className="text-sm text-brand-sand/60">
+            Every admin-flagged account needs a password beyond their PIN to sign in (see
+            Employee.extraPasswordHash) - if you were just promoted to admin, set yours here now instead of
+            waiting for your next sign-in to be forced through it.
+          </p>
+          {pwSaved && (
+            <div className="rounded-xl bg-brand-light-green/15 p-3 text-sm text-brand-light-green">Password saved.</div>
+          )}
+          {pwError && <div className="rounded-xl bg-brand-red/15 p-3 text-sm text-brand-red">{pwError}</div>}
+          <form action={setOwnAdminPasswordAction} className="space-y-3">
+            {hasPasswordSet && (
+              <div>
+                <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+                  Current password
+                </label>
+                <input
+                  name="currentPassword"
+                  type="password"
+                  autoComplete="current-password"
+                  className="input-modern w-full"
+                  required
+                />
+              </div>
+            )}
+            <div>
+              <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+                {hasPasswordSet ? "New password" : "Password"}
+              </label>
+              <input
+                name="newPassword"
+                type="password"
+                minLength={6}
+                autoComplete="new-password"
+                placeholder="At least 6 characters"
+                className="input-modern w-full"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
+                Confirm {hasPasswordSet ? "new " : ""}password
+              </label>
+              <input
+                name="confirmPassword"
+                type="password"
+                minLength={6}
+                autoComplete="new-password"
+                placeholder="At least 6 characters"
+                className="input-modern w-full"
+                required
+              />
+            </div>
+            <button className="btn-secondary !border-brand-cyan/40 !text-brand-cyan">
+              {hasPasswordSet ? "Change password" : "Set password"}
+            </button>
+          </form>
+          <p className="font-terminal text-[10px] uppercase tracking-wide text-brand-sand/35">
+            Currently:{" "}
+            <span className={hasPasswordSet ? "text-brand-light-green" : "text-brand-red"}>
+              {hasPasswordSet ? "SET" : "NOT SET YET"}
+            </span>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

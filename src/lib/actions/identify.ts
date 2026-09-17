@@ -13,7 +13,7 @@ import {
   PENDING_VAULT_COOKIE_NAME,
   PENDING_VAULT_MAX_AGE,
 } from "@/lib/session";
-import { slugifyName, isValidPin, hashPin, verifyPin } from "@/lib/auth";
+import { slugifyName, isValidPin, hashPin, verifyPin, isValidVaultPassword } from "@/lib/auth";
 
 function fail(mode: "register" | "login", next: string, message: string): never {
   redirect(`/identify?mode=${mode}&next=${encodeURIComponent(next)}&error=${encodeURIComponent(message)}`);
@@ -140,6 +140,22 @@ export async function loginAction(formData: FormData) {
     redirect(`/identify?step=vault&next=${encodeURIComponent(next)}`);
   }
 
+  // Every admin-flagged account requires the same second factor, even if
+  // nobody's set their password yet (e.g. someone just got promoted via
+  // toggleAdminAction in the Agents admin panel, or shipped-with-no-
+  // password-set before this requirement existed) - route them to create
+  // one now, same pending-vault cookie proving the PIN already passed.
+  if (existing.isAdmin) {
+    const store = await cookies();
+    store.set(PENDING_VAULT_COOKIE_NAME, encodePendingVaultCookie(existing.email), {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: PENDING_VAULT_MAX_AGE,
+    });
+    redirect(`/identify?step=setup-vault&next=${encodeURIComponent(next)}`);
+  }
+
   await setSessionAndRedirect(existing.email, existing.displayName, next);
 }
 
@@ -169,6 +185,47 @@ export async function verifyVaultPasswordAction(formData: FormData) {
   const store = await cookies();
   store.delete(PENDING_VAULT_COOKIE_NAME);
   await setSessionAndRedirect(employee.email, employee.displayName, next);
+}
+
+/**
+ * First-time setup for an admin-flagged identity that doesn't have an
+ * extraPasswordHash yet (see loginAction above) - reads WHO from the same
+ * signed pending-vault cookie, then lets them pick their own admin
+ * password before establishing the session. Re-checks isAdmin and
+ * !extraPasswordHash server-side rather than trusting the URL step alone
+ * - if either isn't true anymore, there's nothing to set up here.
+ */
+export async function setupVaultPasswordAction(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const next = String(formData.get("next") ?? "/leaderboard");
+
+  const email = await getPendingVaultEmail();
+  if (!email) {
+    fail("login", next, "That took too long - sign in again.");
+  }
+
+  const employee = await prisma.employee.findUnique({ where: { email } });
+  if (!employee || !employee.isAdmin || employee.extraPasswordHash) {
+    redirect(`/identify?mode=login&next=${encodeURIComponent(next)}`);
+  }
+
+  if (!isValidVaultPassword(password)) {
+    redirect(
+      `/identify?step=setup-vault&next=${encodeURIComponent(next)}&error=${encodeURIComponent("Password must be at least 6 characters.")}`
+    );
+  }
+  if (password !== confirmPassword) {
+    redirect(
+      `/identify?step=setup-vault&next=${encodeURIComponent(next)}&error=${encodeURIComponent("Passwords don't match.")}`
+    );
+  }
+
+  await prisma.employee.update({ where: { email: employee!.email }, data: { extraPasswordHash: hashPin(password) } });
+
+  const store = await cookies();
+  store.delete(PENDING_VAULT_COOKIE_NAME);
+  await setSessionAndRedirect(employee!.email, employee!.displayName, next);
 }
 
 export async function signOutAction() {

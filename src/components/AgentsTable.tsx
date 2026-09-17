@@ -15,6 +15,10 @@ export interface AgentRow {
   hidden: boolean;
   claimed: boolean;
   isAdmin: boolean;
+  /// True if this admin-flagged agent has already set their vault
+  /// password (Employee.extraPasswordHash) - only meaningful when
+  /// isAdmin is true; ignored otherwise.
+  hasAdminPassword: boolean;
 }
 
 type SortKey = "name" | "handle" | "xp" | "tier";
@@ -179,11 +183,26 @@ export function AgentsTable({
                   {r.email === permanentAdminEmail ? (
                     <span className="font-terminal text-[10px] uppercase text-brand-light-green/80">Permanent</span>
                   ) : (
-                    <form action={toggleAdminAction} className="flex items-center gap-1.5">
-                      <input type="hidden" name="email" value={r.email} />
-                      <input type="checkbox" name="admin" defaultChecked={r.isAdmin} className="accent-brand-light-green" />
-                      <button className="btn-secondary !px-2 !py-0.5 !text-[10px]">Save</button>
-                    </form>
+                    <div className="space-y-1">
+                      <form action={toggleAdminAction} className="flex items-center gap-1.5">
+                        <input type="hidden" name="email" value={r.email} />
+                        <input
+                          type="checkbox"
+                          name="admin"
+                          defaultChecked={r.isAdmin}
+                          className="accent-brand-light-green"
+                        />
+                        <button className="btn-secondary !px-2 !py-0.5 !text-[10px]">Save</button>
+                      </form>
+                      {r.isAdmin && !r.hasAdminPassword && (
+                        <div
+                          className="font-terminal text-[9px] uppercase text-brand-red/80"
+                          title="They'll be prompted to set one on their next sign-in, or can set it now from /admin/settings."
+                        >
+                          ⚠ no password set
+                        </div>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="px-3 py-2.5">

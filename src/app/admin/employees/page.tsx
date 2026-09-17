@@ -24,9 +24,13 @@ export default async function AdminEmployeesPage({
   const hiddenByEmail = new Map((await prisma.employee.findMany({ select: { email: true, isHidden: true } })).map((e) => [e.email, e.isHidden]));
 
   const employeeFlags = new Map(
-    (await prisma.employee.findMany({ select: { email: true, pinHash: true, isAdmin: true } })).map((e) => [
+    (
+      await prisma.employee.findMany({
+        select: { email: true, pinHash: true, isAdmin: true, extraPasswordHash: true },
+      })
+    ).map((e) => [
       e.email,
-      { claimed: e.pinHash !== null, isAdmin: e.isAdmin },
+      { claimed: e.pinHash !== null, isAdmin: e.isAdmin, hasAdminPassword: e.extraPasswordHash !== null },
     ])
   );
 
@@ -41,6 +45,7 @@ export default async function AdminEmployeesPage({
     hidden: hiddenByEmail.get(r.email) ?? false,
     claimed: employeeFlags.get(r.email)?.claimed ?? false,
     isAdmin: employeeFlags.get(r.email)?.isAdmin ?? false,
+    hasAdminPassword: employeeFlags.get(r.email)?.hasAdminPassword ?? false,
   }));
 
   return (
