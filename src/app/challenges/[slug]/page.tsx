@@ -7,6 +7,8 @@ import { submitAnswerAction } from "@/lib/actions/submit";
 import { ChallengeRewardDetails, UnlockTeaserPills } from "@/components/ChallengeRewardPills";
 import { Icon } from "@/components/Icon";
 import { Linkify } from "@/components/Linkify";
+import { ConnectionsBoard } from "@/components/ConnectionsBoard";
+import { parseConnectionsGroups, parseConnectionsProgress } from "@/lib/connections";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +70,20 @@ export default async function ChallengeDetailPage({
   const choices: string[] | null = challenge.choices ? JSON.parse(challenge.choices) : null;
   const isUnlock = challenge.rewardMode === "UNLOCK";
   const isFreeText = challenge.answerType === "FREE_TEXT_REVIEW";
+  const isConnections = challenge.answerType === "CONNECTIONS";
+
+  // CONNECTIONS never goes through the generic single-answer form/attempts
+  // machinery below (it has its own dedicated action + incremental game
+  // state - see lib/actions/connections.ts) - resolve just what
+  // ConnectionsBoard needs and render it in its own early-return-free
+  // branch further down.
+  const connectionsGroups = isConnections ? parseConnectionsGroups(challenge.correctAnswer) : [];
+  const connectionsProgress = isConnections ? parseConnectionsProgress(existing?.answerRaw) : null;
+  // Only ever resolve the groups actually solved so far to real {label,
+  // words} - the unsolved answer key must never reach the client.
+  const connectionsSolvedGroups = connectionsProgress
+    ? connectionsProgress.solvedGroupIndexes.map((i) => connectionsGroups[i]).filter(Boolean)
+    : [];
 
   // Every non-free-text answer type now supports a configurable attempts
   // cap (Challenge.maxAttempts, null = unlimited) - all derived directly
@@ -160,7 +176,22 @@ export default async function ChallengeDetailPage({
         <div className="surface-card p-4 text-sm text-brand-sand/60">This mission isn&apos;t currently open.</div>
       )}
 
-      {isOpen && existing?.status === "CORRECT" && (
+      {isOpen && isConnections && (
+        <ConnectionsBoard
+          slug={challenge.slug}
+          words={choices ?? []}
+          initialSolvedGroups={connectionsSolvedGroups}
+          initialMistakes={connectionsProgress?.mistakes ?? 0}
+          maxAttempts={challenge.maxAttempts}
+          initialStatus={(existing?.status as "IN_PROGRESS" | "CORRECT" | "INCORRECT") ?? "IN_PROGRESS"}
+          totalGroups={connectionsGroups.length || 4}
+          xpValue={challenge.xpValue}
+          isUnlock={isUnlock}
+          unlockContent={isUnlock ? <UnlockedContent challenge={challenge} /> : undefined}
+        />
+      )}
+
+      {!isConnections && isOpen && existing?.status === "CORRECT" && (
         isUnlock ? (
           <UnlockedContent challenge={challenge} />
         ) : (
@@ -170,13 +201,13 @@ export default async function ChallengeDetailPage({
         )
       )}
 
-      {isOpen && existing?.status === "PENDING_REVIEW" && (
+      {!isConnections && isOpen && existing?.status === "PENDING_REVIEW" && (
         <div className="rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 p-4 text-sm text-brand-yellow">
           Submitted — pending Security team review.
         </div>
       )}
 
-      {isOpen && outOfAttempts && (
+      {!isConnections && isOpen && outOfAttempts && (
         <div className="rounded-xl border border-brand-red/40 bg-brand-red/10 p-4 text-sm font-medium text-brand-red">
           <Icon name="skull" className="mr-1.5 inline h-4 w-4" />
           Out of attempts — you used all {challenge.maxAttempts} {challenge.maxAttempts === 1 ? "try" : "tries"}{" "}
@@ -184,7 +215,7 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {isOpen && canRetryNow && (
+      {!isConnections && isOpen && canRetryNow && (
         <div className="space-y-4">
           {existing?.status === "INCORRECT" && (
             <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-3 text-sm text-brand-red">
@@ -202,9 +233,9 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {isOpen && isFreeText && !existing && answerForm}
+      {!isConnections && isOpen && isFreeText && !existing && answerForm}
 
-      {isOpen && isFreeText && existing?.status === "INCORRECT" && (
+      {!isConnections && isOpen && isFreeText && existing?.status === "INCORRECT" && (
         <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-4 text-sm text-brand-red">
           Your submission wasn&apos;t approved by the Security team. This challenge is now closed for you.
         </div>

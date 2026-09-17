@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { resetSubmissionAction } from "@/lib/actions/admin";
+import { summarizeConnectionsSubmission } from "@/lib/connections";
 
 export interface AnswerRow {
   id: string;
@@ -10,7 +11,7 @@ export interface AnswerRow {
   challengeTitle: string;
   challengeSlug: string;
   answerType: string;
-  status: "CORRECT" | "INCORRECT" | "PENDING_REVIEW";
+  status: "CORRECT" | "INCORRECT" | "PENDING_REVIEW" | "IN_PROGRESS";
   xpAwarded: number;
   attempts: number;
   answerRaw: string;
@@ -21,12 +22,14 @@ const STATUS_STYLE: Record<AnswerRow["status"], string> = {
   CORRECT: "text-brand-light-green",
   INCORRECT: "text-brand-red",
   PENDING_REVIEW: "text-brand-yellow",
+  IN_PROGRESS: "text-brand-cyan",
 };
 
 const STATUS_LABEL: Record<AnswerRow["status"], string> = {
   CORRECT: "Correct",
   INCORRECT: "Incorrect",
   PENDING_REVIEW: "Pending review",
+  IN_PROGRESS: "In progress",
 };
 
 // Client-side search only (no server round trip) - filters across agent
@@ -92,7 +95,9 @@ export function AgentAnswersTable({ rows }: { rows: AnswerRow[] }) {
                 <td className="px-3 py-2.5 font-terminal">{r.xpAwarded > 0 ? `+${r.xpAwarded}` : "—"}</td>
                 <td className="px-3 py-2.5 font-terminal">{r.attempts}</td>
                 <td className="max-w-[220px] px-3 py-2.5 text-brand-sand/60">
-                  <span className="line-clamp-2 break-words">{r.answerRaw}</span>
+                  <span className="line-clamp-2 break-words">
+                    {r.answerType === "CONNECTIONS" ? summarizeConnectionsSubmission(r.status, r.answerRaw) : r.answerRaw}
+                  </span>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5 font-terminal text-[11px] text-brand-sand/40">
                   {r.submittedAt}

@@ -13,6 +13,7 @@ import { handlePossibleTierUp, getCurrentXp } from "@/lib/tierUpEvents";
 import { fireChallengeCompletedWebhook } from "@/lib/webhooks";
 import { setClearanceWebhookConfig, setReviewWebhookConfig } from "@/lib/settings";
 import { announceJustOpenedChallenges } from "@/lib/challengeDrops";
+import { shuffleWords, type ConnectionsGroup } from "@/lib/connections";
 
 async function requireAdmin() {
   if (!(await isAdminSession())) {
@@ -95,6 +96,50 @@ function parseChoices(raw: string): string[] | undefined {
   return lines.length ? lines : undefined;
 }
 
+/**
+ * Reads the 4 label+words field pairs (connGroup1Label/connGroup1Words ...
+ * connGroup4Label/connGroup4Words) the admin form submits for a CONNECTIONS
+ * challenge and turns them into the 4 ConnectionsGroup objects plus a
+ * freshly-shuffled flat 16-word grid order. Validates exactly 4 non-empty
+ * words per group and all 16 words unique (case-insensitively) across every
+ * group - anything else returns an error instead of silently saving a
+ * broken puzzle.
+ */
+interface ConnectionsFieldsResult {
+  groups: ConnectionsGroup[] | null;
+  shuffledWords: string[] | null;
+  error: string | null;
+}
+
+function buildConnectionsFields(formData: FormData): ConnectionsFieldsResult {
+  const groups: ConnectionsGroup[] = [];
+  for (let i = 1; i <= 4; i++) {
+    const label = String(formData.get(`connGroup${i}Label`) ?? "").trim();
+    const words = String(formData.get(`connGroup${i}Words`) ?? "")
+      .split("\n")
+      .map((w) => w.trim())
+      .filter(Boolean);
+    if (!label) return { groups: null, shuffledWords: null, error: `Group ${i} needs a label.` };
+    if (words.length !== 4) {
+      return { groups: null, shuffledWords: null, error: `Group "${label}" needs exactly 4 words (got ${words.length}).` };
+    }
+    groups.push({ label, words });
+  }
+
+  const allWordsLower = groups.flatMap((g) => g.words.map((w) => w.toLowerCase()));
+  const uniqueCount = new Set(allWordsLower).size;
+  if (uniqueCount !== 16) {
+    return {
+      groups: null,
+      shuffledWords: null,
+      error: "All 16 words across the 4 groups must be unique (case-insensitive) - found a duplicate.",
+    };
+  }
+
+  const shuffledWords = shuffleWords(groups.flatMap((g) => g.words));
+  return { groups, shuffledWords, error: null };
+}
+
 export async function upsertChallengeAction(formData: FormData) {
   await requireAdmin();
 
@@ -108,7 +153,8 @@ export async function upsertChallengeAction(formData: FormData) {
     | "CONTAINS"
     | "REGEX"
     | "MULTIPLE_CHOICE"
-    | "FREE_TEXT_REVIEW";
+    | "FREE_TEXT_REVIEW"
+    | "CONNECTIONS";
   const correctAnswer = String(formData.get("correctAnswer") ?? "").trim() || null;
   const choicesRaw = String(formData.get("choices") ?? "");
   const xpValue = parseInt(String(formData.get("xpValue") ?? "0"), 10) || 0;
@@ -141,13 +187,34 @@ export async function upsertChallengeAction(formData: FormData) {
   const opensAtRaw = String(formData.get("opensAt") ?? "");
   const closesAtRaw = String(formData.get("closesAt") ?? "");
 
+  // CONNECTIONS builds both choices (the shuffled 16-word grid) and
+  // correctAnswer (the 4 labeled groups) from 4 label+words field pairs
+  // instead of the generic correctAnswer/choices textareas - see
+  // buildConnectionsFields below. Any validation failure here bails out
+  // before ever touching the database, same pattern as the asset-field
+  // errors further down.
+  const connectionsResult = answerType === "CONNECTIONS" ? buildConnectionsFields(formData) : null;
+  if (connectionsResult?.error) {
+    redirect(`/admin/challenges?error=${encodeURIComponent(connectionsResult.error)}`);
+  }
+
   const data: Record<string, unknown> = {
     slug,
     title,
     description,
     answerType,
-    correctAnswer: answerType === "FREE_TEXT_REVIEW" ? null : correctAnswer,
-    choices: answerType === "MULTIPLE_CHOICE" ? JSON.stringify(parseChoices(choicesRaw)) : undefined,
+    correctAnswer:
+      answerType === "FREE_TEXT_REVIEW"
+        ? null
+        : answerType === "CONNECTIONS"
+          ? JSON.stringify(connectionsResult!.groups)
+          : correctAnswer,
+    choices:
+      answerType === "MULTIPLE_CHOICE"
+        ? JSON.stringify(parseChoices(choicesRaw))
+        : answerType === "CONNECTIONS"
+          ? JSON.stringify(connectionsResult!.shuffledWords)
+          : undefined,
     xpValue,
     maxAttempts,
     rewardMode,

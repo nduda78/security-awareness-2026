@@ -1142,3 +1142,26 @@ html.site-compromised .site-logo {
     break-inside: avoid;
   }
 }
+
+/* Wrong-guess tile shake for the CONNECTIONS challenge type (ConnectionsBoard.tsx) - a single quick shake, not the looping "chaos" glitch effect used elsewhere for the compromised theme. */
+@keyframes connections-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+.animate-shake {
+  animation: connections-shake 0.4s ease-in-out;
+}

@@ -130,7 +130,7 @@ model Challenge {
   slug String @unique
   title String
   description String
-  /// One of: EXACT | CASE_INSENSITIVE | CONTAINS | REGEX | MULTIPLE_CHOICE | FREE_TEXT_REVIEW
+  /// One of: EXACT | CASE_INSENSITIVE | CONTAINS | REGEX | MULTIPLE_CHOICE | FREE_TEXT_REVIEW | CONNECTIONS
   answerType    String
   correctAnswer String? // null for FREE_TEXT_REVIEW
   /// JSON-encoded string[] for MULTIPLE_CHOICE (SQLite has no native Json type in this Prisma version)
@@ -207,7 +207,7 @@ model Submission {
   employeeId   String
   challengeId  String
   answerRaw    String
-  /// One of: CORRECT | INCORRECT | PENDING_REVIEW
+  /// One of: CORRECT | INCORRECT | PENDING_REVIEW | IN_PROGRESS (IN_PROGRESS is only ever written by the CONNECTIONS answer type - see lib/connections.ts - for a multi-guess game that hasn't been won or locked out yet)
   status       String
   xpAwarded    Int      @default(0)
   /// How many times this employee has submitted an answer to this

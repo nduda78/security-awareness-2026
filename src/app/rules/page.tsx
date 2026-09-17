@@ -229,6 +229,28 @@ export default async function RulesPage() {
                 : "A challenge of either type might also show you an image as part of the question itself — for example, a phishing email screenshot to inspect before you answer."}
             </span>
           </li>
+          <li className="flex gap-2.5">
+            <Icon name="crown" className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" />
+            <span>
+              {compromised ? (
+                <>
+                  <strong className="text-brand-sand">Correlation puzzles</strong> present sixteen unsorted tokens.
+                  Group them into four unlabeled clusters — the original taxonomy has been scrambled and each
+                  cluster only reveals itself after a correct match. Mismatches are logged and may exhaust your
+                  attempt budget.
+                </>
+              ) : (
+                <>
+                  <strong className="text-brand-sand">Security Connections</strong> gives you sixteen
+                  security-related words and asks you to sort them into four hidden groups of four. Select four
+                  words and submit a guess — get it right and that group locks in with its label revealed; get
+                  it wrong and it counts as a mistake (your selection stays put so you can just swap a word and
+                  try again). Some Connections challenges cap how many wrong guesses you get before it locks for
+                  good; others let you keep guessing until you find every group.
+                </>
+              )}
+            </span>
+          </li>
         </ul>
       </Section>
 

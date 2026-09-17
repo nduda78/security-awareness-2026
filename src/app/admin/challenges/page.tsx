@@ -13,6 +13,7 @@ import { Icon } from "@/components/Icon";
 import type { IconKey } from "@/lib/flare";
 import { toEasternInputValue, formatEasternDateTime } from "@/lib/easternTime";
 import { AdminScheduleCalendar, type ScheduleEvent } from "@/components/AdminScheduleCalendar";
+import { parseConnectionsGroups } from "@/lib/connections";
 
 export const dynamic = "force-dynamic";
 
@@ -156,6 +157,9 @@ function ChallengeForm({
 }) {
   const parsedChoices: unknown = typeof challenge?.choices === "string" ? JSON.parse(challenge.choices) : null;
   const choicesText = Array.isArray(parsedChoices) ? (parsedChoices as string[]).join("\n") : "";
+  const connectionsGroups =
+    challenge?.answerType === "CONNECTIONS" ? parseConnectionsGroups(challenge.correctAnswer) : [];
+  const CONNECTIONS_GROUP_PLACEHOLDERS = ["MFA Methods", "Chat Apps", "Phishing Variants", "Access Tools"];
   return (
     <form action={upsertChallengeAction} className="mt-4 space-y-4">
       <RewardModeProvider defaultValue={challenge?.rewardMode ?? "XP"}>
@@ -356,10 +360,12 @@ function ChallengeForm({
             <option value="REGEX">Regex</option>
             <option value="MULTIPLE_CHOICE">Multiple choice</option>
             <option value="FREE_TEXT_REVIEW">Free text (manual review)</option>
+            <option value="CONNECTIONS">Security Connections (word-grouping game)</option>
           </select>
           <p className="mt-1 text-[11px] text-brand-sand/35">
             Contains: correct if the submitted answer includes this text anywhere (case-insensitive). Regex: this
             field is a JS regex pattern (no slashes/flags) tested case-insensitively against the submitted answer.
+            Security Connections ignores Correct answer/Choices below entirely — configure its 4 groups further down.
           </p>
         </div>
         <Field
@@ -380,6 +386,8 @@ function ChallengeForm({
         <p className="mt-1 text-[11px] text-brand-sand/35">
           How many times someone can (re)submit before it's permanently marked failed. Leave blank for
           unlimited retries. Ignored for Free text (manual review) — that type is always one-shot regardless.
+          For Security Connections, this instead caps how many <em>wrong group guesses</em> are allowed before
+          the puzzle locks — blank = unlimited guesses.
         </p>
       </div>
       <div>
@@ -387,6 +395,38 @@ function ChallengeForm({
           Choices (multiple choice only, one per line)
         </label>
         <textarea name="choices" rows={3} defaultValue={choicesText} className="input-modern w-full" />
+      </div>
+      <div className="surface-card space-y-3 p-4">
+        <div className="font-terminal text-xs uppercase text-brand-cyan/70">
+          Security Connections groups (only used when Answer type = Security Connections)
+        </div>
+        <p className="text-[11px] text-brand-sand/35">
+          Exactly 4 groups, exactly 4 words each, all 16 words unique. The grid order players see is shuffled
+          fresh every time this challenge is saved.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="space-y-2">
+              <Field
+                label={`Group ${i + 1} label`}
+                name={`connGroup${i + 1}Label`}
+                defaultValue={connectionsGroups[i]?.label ?? ""}
+                placeholder={`e.g. ${CONNECTIONS_GROUP_PLACEHOLDERS[i]}`}
+              />
+              <div>
+                <label className="mb-1.5 block font-terminal text-[11px] uppercase text-brand-sand/40">
+                  Words (one per line, exactly 4)
+                </label>
+                <textarea
+                  name={`connGroup${i + 1}Words`}
+                  rows={4}
+                  defaultValue={connectionsGroups[i]?.words.join("\n") ?? ""}
+                  className="input-modern w-full"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field
