@@ -386,13 +386,21 @@ export function CardVisual({
             className="pointer-events-none absolute -inset-x-10 -top-16 h-32 rotate-[8deg] opacity-30 blur-sm"
             style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.35), transparent)" }}
           />
-          {card.backgroundEffect && (
+          {card.backgroundEffect && card.backgroundEffect !== "on-fire" && (
             <div className={`absolute inset-0 overflow-hidden pointer-events-none fx-${card.backgroundEffect}`} />
           )}
           {card.holoSheen && <div className="holo-sheen-layer absolute inset-0 overflow-hidden" />}
           {isRogue && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
           <CardFront card={card} outline={outline} icon={icon} isRogue={isRogue} large={large} />
         </div>
+
+        {/* "on-fire" deliberately renders OUTSIDE the front face's
+            overflow-hidden clip, sitting on top of (and above) the card
+            itself rather than clipped to fit inside it. Only shown while
+            looking at the front (flip-card has preserve-3d, so an
+            un-flipped element would otherwise show through mirrored on
+            the back too). */}
+        {card.backgroundEffect === "on-fire" && !flipped && <div className="flame-topper pointer-events-none" />}
 
         {/* back face */}
         <div

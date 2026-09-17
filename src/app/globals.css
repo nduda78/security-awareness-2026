@@ -567,30 +567,35 @@ body.chaos-mode {
   }
 }
 
-/* Jagged, pixel-art-style flame silhouettes licking up from the badge's
-   top edge - two layers (a sharp bright one in front, a blurred dimmer
-   one behind for glow/depth), each a hard-edged zigzag clip-path (not a
-   smooth curve) stepped through only a handful of keyframe positions via
+/* Jagged, pixel-art-style flame silhouettes erupting from the badge's
+   TOP EDGE, upward and OUTSIDE the card frame - deliberately not clipped
+   to the card's own rounded corners (unlike every other backgroundEffect,
+   which fills inset:0 inside the card) - see the dedicated flame-topper
+   render branch in BadgeCard.tsx's CardVisual, sitting as a sibling of
+   the front/back faces so it isn't subject to their overflow-hidden.
+   Two layers (a sharp bright one in front, a blurred dimmer one behind
+   for glow/depth), each a hard-edged zigzag clip-path (not a smooth
+   curve) stepped through only a handful of keyframe positions via
    steps() timing, which is what actually reads as chunky/8-bit rather
-   than a fluid animation. mix-blend-mode: screen makes the fire glow
-   against the dark card background instead of sitting on top of it as a
-   flat colored shape. */
-.fx-on-fire {
+   than a fluid animation. mix-blend-mode: screen still reads well against
+   the page's own dark background behind the card. */
+.flame-topper {
   position: absolute;
-  inset: 0;
+  left: -3%;
+  right: -3%;
+  top: -34%;
+  height: 42%;
+  z-index: 5;
 }
-.fx-on-fire::before,
-.fx-on-fire::after {
+.flame-topper::before,
+.flame-topper::after {
   content: "";
   position: absolute;
-  left: -2%;
-  right: -2%;
-  top: -8%;
-  height: 46%;
+  inset: 0;
   background: linear-gradient(to top, #ff2d0f 0%, #ff8c1f 38%, #ffd23f 68%, #fff6b0 100%);
   mix-blend-mode: screen;
 }
-.fx-on-fire::before {
+.flame-topper::before {
   clip-path: polygon(
     0% 100%,
     5% 50%,
@@ -617,7 +622,7 @@ body.chaos-mode {
   opacity: 0.95;
   animation: pixel-flame-a 0.5s steps(4) infinite;
 }
-.fx-on-fire::after {
+.flame-topper::after {
   clip-path: polygon(
     0% 100%,
     8% 62%,
