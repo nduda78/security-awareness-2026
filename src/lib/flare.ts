@@ -68,7 +68,8 @@ export type BackgroundEffect =
   | "circuit"
   | "aurora"
   | "fireflies"
-  | "lightning";
+  | "lightning"
+  | "on-fire";
 export const BACKGROUND_EFFECTS: BackgroundEffect[] = [
   "holo",
   "crt",
@@ -81,6 +82,7 @@ export const BACKGROUND_EFFECTS: BackgroundEffect[] = [
   "aurora",
   "fireflies",
   "lightning",
+  "on-fire",
 ];
 
 export type BorderStyle =

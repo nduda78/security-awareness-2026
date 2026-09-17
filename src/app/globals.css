@@ -567,6 +567,104 @@ body.chaos-mode {
   }
 }
 
+/* Jagged, pixel-art-style flame silhouettes licking up from the badge's
+   top edge - two layers (a sharp bright one in front, a blurred dimmer
+   one behind for glow/depth), each a hard-edged zigzag clip-path (not a
+   smooth curve) stepped through only a handful of keyframe positions via
+   steps() timing, which is what actually reads as chunky/8-bit rather
+   than a fluid animation. mix-blend-mode: screen makes the fire glow
+   against the dark card background instead of sitting on top of it as a
+   flat colored shape. */
+.fx-on-fire {
+  position: absolute;
+  inset: 0;
+}
+.fx-on-fire::before,
+.fx-on-fire::after {
+  content: "";
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  top: -8%;
+  height: 46%;
+  background: linear-gradient(to top, #ff2d0f 0%, #ff8c1f 38%, #ffd23f 68%, #fff6b0 100%);
+  mix-blend-mode: screen;
+}
+.fx-on-fire::before {
+  clip-path: polygon(
+    0% 100%,
+    5% 50%,
+    10% 100%,
+    15% 38%,
+    20% 100%,
+    25% 58%,
+    30% 100%,
+    35% 30%,
+    40% 100%,
+    45% 62%,
+    50% 100%,
+    55% 25%,
+    60% 100%,
+    65% 52%,
+    70% 100%,
+    75% 40%,
+    80% 100%,
+    85% 48%,
+    90% 100%,
+    95% 65%,
+    100% 100%
+  );
+  opacity: 0.95;
+  animation: pixel-flame-a 0.5s steps(4) infinite;
+}
+.fx-on-fire::after {
+  clip-path: polygon(
+    0% 100%,
+    8% 62%,
+    16% 100%,
+    24% 45%,
+    32% 100%,
+    40% 55%,
+    48% 100%,
+    56% 35%,
+    64% 100%,
+    72% 58%,
+    80% 100%,
+    88% 42%,
+    96% 100%,
+    100% 70%,
+    100% 100%
+  );
+  opacity: 0.55;
+  filter: blur(1.5px);
+  animation: pixel-flame-b 0.65s steps(3) infinite reverse;
+}
+@keyframes pixel-flame-a {
+  0% {
+    transform: translateY(0) scaleY(1);
+  }
+  33% {
+    transform: translateY(-3%) scaleY(1.08);
+  }
+  66% {
+    transform: translateY(1%) scaleY(0.94);
+  }
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+}
+@keyframes pixel-flame-b {
+  0% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(-2%) scaleY(1.12);
+  }
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+}
+
 /* --- Border styles --- */
 @keyframes border-pulse {
   0%,
