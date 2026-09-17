@@ -12,6 +12,7 @@ import { TIERS } from "@/lib/tiers";
 import { Icon } from "@/components/Icon";
 import type { IconKey } from "@/lib/flare";
 import { toEasternInputValue, formatEasternDateTime } from "@/lib/easternTime";
+import { AdminScheduleCalendar, type ScheduleEvent } from "@/components/AdminScheduleCalendar";
 
 export const dynamic = "force-dynamic";
 
@@ -531,7 +532,7 @@ function SchedulePill({
 
 function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof ChallengeForm>[0]["challenge"]>> }) {
   return (
-    <details className="surface-card p-4">
+    <details id={`challenge-${c.slug}`} className="surface-card scroll-mt-24 p-4">
       <summary className="flex cursor-pointer items-center justify-between font-medium">
         <span>
           {c.title}{" "}
@@ -563,8 +564,13 @@ function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof Challen
   );
 }
 
-export default async function AdminChallengesPage() {
+export default async function AdminChallengesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cal?: string }>;
+}) {
   if (!(await isAdminSession())) redirect("/admin");
+  const { cal } = await searchParams;
 
   // Explicit select excludes the bytea asset columns (questionImage,
   // unlockImage, unlockAudio) — this list only needs to know whether one is
@@ -623,10 +629,22 @@ export default async function AdminChallengesPage() {
     .map((tier) => ({ tier, members: xpChallenges.filter((c) => c.minClearance === tier.key) }))
     .filter((g) => g.members.length > 0);
 
+  // Manual Bonus challenges are excluded - they're synthetic per-employee
+  // audit records, not real scheduled missions anyone would look for on a
+  // calendar.
+  const scheduleEvents: ScheduleEvent[] = regularChallenges.flatMap((c) => {
+    const list: ScheduleEvent[] = [];
+    if (c.opensAt) list.push({ slug: c.slug, title: c.title, kind: "opens", at: c.opensAt });
+    if (c.closesAt) list.push({ slug: c.slug, title: c.title, kind: "closes", at: c.closesAt });
+    return list;
+  });
+
   return (
     <div className="fade-in-up">
       <AdminNav />
       <h1 className="mb-6 font-display text-2xl font-semibold">Challenges</h1>
+
+      <AdminScheduleCalendar events={scheduleEvents} cal={cal} />
 
       <details className="surface-card group mb-8 p-4 open:border-brand-yellow/30">
         <summary className="cursor-pointer font-terminal text-sm uppercase text-brand-yellow">

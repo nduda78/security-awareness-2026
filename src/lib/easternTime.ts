@@ -75,6 +75,18 @@ export function toEasternInputValue(date: Date | null): string {
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
+/** "yyyy-MM-dd" calendar day key in Eastern time - for bucketing events onto a calendar grid, independent of the viewer/server's own timezone. */
+export function formatEasternDayKey(date: Date): string {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: EASTERN_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = Object.fromEntries(dtf.formatToParts(date).map((p) => [p.type, p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 /** Short "Sep 16, 2026" date, always in Eastern time regardless of viewer/server timezone. */
 export function formatEasternDate(date: Date | null): string | null {
   if (!date) return null;
