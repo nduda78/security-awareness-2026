@@ -8,7 +8,7 @@
 // short timeout.
 
 import type { TierDef } from "./tiers";
-import { getClearanceWebhookConfig } from "./settings";
+import { getClearanceWebhookConfig, getReviewWebhookConfig } from "./settings";
 
 const WEBHOOK_TIMEOUT_MS = 5_000;
 
@@ -84,6 +84,39 @@ export async function fireChallengePostedWebhook(challenge: {
       rewardMode: challenge.rewardMode,
     },
     postedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * Fired once, the moment a Free Text (manual review) submission lands in
+ * PENDING_REVIEW status - i.e. right when it's created (see submit.ts),
+ * never on a later re-view of an already-decided one, since FREE_TEXT_
+ * REVIEW submissions are one-shot and can never re-enter this status.
+ * Gated by the global review webhook toggle (see settings.ts) - separate
+ * from the per-challenge webhookUrl and the clearance webhook, purely so
+ * admins actually notice a submission is waiting on them instead of only
+ * finding out by checking the Answers page or Audit Log by hand.
+ */
+export async function fireReviewNeededWebhook(
+  challenge: { slug: string; title: string; description: string },
+  employee: { email: string; displayName: string },
+  answer: string
+): Promise<void> {
+  const config = await getReviewWebhookConfig();
+  if (!config.enabled || !config.url) return;
+  await postWebhook(config.url, {
+    event: "review_needed",
+    challenge: {
+      slug: challenge.slug,
+      title: challenge.title,
+      description: challenge.description,
+    },
+    agent: {
+      slug: employee.email,
+      displayName: employee.displayName,
+    },
+    answer,
+    submittedAt: new Date().toISOString(),
   });
 }
 

@@ -11,7 +11,7 @@ import { setCompromisedMode } from "@/lib/settings";
 import { parseEasternInputValue } from "@/lib/easternTime";
 import { handlePossibleTierUp, getCurrentXp } from "@/lib/tierUpEvents";
 import { fireChallengeCompletedWebhook } from "@/lib/webhooks";
-import { setClearanceWebhookConfig } from "@/lib/settings";
+import { setClearanceWebhookConfig, setReviewWebhookConfig } from "@/lib/settings";
 import { announceJustOpenedChallenges } from "@/lib/challengeDrops";
 
 async function requireAdmin() {
@@ -449,6 +449,15 @@ export async function saveClearanceWebhookAction(formData: FormData) {
   const url = String(formData.get("url") ?? "").trim() || null;
   await setClearanceWebhookConfig(enabled, url);
   await logAdminAudit("CLEARANCE_WEBHOOK", `Clearance upgrade webhook: ${enabled && url ? "ENABLED" : "disabled"}`);
+  redirect("/admin/settings?saved=1");
+}
+
+export async function saveReviewWebhookAction(formData: FormData) {
+  await requireAdmin();
+  const enabled = formData.get("enabled") === "on";
+  const url = String(formData.get("url") ?? "").trim() || null;
+  await setReviewWebhookConfig(enabled, url);
+  await logAdminAudit("REVIEW_WEBHOOK", `Review-needed webhook: ${enabled && url ? "ENABLED" : "disabled"}`);
   redirect("/admin/settings?saved=1");
 }
 

@@ -17,6 +17,7 @@ const AUDIT_LABELS: Record<string, string> = {
   MANUAL_XP_GRANT: "Manual XP grant",
   PHOTO_OVERRIDE: "Badge photo overridden",
   CLEARANCE_WEBHOOK: "Clearance webhook settings changed",
+  REVIEW_WEBHOOK: "Review-needed webhook settings changed",
 };
 
 export default async function AdminSubmissionsPage() {

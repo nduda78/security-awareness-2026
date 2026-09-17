@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { handlePossibleTierUp, getCurrentXp } from "@/lib/tierUpEvents";
-import { fireChallengeCompletedWebhook } from "@/lib/webhooks";
+import { fireChallengeCompletedWebhook, fireReviewNeededWebhook } from "@/lib/webhooks";
 
 function normalizeAnswer(raw: string): string {
   return raw.trim();
@@ -146,6 +146,13 @@ export async function submitAnswerAction(formData: FormData) {
     } catch {
       // Unique constraint race — someone double-submitted concurrently.
       redirect(`/challenges/${slug}?already=1`);
+    }
+    // Only reachable here on a genuinely new submission (FREE_TEXT_REVIEW
+    // is one-shot - a retry never falls through to this branch, see the
+    // existing-row handling above), so this fires exactly once per
+    // question actually waiting on a human.
+    if (status === "PENDING_REVIEW") {
+      await fireReviewNeededWebhook(challenge, employee, answerRaw);
     }
   }
 

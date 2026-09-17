@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { isAdminSession, getAgentIdentity } from "@/lib/session";
-import { isCompromisedModeEnabled, getClearanceWebhookConfig } from "@/lib/settings";
-import { toggleCompromisedModeAction, saveClearanceWebhookAction } from "@/lib/actions/admin";
+import { isCompromisedModeEnabled, getClearanceWebhookConfig, getReviewWebhookConfig } from "@/lib/settings";
+import { toggleCompromisedModeAction, saveClearanceWebhookAction, saveReviewWebhookAction } from "@/lib/actions/admin";
 import { setOwnAdminPasswordAction } from "@/lib/actions/adminSecurity";
 import { prisma } from "@/lib/prisma";
 import { AdminNav } from "@/components/AdminNav";
@@ -18,6 +18,7 @@ export default async function AdminSettingsPage({
   const { saved, pwSaved, pwError } = await searchParams;
   const compromised = await isCompromisedModeEnabled();
   const clearanceWebhook = await getClearanceWebhookConfig();
+  const reviewWebhook = await getReviewWebhookConfig();
 
   // Only a real signed-in agent identity flagged isAdmin has a password to
   // set here - the legacy admin_session passphrase cookie alone has no
@@ -97,6 +98,47 @@ export default async function AdminSettingsPage({
           Currently:{" "}
           <span className={clearanceWebhook.enabled && clearanceWebhook.url ? "text-brand-cyan" : "text-brand-sand/50"}>
             {clearanceWebhook.enabled && clearanceWebhook.url ? "ENABLED" : "off"}
+          </span>
+        </p>
+      </div>
+
+      <div className="surface-card mt-6 max-w-xl space-y-4 p-5">
+        <div className="flex items-center gap-2 text-brand-cyan">
+          <Icon name="lock" className="h-4 w-4" />
+          <span className="section-eyebrow !text-brand-cyan">Integration</span>
+        </div>
+        <h2 className="font-display text-lg font-semibold">Free Text Review Needed Webhook</h2>
+        <p className="text-sm text-brand-sand/60">
+          POSTs a JSON payload (agent, challenge, and their submitted answer) to this URL the moment a Free
+          Text (manual review) submission lands in PENDING_REVIEW - so admins actually get notified instead of
+          only finding out by checking the Answers page or Audit Log by hand. Fires exactly once per question
+          (Free Text submissions are always one-shot).
+        </p>
+        <form action={saveReviewWebhookAction} className="space-y-3">
+          <label className="flex items-center gap-2.5">
+            <input
+              type="checkbox"
+              name="enabled"
+              defaultChecked={reviewWebhook.enabled}
+              className="h-4 w-4 accent-brand-cyan"
+            />
+            <span className="font-terminal text-xs uppercase tracking-wide text-brand-sand/70">
+              Enable review-needed webhook
+            </span>
+          </label>
+          <input
+            name="url"
+            type="url"
+            defaultValue={reviewWebhook.url ?? ""}
+            placeholder="https://your-tines-webhook-url..."
+            className="input-modern w-full"
+          />
+          <button className="btn-secondary !border-brand-cyan/40 !text-brand-cyan">Save</button>
+        </form>
+        <p className="font-terminal text-[10px] uppercase tracking-wide text-brand-sand/35">
+          Currently:{" "}
+          <span className={reviewWebhook.enabled && reviewWebhook.url ? "text-brand-cyan" : "text-brand-sand/50"}>
+            {reviewWebhook.enabled && reviewWebhook.url ? "ENABLED" : "off"}
           </span>
         </p>
       </div>

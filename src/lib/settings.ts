@@ -64,3 +64,51 @@ export async function setClearanceWebhookConfig(enabled: boolean, url: string | 
     }),
   ]);
 }
+
+const REVIEW_WEBHOOK_URL_KEY = "reviewWebhookUrl";
+const REVIEW_WEBHOOK_ENABLED_KEY = "reviewWebhookEnabled";
+
+export interface ReviewWebhookConfig {
+  enabled: boolean;
+  url: string | null;
+}
+
+/**
+ * Global "a Free Text (manual review) answer is waiting on a human"
+ * webhook - same enabled/url split as the clearance webhook above, so an
+ * admin can pause it without losing the configured endpoint. Fires once
+ * per submission the moment it lands in PENDING_REVIEW (see
+ * fireReviewNeededWebhook in webhooks.ts) - separate from the per-
+ * challenge webhookUrl and the clearance-upgrade webhook, since this one
+ * exists purely so admins actually notice a review is waiting instead of
+ * only finding out by checking the Audit Log / Answers page by hand.
+ */
+export async function getReviewWebhookConfig(): Promise<ReviewWebhookConfig> {
+  try {
+    const rows = await prisma.appSetting.findMany({
+      where: { key: { in: [REVIEW_WEBHOOK_URL_KEY, REVIEW_WEBHOOK_ENABLED_KEY] } },
+    });
+    const map = new Map(rows.map((r) => [r.key, r.value]));
+    return {
+      enabled: map.get(REVIEW_WEBHOOK_ENABLED_KEY) === "true",
+      url: map.get(REVIEW_WEBHOOK_URL_KEY) || null,
+    };
+  } catch {
+    return { enabled: false, url: null };
+  }
+}
+
+export async function setReviewWebhookConfig(enabled: boolean, url: string | null): Promise<void> {
+  await prisma.$transaction([
+    prisma.appSetting.upsert({
+      where: { key: REVIEW_WEBHOOK_ENABLED_KEY },
+      update: { value: String(enabled) },
+      create: { key: REVIEW_WEBHOOK_ENABLED_KEY, value: String(enabled) },
+    }),
+    prisma.appSetting.upsert({
+      where: { key: REVIEW_WEBHOOK_URL_KEY },
+      update: { value: url ?? "" },
+      create: { key: REVIEW_WEBHOOK_URL_KEY, value: url ?? "" },
+    }),
+  ]);
+}
