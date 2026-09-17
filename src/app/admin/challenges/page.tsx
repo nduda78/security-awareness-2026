@@ -477,9 +477,14 @@ function SchedulePill({
   opensAt: Date | null;
   closesAt: Date | null;
 }) {
-  // Inactive already gets its own "(inactive)" text right next to this -
-  // no need for a second, possibly-conflicting pill on top of it.
-  if (!isActive) return null;
+  if (!isActive) {
+    return (
+      <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-brand-sand/25 bg-brand-sand/15 px-2 py-0.5 font-terminal text-[10px] font-bold uppercase tracking-wide text-brand-sand/60">
+        <span>○</span>
+        Inactive
+      </span>
+    );
+  }
   const now = new Date();
   const notYetOpen = opensAt && opensAt > now;
   const closed = closesAt && closesAt < now;
@@ -543,7 +548,6 @@ function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof Challen
               • {tag}
             </span>
           ))}{" "}
-          {!c.isActive && <span className="font-terminal text-xs text-brand-sand/40">(inactive)</span>}{" "}
           <SchedulePill isActive={c.isActive} opensAt={c.opensAt} closesAt={c.closesAt} />
         </span>
         <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>
