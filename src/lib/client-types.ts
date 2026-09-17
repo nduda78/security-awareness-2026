@@ -1,5 +1,5 @@
 import type { AgentCard } from "./leaderboard";
-import { resolveFlare, type RawFlareInput } from "./flare";
+import { resolveFlare, type RawFlareInput, type AchievementEntry } from "./flare";
 import { formatEasternDate } from "./easternTime";
 
 // Plain-data shape safe to pass from server -> client components (dates
@@ -23,7 +23,7 @@ export interface ClientAgentCard {
   funFact: string;
   barcode: string;
   challengesCompleted: number;
-  achievements: string[];
+  achievements: AchievementEntry[];
   outlineColor: string | null;
   backgroundColor: string | null;
   backgroundEffect: string | null;
@@ -39,6 +39,8 @@ export interface ClientAgentCard {
   /// Not shown anywhere except the card back itself - see BadgeCard's
   /// CardBack component.
   secretBackText: string | null;
+  /// Cursor-tracking holographic sheen overlay - see CardVisual.
+  holoSheen: boolean;
 }
 
 // --- Challenges page (ChallengesBoard) ---
@@ -118,6 +120,7 @@ export function applyFlareToCard(
       codename: defaultCodename,
       renderedName: base.displayName,
       secretBackText: null,
+      holoSheen: false,
     };
   }
   return {
@@ -134,6 +137,7 @@ export function applyFlareToCard(
     codename: resolved.codenameOverride || defaultCodename,
     renderedName: resolved.nameSuffix ? `${base.displayName} ${resolved.nameSuffix}` : base.displayName,
     secretBackText: resolved.secretBackText,
+    holoSheen: resolved.holoSheen,
   };
 }
 
@@ -170,5 +174,6 @@ export function toClientCard(card: AgentCard, rankInTier: number, totalInTier: n
     totalInTier,
     photoUrl: card.photoUrl,
     secretBackText: card.flare?.secretBackText ?? null,
+    holoSheen: card.flare?.holoSheen ?? false,
   };
 }

@@ -122,7 +122,7 @@ export default async function ProfilePage({
                       key={i}
                       className="inline-flex items-center gap-1.5 rounded-full border border-brand-yellow/30 bg-brand-yellow/10 px-3.5 py-1.5 text-sm text-brand-yellow"
                     >
-                      <Icon name="trophy" className="h-4 w-4" /> {a}
+                      <Icon name={a.icon} className="h-4 w-4" /> {a.text}
                     </span>
                   ))}
                 </div>
@@ -203,6 +203,7 @@ export default async function ProfilePage({
               achievements: card.flare?.achievements ?? [],
               motto: card.flare?.motto ?? null,
               codenameOverride: card.flare?.codenameOverride ?? null,
+              holoSheen: card.flare?.holoSheen ?? false,
             }}
             initial={{
               backgroundEffect: card.flare?.backgroundEffect ?? "",

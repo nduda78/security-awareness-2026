@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { upsertFlareAction, adminUploadPhotoAction, adminRemovePhotoAction } from "@/lib/actions/admin";
-import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
+import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS, parseAchievementsInput } from "@/lib/flare";
 import { applyFlareToCard, type ClientAgentCard } from "@/lib/client-types";
 import { parseEasternInputValue } from "@/lib/easternTime";
 import { ColorField } from "./ColorField";
@@ -32,6 +32,7 @@ export function FlareEditor({
     motto: string;
     nameSuffix: string;
     secretBackText: string;
+    holoSheen: boolean;
     expiresAt: string;
   };
 }) {
@@ -46,15 +47,13 @@ export function FlareEditor({
   const [motto, setMotto] = useState(initial.motto);
   const [nameSuffix, setNameSuffix] = useState(initial.nameSuffix);
   const [secretBackText, setSecretBackText] = useState(initial.secretBackText);
+  const [holoSheen, setHoloSheen] = useState(initial.holoSheen);
   const [expiresAt, setExpiresAt] = useState(initial.expiresAt);
 
   const previewCard = useMemo(
     () =>
       applyFlareToCard(baseCard, defaultCodename, {
-        achievements: achievements
-          .split("\n")
-          .map((l) => l.trim())
-          .filter(Boolean),
+        achievements: parseAchievementsInput(achievements),
         outlineColor,
         backgroundColor,
         backgroundEffect,
@@ -65,6 +64,7 @@ export function FlareEditor({
         ribbonText,
         nameSuffix,
         secretBackText,
+        holoSheen,
         expiresAt: parseEasternInputValue(expiresAt),
       }),
     [
@@ -81,6 +81,7 @@ export function FlareEditor({
       ribbonText,
       nameSuffix,
       secretBackText,
+      holoSheen,
       expiresAt,
     ]
   );
@@ -147,6 +148,10 @@ export function FlareEditor({
             onChange={(e) => setAchievements(e.target.value)}
             className="input-modern w-full"
           />
+          <p className="mt-1 text-[11px] text-brand-sand/35">
+            Trophy icon by default. Prefix a line with a recognized icon name and a colon to use a different one,
+            e.g. <span className="text-brand-sand/50">crown: October Champion</span>. Options: {ICONS.join(", ")}.
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <ColorField
@@ -216,6 +221,20 @@ export function FlareEditor({
             else in the app - safe to stash a hint or code word here for a challenge you&apos;ll run later.
           </p>
         </div>
+        <label className="flex items-center gap-2 font-terminal text-xs uppercase text-brand-sand/45">
+          <input
+            type="checkbox"
+            name="holoSheen"
+            checked={holoSheen}
+            onChange={(e) => setHoloSheen(e.target.checked)}
+            className="accent-brand-cyan"
+          />
+          Holographic cursor sheen
+        </label>
+        <p className="-mt-3 text-[11px] text-brand-sand/35">
+          A rainbow glint that follows the cursor across the badge on hover - independent of (and stacks with) any
+          background effect above.
+        </p>
         <div>
           <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
             Expires at (Eastern Time)

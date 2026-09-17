@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { PrizeWinnersList, type PrizeWinnerGroup, type PrizeWinnerEntry } from "@/components/PrizeWinnersList";
+import { parseAchievements } from "@/lib/flare";
 
 export const dynamic = "force-dynamic";
 
@@ -43,16 +44,18 @@ export default async function PrizesPage() {
 
   for (const f of flares) {
     const entries: PrizeWinnerEntry[] = [];
-    let achievements: string[] = [];
-    try {
-      achievements = JSON.parse(f.achievements || "[]");
-    } catch {
-      achievements = [];
-    }
+    const achievements = parseAchievements(f.achievements);
     const wonAt = f.updatedAt.toISOString();
 
-    for (const prize of achievements) {
-      entries.push({ prize, wonAt, source: "achievement", sourceChallengeTitle: null, sourceChallengeSlug: null });
+    for (const a of achievements) {
+      entries.push({
+        prize: a.text,
+        icon: a.icon,
+        wonAt,
+        source: "achievement",
+        sourceChallengeTitle: null,
+        sourceChallengeSlug: null,
+      });
     }
 
     if (f.ribbonText || f.nameSuffix) {

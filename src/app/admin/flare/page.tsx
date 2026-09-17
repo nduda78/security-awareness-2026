@@ -6,7 +6,7 @@ import { buildAgentRoster, rankWithinTier } from "@/lib/leaderboard";
 import { resolveUniqueCodenames } from "@/lib/identity";
 import { toClientCard } from "@/lib/client-types";
 import { FlareEditor } from "@/components/FlareEditor";
-import { parseAchievements } from "@/lib/flare";
+import { parseAchievements, formatAchievementsForInput } from "@/lib/flare";
 import { toggleHiddenAction } from "@/lib/actions/admin";
 import { toEasternInputValue } from "@/lib/easternTime";
 
@@ -112,7 +112,7 @@ export default async function AdminFlarePage({
               defaultCodename={editorProps.defaultCodename}
               photoStatus={{ uploaded: photoUploaded === "1", removed: photoRemoved === "1", error: photoError }}
               initial={{
-                achievements: parseAchievements(selected.flare?.achievements).join("\n"),
+                achievements: formatAchievementsForInput(parseAchievements(selected.flare?.achievements)),
                 outlineColor: selected.flare?.outlineColor ?? "",
                 backgroundColor: selected.flare?.backgroundColor ?? "",
                 backgroundEffect: selected.flare?.backgroundEffect ?? "",
@@ -123,6 +123,7 @@ export default async function AdminFlarePage({
                 motto: selected.flare?.motto ?? "",
                 nameSuffix: selected.flare?.nameSuffix ?? "",
                 secretBackText: selected.flare?.secretBackText ?? "",
+                holoSheen: selected.flare?.holoSheen ?? false,
                 expiresAt: selected.flare?.expiresAt ? toEasternInputValue(selected.flare.expiresAt) : "",
               }}
             />

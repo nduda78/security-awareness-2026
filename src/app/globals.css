@@ -512,6 +512,61 @@ body.chaos-mode {
   }
 }
 
+/* Softly drifting glowing dots, each on its own random-feeling offset -
+   distinct from starfield's static twinkling grid, these actually wander. */
+.fx-fireflies {
+  background-image:
+    radial-gradient(circle, rgba(255, 244, 168, 0.9) 1.5px, transparent 2.5px),
+    radial-gradient(circle, rgba(255, 244, 168, 0.7) 1.5px, transparent 2.5px),
+    radial-gradient(circle, rgba(255, 244, 168, 0.8) 1.5px, transparent 2.5px),
+    radial-gradient(circle, rgba(255, 244, 168, 0.6) 1.5px, transparent 2.5px);
+  background-size: 70px 70px, 90px 90px, 55px 55px, 80px 80px;
+  background-position: 10px 15px, 45px 60px, 25px 40px, 65px 10px;
+  filter: blur(0.4px);
+  opacity: 0.6;
+  animation: fireflies-drift 6s ease-in-out infinite alternate;
+}
+@keyframes fireflies-drift {
+  0% {
+    background-position: 10px 15px, 45px 60px, 25px 40px, 65px 10px;
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    background-position: 22px 28px, 30px 45px, 40px 20px, 48px 32px;
+    opacity: 0.4;
+  }
+}
+
+/* Occasional dramatic white flash across a dark stormy backdrop. */
+.fx-lightning {
+  background: linear-gradient(160deg, rgba(20, 24, 40, 0.6), rgba(8, 10, 20, 0.75));
+  opacity: 0.55;
+  animation: lightning-flash 4.5s infinite;
+}
+@keyframes lightning-flash {
+  0%,
+  91%,
+  100% {
+    box-shadow: inset 0 0 0 100vmax transparent;
+  }
+  92% {
+    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 0.55);
+  }
+  93% {
+    box-shadow: inset 0 0 0 100vmax transparent;
+  }
+  94% {
+    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 0.35);
+  }
+  95%,
+  99% {
+    box-shadow: inset 0 0 0 100vmax transparent;
+  }
+}
+
 /* --- Border styles --- */
 @keyframes border-pulse {
   0%,
@@ -700,6 +755,72 @@ body.chaos-mode {
   pointer-events: none;
 }
 
+/* Full-spectrum rotating ring - same gradient-border-with-mask technique
+   as marching-ants (a native CSS border can't do a smooth color sweep),
+   but conic instead of dashed, and deliberately ignores the badge's own
+   outline color for a fixed rainbow palette. */
+.border-fx-rainbow {
+  border-color: transparent !important;
+  position: relative;
+}
+.border-fx-rainbow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 3px;
+  background: conic-gradient(from 0deg, #ff004c, #ff7b00, #ffe600, #00ff6a, #00d4ff, #7b2fff, #ff004c);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: rainbow-spin 3s linear infinite;
+}
+@keyframes rainbow-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Irregular warm flicker, like firelight - fixed ember palette (same
+   ignore-the-outline-color idea as rainbow), using staggered opacity/blur
+   steps rather than a smooth sine wave so it reads as flickering, not
+   breathing. */
+.border-fx-ember {
+  border-color: #ff7b1a !important;
+  animation: ember-flicker 1.8s steps(1) infinite;
+}
+@keyframes ember-flicker {
+  0% {
+    border-color: #ff7b1a;
+    box-shadow: 0 0 8px 1px rgba(255, 123, 26, 0.55);
+  }
+  20% {
+    border-color: #ffae42;
+    box-shadow: 0 0 14px 3px rgba(255, 174, 66, 0.7);
+  }
+  35% {
+    border-color: #e8480c;
+    box-shadow: 0 0 6px 1px rgba(232, 72, 12, 0.45);
+  }
+  55% {
+    border-color: #ff9d33;
+    box-shadow: 0 0 16px 4px rgba(255, 157, 51, 0.75);
+  }
+  70% {
+    border-color: #ff7b1a;
+    box-shadow: 0 0 8px 1px rgba(255, 123, 26, 0.5);
+  }
+  85% {
+    border-color: #ffcf7a;
+    box-shadow: 0 0 12px 2px rgba(255, 207, 122, 0.65);
+  }
+  100% {
+    border-color: #ff7b1a;
+    box-shadow: 0 0 8px 1px rgba(255, 123, 26, 0.55);
+  }
+}
+
 /* --- Realistic ID card security print texture --- */
 .badge-security-pattern {
   background-image:
@@ -719,6 +840,32 @@ body.chaos-mode {
 }
 .tilt-card:hover {
   box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.55);
+}
+
+/* Cursor-tracking holographic sheen (badge flare capability, independent
+   of backgroundEffect - see BadgeCard.tsx's CardVisual, which drives
+   --mx/--my off real mouse position). A bright radial glint plus a
+   rotating rainbow ring, both centered on the cursor, blended with
+   overlay so it reads as a reflective foil catching the light rather
+   than a flat colored wash. Defaults to a centered glint when the
+   cursor hasn't moved yet (or tilt/tracking is disabled, e.g. the admin
+   editor's static preview). */
+.holo-sheen-layer {
+  pointer-events: none;
+  background:
+    radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.7), transparent 42%),
+    conic-gradient(
+      from 120deg at var(--mx, 50%) var(--my, 50%),
+      #ff6ad5,
+      #ffd166,
+      #94d0ff,
+      #6aba48,
+      #ad8cff,
+      #ff6ad5
+    );
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
 }
 
 /* --- 3D card flip (real two-sided rotation, not a content swap) --- */

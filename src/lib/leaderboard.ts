@@ -6,7 +6,7 @@ import type { BadgeFlare } from "@prisma/client";
 
 // BadgeFlare.achievements is a JSON-encoded string column (see flare.ts) -
 // this is the one place that crosses back from the raw Prisma row into the
-// string[] shape resolveFlare expects.
+// AchievementEntry[] shape resolveFlare expects.
 function rawFlareInput(flare: BadgeFlare | null): RawFlareInput | null {
   if (!flare) return null;
   return { ...flare, achievements: parseAchievements(flare.achievements) };

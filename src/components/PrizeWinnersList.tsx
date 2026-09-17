@@ -3,9 +3,16 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatEasternShortDate } from "@/lib/easternTime";
+import { Icon } from "./Icon";
+import type { IconKey } from "@/lib/flare";
 
 export interface PrizeWinnerEntry {
   prize: string;
+  /// Only set for source === "achievement" - the specific icon chosen for
+  /// this achievement (defaults to "trophy" - see DEFAULT_ACHIEVEMENT_ICON
+  /// in flare.ts). Flare entries don't have a per-field icon concept, so
+  /// they keep the fixed sparkle emoji instead.
+  icon?: IconKey;
   wonAt: string; // ISO
   /// "achievement" = a freeform Achievements entry (real-world prize,
   /// e.g. "Won a MacBook"). "flare" = a granted ribbon/name-suffix badge
@@ -118,7 +125,12 @@ export function PrizeWinnersList({ groups }: { groups: PrizeWinnerGroup[] }) {
                             : "rounded-full border border-brand-yellow/40 bg-brand-yellow/10 px-3 py-1 font-terminal text-xs font-bold uppercase tracking-wide text-brand-yellow"
                         }
                       >
-                        {isFlare ? "✨" : "🏆"} {e.prize}
+                        {isFlare ? (
+                          "✨"
+                        ) : (
+                          <Icon name={e.icon ?? "trophy"} className="inline h-3 w-3" />
+                        )}{" "}
+                        {e.prize}
                       </div>
                       <div className="mt-1 font-terminal text-[11px] text-brand-sand/35">
                         {isFlare && (

@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { encodeAdminCookie, ADMIN_COOKIE_NAME, isAdminSession, getAgentIdentity } from "@/lib/session";
 import { IMAGE_TYPES, IMAGE_MAX_BYTES, AUDIO_TYPES, AUDIO_MAX_BYTES, VIDEO_TYPES, VIDEO_MAX_BYTES } from "@/lib/assetUpload";
-import { serializeAchievements } from "@/lib/flare";
+import { serializeAchievements, parseAchievementsInput } from "@/lib/flare";
 import { setCompromisedMode } from "@/lib/settings";
 import { parseEasternInputValue } from "@/lib/easternTime";
 import { handlePossibleTierUp, getCurrentXp } from "@/lib/tierUpEvents";
@@ -352,10 +352,7 @@ export async function upsertFlareAction(formData: FormData) {
   }
 
   const achievementsRaw = String(formData.get("achievements") ?? "");
-  const achievements = achievementsRaw
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const achievements = parseAchievementsInput(achievementsRaw);
 
   const expiresAtRaw = String(formData.get("expiresAt") ?? "");
 
@@ -371,6 +368,7 @@ export async function upsertFlareAction(formData: FormData) {
     ribbonText: String(formData.get("ribbonText") ?? "").trim() || null,
     nameSuffix: String(formData.get("nameSuffix") ?? "").trim() || null,
     secretBackText: String(formData.get("secretBackText") ?? "").trim() || null,
+    holoSheen: formData.get("holoSheen") === "on",
     expiresAt: parseEasternInputValue(expiresAtRaw),
   };
 
@@ -381,9 +379,9 @@ export async function upsertFlareAction(formData: FormData) {
   });
 
   const changedFields = Object.entries(data)
-    .filter(([key, value]) => key !== "achievements" && value !== null)
+    .filter(([key, value]) => key !== "achievements" && value !== null && value !== false)
     .map(([key, value]) => `${key}=${value instanceof Date ? value.toISOString() : String(value)}`);
-  if (achievements.length) changedFields.push(`achievements=[${achievements.join(", ")}]`);
+  if (achievements.length) changedFields.push(`achievements=[${achievements.map((a) => a.text).join(", ")}]`);
   await logAdminAudit(
     "FLARE_UPDATE",
     `${employee!.displayName} (${employee!.email}): ${changedFields.length ? changedFields.join(", ") : "cleared all flare fields"}`

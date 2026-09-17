@@ -66,7 +66,9 @@ export type BackgroundEffect =
   | "smoke"
   | "confetti"
   | "circuit"
-  | "aurora";
+  | "aurora"
+  | "fireflies"
+  | "lightning";
 export const BACKGROUND_EFFECTS: BackgroundEffect[] = [
   "holo",
   "crt",
@@ -77,9 +79,20 @@ export const BACKGROUND_EFFECTS: BackgroundEffect[] = [
   "confetti",
   "circuit",
   "aurora",
+  "fireflies",
+  "lightning",
 ];
 
-export type BorderStyle = "pulse" | "shimmer" | "marching-ants" | "neon" | "glitch" | "foil" | "pulse-glitch";
+export type BorderStyle =
+  | "pulse"
+  | "shimmer"
+  | "marching-ants"
+  | "neon"
+  | "glitch"
+  | "foil"
+  | "pulse-glitch"
+  | "rainbow"
+  | "ember";
 export const BORDER_STYLES: BorderStyle[] = [
   "pulse",
   "shimmer",
@@ -88,6 +101,8 @@ export const BORDER_STYLES: BorderStyle[] = [
   "glitch",
   "foil",
   "pulse-glitch",
+  "rainbow",
+  "ember",
 ];
 
 export type IconKey = "crown" | "flame" | "trophy" | "lightning" | "skull" | "shield" | "lock" | "file";
@@ -153,8 +168,15 @@ export function resolveIcon(raw: string | null | undefined, warnings: FlareWarni
   return null;
 }
 
+export interface AchievementEntry {
+  text: string;
+  icon: IconKey;
+}
+
+export const DEFAULT_ACHIEVEMENT_ICON: IconKey = "trophy";
+
 export interface ResolvedFlare {
-  achievements: string[];
+  achievements: AchievementEntry[];
   outlineColor: string | null;
   backgroundColor: string | null;
   backgroundEffect: BackgroundEffect | null;
@@ -168,11 +190,15 @@ export interface ResolvedFlare {
   /// Freeform admin note stashed on the badge back, for later challenge
   /// use - no validation, any text goes through as-is.
   secretBackText: string | null;
+  /// Cursor-tracking holographic sheen overlay on the front face - a
+  /// simple on/off capability (see CardVisual), independent of
+  /// backgroundEffect so it can be combined with any of them (or none).
+  holoSheen: boolean;
   warnings: FlareWarning[];
 }
 
 export interface RawFlareInput {
-  achievements?: string[] | null;
+  achievements?: AchievementEntry[] | null;
   outlineColor?: string | null;
   backgroundColor?: string | null;
   backgroundEffect?: string | null;
@@ -183,6 +209,7 @@ export interface RawFlareInput {
   ribbonText?: string | null;
   nameSuffix?: string | null;
   secretBackText?: string | null;
+  holoSheen?: boolean | null;
   expiresAt?: Date | null;
 }
 
@@ -199,7 +226,7 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
   const ribbonText = raw.ribbonText?.trim() || null;
 
   return {
-    achievements: (raw.achievements ?? []).filter((a) => !!a && !!a.trim()),
+    achievements: (raw.achievements ?? []).filter((a) => !!a?.text?.trim()),
     outlineColor: resolveColor(raw.outlineColor, "outlineColor", warnings),
     backgroundColor: resolveColor(raw.backgroundColor, "backgroundColor", warnings),
     backgroundEffect: resolveBackgroundEffect(raw.backgroundEffect, warnings),
@@ -211,25 +238,73 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
     ribbonRecognized: ribbonText ? RECOGNIZED_RIBBONS.has(ribbonText.toLowerCase()) : false,
     nameSuffix: raw.nameSuffix?.trim() || null,
     secretBackText: raw.secretBackText?.trim() || null,
+    holoSheen: !!raw.holoSheen,
     warnings,
   };
+}
+
+// Achievements textarea line syntax: plain text, or an optional recognized
+// icon-key prefix ("crown: October Champion") to override the default
+// trophy icon for just that one entry. Anything that doesn't match a known
+// icon key is treated as plain text (never rejected/warned - this is a
+// cosmetic freeform field, not something that should block a save).
+export function parseAchievementLine(line: string): AchievementEntry {
+  const trimmed = line.trim();
+  const match = trimmed.match(/^([a-z-]+):\s*(.+)$/i);
+  if (match) {
+    const iconKey = match[1].toLowerCase();
+    if (ICONS.includes(iconKey as IconKey)) {
+      return { text: match[2].trim(), icon: iconKey as IconKey };
+    }
+  }
+  return { text: trimmed, icon: DEFAULT_ACHIEVEMENT_ICON };
+}
+
+export function parseAchievementsInput(raw: string): AchievementEntry[] {
+  return raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map(parseAchievementLine);
+}
+
+/** Reverse of parseAchievementsInput, for repopulating the editor textarea. */
+export function formatAchievementsForInput(entries: AchievementEntry[]): string {
+  return entries.map((e) => (e.icon !== DEFAULT_ACHIEVEMENT_ICON ? `${e.icon}: ${e.text}` : e.text)).join("\n");
 }
 
 // BadgeFlare.achievements is stored as a JSON-encoded string column (SQLite
 // has no native scalar-array type Prisma can map to, unlike the old Postgres
 // String[] column). These two helpers are the only place that (de)serializes
 // it, so every call site crosses the DB boundary the same safe way.
-export function parseAchievements(raw: string | null | undefined): string[] {
+// Tolerates the legacy shape (a plain JSON array of strings, from before
+// per-achievement icons existed) by normalizing each string entry to the
+// default icon - existing real data written before this feature keeps
+// rendering exactly as it did.
+export function parseAchievements(raw: string | null | undefined): AchievementEntry[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((a): a is string => typeof a === "string") : [];
+    if (!Array.isArray(parsed)) return [];
+    const entries: AchievementEntry[] = [];
+    for (const item of parsed) {
+      if (typeof item === "string") {
+        const text = item.trim();
+        if (text) entries.push({ text, icon: DEFAULT_ACHIEVEMENT_ICON });
+      } else if (item && typeof item === "object" && typeof item.text === "string") {
+        const text = item.text.trim();
+        if (!text) continue;
+        const iconRaw = typeof item.icon === "string" ? item.icon.toLowerCase() : "";
+        entries.push({ text, icon: ICONS.includes(iconRaw as IconKey) ? (iconRaw as IconKey) : DEFAULT_ACHIEVEMENT_ICON });
+      }
+    }
+    return entries;
   } catch {
     return [];
   }
 }
 
-export function serializeAchievements(achievements: string[]): string {
+export function serializeAchievements(achievements: AchievementEntry[]): string {
   return JSON.stringify(achievements ?? []);
 }
 

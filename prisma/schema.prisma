@@ -245,6 +245,11 @@ model BadgeFlare {
   /// clue/code word to be used in a later challenge. No validation - any
   /// text is fine.
   secretBackText   String?
+  /// Cursor-tracking holographic sheen overlay capability - see
+  /// src/components/BadgeCard.tsx's CardVisual. A simple on/off flag,
+  /// independent of backgroundEffect so it can be combined with any of
+  /// them (or none).
+  holoSheen        Boolean   @default(false)
   expiresAt        DateTime?
   updatedAt        DateTime  @updatedAt
 

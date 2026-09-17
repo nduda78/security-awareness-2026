@@ -160,8 +160,8 @@ function CardFront({
                     key={i}
                     className="flex items-center gap-1.5 rounded-full bg-brand-yellow/10 px-2.5 py-1 text-sm font-medium text-brand-yellow ring-1 ring-brand-yellow/25"
                   >
-                    <Icon name="trophy" className="h-4 w-4" />
-                    {a}
+                    <Icon name={a.icon} className="h-4 w-4" />
+                    {a.text}
                   </span>
                 ))}
               </div>
@@ -202,7 +202,11 @@ function CardFront({
           {card.achievements.length > 0 && (
             <div className={`flex flex-col items-center ${large ? "gap-2" : "gap-1"}`}>
               {card.achievements.slice(0, 3).map((a, i) => (
-                <Icon key={i} name="trophy" className={large ? "h-[18px] w-[18px] text-brand-yellow" : "h-3 w-3 text-brand-yellow"} />
+                <Icon
+                  key={i}
+                  name={a.icon}
+                  className={large ? "h-[18px] w-[18px] text-brand-yellow" : "h-3 w-3 text-brand-yellow"}
+                />
               ))}
             </div>
           )}
@@ -322,17 +326,28 @@ export function CardVisual({
   const outerRef = useRef<HTMLDivElement>(null);
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    if (!tiltEnabled) return;
     const el = outerRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width - 0.5;
     const py = (e.clientY - rect.top) / rect.height - 0.5;
-    el.style.transform = `rotateY(${px * 8}deg) rotateX(${-py * 8}deg)`;
+    if (tiltEnabled) {
+      el.style.transform = `rotateY(${px * 8}deg) rotateX(${-py * 8}deg)`;
+    }
+    // Drives the holo-sheen overlay's cursor-tracking glint, regardless of
+    // tiltEnabled - a static preview (tilt disabled) still benefits from
+    // the sheen reacting to the cursor even without the 3D tilt.
+    if (card.holoSheen) {
+      el.style.setProperty("--mx", `${(px + 0.5) * 100}%`);
+      el.style.setProperty("--my", `${(py + 0.5) * 100}%`);
+    }
   }
   function handleMouseLeave() {
     const el = outerRef.current;
-    if (el) el.style.transform = "rotateY(0deg) rotateX(0deg)";
+    if (!el) return;
+    el.style.transform = "rotateY(0deg) rotateX(0deg)";
+    el.style.setProperty("--mx", "50%");
+    el.style.setProperty("--my", "50%");
   }
 
   const faceStyle: React.CSSProperties = {
@@ -351,8 +366,10 @@ export function CardVisual({
       onClick={onClick}
       className={`flip-scene tilt-card relative aspect-[27/17] w-full ${tiltEnabled ? "cursor-pointer" : ""}`}
       style={{
-        // @ts-expect-error custom property for pulse animation color
+        // @ts-expect-error custom properties for pulse animation color + holo-sheen cursor position
         "--pulse-color": outline,
+        "--mx": "50%",
+        "--my": "50%",
       }}
     >
       <div className={`flip-card ${flipped ? "is-flipped" : ""}`}>
@@ -372,6 +389,7 @@ export function CardVisual({
           {card.backgroundEffect && (
             <div className={`absolute inset-0 overflow-hidden pointer-events-none fx-${card.backgroundEffect}`} />
           )}
+          {card.holoSheen && <div className="holo-sheen-layer absolute inset-0 overflow-hidden" />}
           {isRogue && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
           <CardFront card={card} outline={outline} icon={icon} isRogue={isRogue} large={large} />
         </div>

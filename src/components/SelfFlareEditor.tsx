@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { selfUpdateFlareAction } from "@/lib/actions/selfFlare";
 import { applyFlareToCard, type ClientAgentCard } from "@/lib/client-types";
 import type { UnlockedFlareOptions } from "@/lib/rewards";
+import type { AchievementEntry } from "@/lib/flare";
 import { ColorField } from "./ColorField";
 import { BadgeCard, CardVisual, deriveBadgeVisualProps } from "./BadgeCard";
 
@@ -28,9 +29,10 @@ export function SelfFlareEditor({
   baseCard: ClientAgentCard;
   defaultCodename: string;
   passthrough: {
-    achievements: string[];
+    achievements: AchievementEntry[];
     motto: string | null;
     codenameOverride: string | null;
+    holoSheen: boolean;
   };
   initial: {
     backgroundEffect: string;
@@ -65,6 +67,7 @@ export function SelfFlareEditor({
         borderStyle,
         ribbonText,
         nameSuffix,
+        holoSheen: passthrough.holoSheen,
         expiresAt: null,
       }),
     [
