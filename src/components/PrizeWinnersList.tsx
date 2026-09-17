@@ -71,12 +71,14 @@ export function PrizeWinnersList({ rows }: { rows: PrizeWinnerRow[] }) {
               >
                 {r.displayName}
               </Link>
-              <div className="font-terminal text-xs text-brand-sand/40">
-                won for{" "}
-                <Link href={`/challenges/${r.challengeSlug}`} className="text-brand-cyan hover:underline">
-                  {r.challengeTitle}
-                </Link>
-              </div>
+              {r.challengeTitle && (
+                <div className="font-terminal text-xs text-brand-sand/40">
+                  won for{" "}
+                  <Link href={`/challenges/${r.challengeSlug}`} className="text-brand-cyan hover:underline">
+                    {r.challengeTitle}
+                  </Link>
+                </div>
+              )}
             </div>
             <div className="rounded-full border border-brand-yellow/40 bg-brand-yellow/10 px-3 py-1 font-terminal text-xs font-bold uppercase tracking-wide text-brand-yellow">
               🏆 {r.prize}

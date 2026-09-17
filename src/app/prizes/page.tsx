@@ -4,51 +4,73 @@ import { PrizeWinnersList, type PrizeWinnerRow } from "@/components/PrizeWinners
 export const dynamic = "force-dynamic";
 
 /**
- * Public "who won a real prize" board - distinct from XP/badge-flare
- * rewards (see rewards.ts), this is specifically the freeform
- * Challenge.rewardPrize field ("Company hoodie", "Extra PTO day", etc.).
- * A "win" = a CORRECT Submission on a challenge that has a prize set.
- * Manual Bonus challenges (see grantManualXpAction) are synthetic
- * per-employee audit records, not real missions, so they're excluded
- * even though none currently set rewardPrize anyway.
+ * Public "who's actually won something" board. Real prizes here come
+ * from what's actually been issued to an agent's badge - not the unused
+ * Challenge.rewardPrize field (nothing grants that in practice) - so this
+ * reads each employee's BadgeFlare row and surfaces:
+ *  - every freeform Achievements entry (the same list shown on their
+ *    profile badge, e.g. "Won a MacBook") as its own prize, and
+ *  - the two freeform, reward-flavored badge flare fields - ribbon
+ *    text and name suffix (e.g. "Legendary", "the O.G.") - as their
+ *    own "badge flare" prize. Purely cosmetic/technical flare (border
+ *    style, background effect, badge icon, unlocked color pickers)
+ *    is deliberately excluded - those are customization capabilities,
+ *    not something that reads as a named prize.
+ * BadgeFlare has no per-entry timestamp, so `updatedAt` on the row
+ * (last time any of it was edited) is used as the "won" date for
+ * everything from that employee - an approximation, not a precise
+ * per-prize grant time.
  */
 export default async function PrizesPage() {
-  const submissions = await prisma.submission.findMany({
-    where: {
-      status: "CORRECT",
-      challenge: { rewardPrize: { not: null } },
-    },
-    orderBy: { submittedAt: "desc" },
+  const flares = await prisma.badgeFlare.findMany({
     include: {
-      employee: {
-        select: { email: true, displayName: true, photoUpdatedAt: true, isHidden: true },
-      },
-      challenge: {
-        select: { title: true, slug: true, rewardPrize: true },
-      },
+      employee: { select: { email: true, displayName: true, photoUpdatedAt: true, isHidden: true } },
     },
   });
 
-  const rows: PrizeWinnerRow[] = submissions
-    .filter((s) => !s.employee.isHidden && !!s.challenge.rewardPrize && !s.challenge.slug.startsWith("manual-bonus-"))
-    .map((s) => ({
-      submissionId: s.id,
-      employeeEmail: s.employee.email,
-      displayName: s.employee.displayName,
-      photoUrl: s.employee.photoUpdatedAt
-        ? `/api/photo/${encodeURIComponent(s.employee.email)}?v=${s.employee.photoUpdatedAt.getTime()}`
-        : null,
-      challengeTitle: s.challenge.title,
-      challengeSlug: s.challenge.slug,
-      prize: s.challenge.rewardPrize as string,
-      wonAt: s.submittedAt.toISOString(),
-    }));
+  const rows: PrizeWinnerRow[] = [];
+  let counter = 0;
+
+  for (const f of flares) {
+    if (f.employee.isHidden) continue;
+    const photoUrl = f.employee.photoUpdatedAt
+      ? `/api/photo/${encodeURIComponent(f.employee.email)}?v=${f.employee.photoUpdatedAt.getTime()}`
+      : null;
+    const wonAt = f.updatedAt.toISOString();
+
+    const prizes: string[] = [];
+    let achievements: string[] = [];
+    try {
+      achievements = JSON.parse(f.achievements || "[]");
+    } catch {
+      achievements = [];
+    }
+    prizes.push(...achievements);
+
+    if (f.ribbonText) prizes.push(f.ribbonText);
+    if (f.nameSuffix) prizes.push(f.nameSuffix);
+
+    for (const prize of prizes) {
+      rows.push({
+        submissionId: `${f.employeeId}-${counter++}`,
+        employeeEmail: f.employee.email,
+        displayName: f.employee.displayName,
+        photoUrl,
+        challengeTitle: "",
+        challengeSlug: "",
+        prize,
+        wonAt,
+      });
+    }
+  }
+
+  rows.sort((a, b) => b.wonAt.localeCompare(a.wonAt));
 
   return (
     <div className="fade-in-up mx-auto max-w-3xl">
       <h1 className="mb-2 font-display text-2xl font-semibold">Prizes</h1>
       <p className="mb-6 font-terminal text-sm text-brand-sand/45">
-        Agents who&apos;ve earned a real-world prize by completing a challenge.
+        Agents who&apos;ve won something - real prizes and badge flare alike.
       </p>
       <PrizeWinnersList rows={rows} />
     </div>
