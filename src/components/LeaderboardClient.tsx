@@ -76,6 +76,23 @@ export function LeaderboardClient({
 
   const allMembers = useMemo(() => sections.flatMap((s) => s.members), [sections]);
 
+  // ROGUE is a hidden-easter-egg tier (see rules page) - only worth
+  // showing as a filter option at all when someone actually visible on
+  // the board right now has it. Doesn't touch matchesFilter/state, just
+  // whether the button itself renders.
+  const hasVisibleRogue = useMemo(() => allMembers.some((m) => m.tierKey === "ROGUE"), [allMembers]);
+  const visibleFilters = useMemo(
+    () => FILTERS.filter((f) => f.key !== "ROGUE" || hasVisibleRogue),
+    [hasVisibleRogue]
+  );
+
+  // If the ROGUE filter was active and rogue members disappear (e.g. the
+  // easter-egg account gets hidden), fall back to ALL rather than leaving
+  // the list stuck showing nothing with no visible button to escape it.
+  useEffect(() => {
+    if (filter === "ROGUE" && !hasVisibleRogue) setFilter("ALL");
+  }, [filter, hasVisibleRogue]);
+
   function matchesFilter(card: ClientAgentCard, f: FilterKey): boolean {
     if (f === "ALL") return true;
     if (f === "WINNERS") return card.achievements.length > 0;
@@ -168,7 +185,7 @@ export function LeaderboardClient({
       </div>
 
       <div className="mb-8 flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
+        {visibleFilters.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
