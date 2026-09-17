@@ -3,6 +3,7 @@ import { Icon } from "@/components/Icon";
 import { TIERS } from "@/lib/tiers";
 import type { IconKey } from "@/lib/flare";
 import { isCompromisedModeEnabled } from "@/lib/settings";
+import { DownloadRulesPdfButton } from "@/components/DownloadRulesPdfButton";
 
 function Section({
   id,
@@ -50,7 +51,10 @@ export default async function RulesPage() {
   return (
     <div className="fade-in-up mx-auto max-w-3xl space-y-6">
       <div className="mb-4">
-        <div className="section-eyebrow mb-2">{compromised ? "Intercepted Transmission" : "Briefing Document"}</div>
+        <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
+          <div className="section-eyebrow">{compromised ? "Intercepted Transmission" : "Briefing Document"}</div>
+          <DownloadRulesPdfButton />
+        </div>
         <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           {compromised ? (
             <>

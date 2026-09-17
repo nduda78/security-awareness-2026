@@ -1071,3 +1071,74 @@ html.site-compromised .site-logo {
     opacity: 0.85;
   }
 }
+
+/* --- Print stylesheet (Rules page "Save as PDF") ---
+   Only meaningfully exercised on /rules (the only page with a print
+   button), but scoped generically by component class rather than a
+   page-specific selector, so it doesn't silently break if a print
+   button is ever added elsewhere. Re-themes the whole dark-mode site to
+   a clean light/dark-text printable look and strips every bit of site
+   chrome and decorative effects that only make sense on a glowing dark
+   screen (grid-glow background, blur/backdrop-filter, box-shadow glows,
+   the gradient-clipped heading text, virus overlay, nav/footer). */
+@media print {
+  .print\:hidden,
+  header.sticky,
+  footer,
+  .grid-glow::before,
+  .grid-glow::after {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  * {
+    color: #111111;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+  }
+
+  .surface-card,
+  .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid #d4d4d4 !important;
+  }
+
+  .gradient-text {
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+  }
+
+  .section-eyebrow {
+    color: #555555 !important;
+  }
+
+  .pill,
+  .pill-active {
+    border: 1px solid #999999 !important;
+    background: none !important;
+    color: #111111 !important;
+  }
+
+  a {
+    color: #1a4fbd !important;
+    text-decoration: underline;
+  }
+
+  /* Page-break hygiene: never split a rule section's heading from its
+     own body text across a page boundary. */
+  .surface-card,
+  .glass-panel {
+    break-inside: avoid;
+  }
+}
