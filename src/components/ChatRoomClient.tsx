@@ -86,12 +86,16 @@ function Reactions({
 
 const POLL_INTERVAL_MS = 4000;
 
-// Always shows the date alongside the time (not just on a different day
-// than "now") - a long-running event-wide channel makes "3:47 PM" alone
-// ambiguous once you're scrolling back more than a few minutes.
 function formatTime(iso: string): string {
   const d = new Date(iso);
-  return `${formatEasternShortDate(d)}, ${formatEasternTime(d)}`;
+  const now = new Date();
+  // "Same day" is judged in Eastern time (not the viewer's own browser
+  // zone) so everyone in the room agrees on what "today" means, same as
+  // every other timestamp in the app.
+  const sameDay = formatEasternShortDate(d) === formatEasternShortDate(now);
+  const time = formatEasternTime(d);
+  if (sameDay) return time;
+  return `${formatEasternShortDate(d)}, ${time}`;
 }
 
 function initials(name: string): string {
