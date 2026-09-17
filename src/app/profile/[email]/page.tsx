@@ -204,6 +204,7 @@ export default async function ProfilePage({
               motto: card.flare?.motto ?? null,
               codenameOverride: card.flare?.codenameOverride ?? null,
               holoSheen: card.flare?.holoSheen ?? false,
+              psaGrade: card.flare?.psaGrade ?? false,
             }}
             initial={{
               backgroundEffect: card.flare?.backgroundEffect ?? "",

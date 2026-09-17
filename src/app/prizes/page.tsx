@@ -76,6 +76,7 @@ export default async function PrizesPage() {
       f.backgroundEffect ||
       f.iconOverride ||
       f.holoSheen ||
+      f.psaGrade ||
       f.outlineColor ||
       f.backgroundColor;
 
@@ -132,6 +133,9 @@ export default async function PrizesPage() {
       }
       if (f.holoSheen) {
         pushFlareEntry("Holographic Cursor Sheen", "Holo Sheen", () => false);
+      }
+      if (f.psaGrade) {
+        pushFlareEntry("Graded Slab (Gem MT 10)", "Graded Slab", () => false);
       }
       if (f.outlineColor) {
         pushFlareEntry("Custom Outline Color", "Outline Color", (r) => r.rewardOutlineColorPicker);

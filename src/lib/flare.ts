@@ -194,6 +194,11 @@ export interface ResolvedFlare {
   /// simple on/off capability (see CardVisual), independent of
   /// backgroundEffect so it can be combined with any of them (or none).
   holoSheen: boolean;
+  /// "Graded slab" treatment (foil sheen sweep + a Gem MT 10 grading chip
+  /// on the front face - see CardVisual/CardFront) - another simple
+  /// on/off capability, independent of backgroundEffect/borderStyle/
+  /// holoSheen so it can be combined with any of them (or none).
+  psaGrade: boolean;
   warnings: FlareWarning[];
 }
 
@@ -210,6 +215,7 @@ export interface RawFlareInput {
   nameSuffix?: string | null;
   secretBackText?: string | null;
   holoSheen?: boolean | null;
+  psaGrade?: boolean | null;
   expiresAt?: Date | null;
 }
 
@@ -239,6 +245,7 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
     nameSuffix: raw.nameSuffix?.trim() || null,
     secretBackText: raw.secretBackText?.trim() || null,
     holoSheen: !!raw.holoSheen,
+    psaGrade: !!raw.psaGrade,
     warnings,
   };
 }

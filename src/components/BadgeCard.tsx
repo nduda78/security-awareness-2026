@@ -73,17 +73,29 @@ function CardFront({
             </div>
           )}
         </div>
-        <div
-          className={`shrink-0 rounded-full font-terminal font-bold uppercase tracking-wide ring-1 ${
-            large ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[9px]"
-          } ${isRogue ? "glitch-text" : ""}`}
-          style={{
-            color: outline,
-            background: glow(outline, 16),
-            boxShadow: `inset 0 0 0 1px ${glow(outline, 35)}`,
-          }}
-        >
-          {card.tierLabel}
+        <div className="flex shrink-0 items-center gap-1.5">
+          <div
+            className={`shrink-0 rounded-full font-terminal font-bold uppercase tracking-wide ring-1 ${
+              large ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[9px]"
+            } ${isRogue ? "glitch-text" : ""}`}
+            style={{
+              color: outline,
+              background: glow(outline, 16),
+              boxShadow: `inset 0 0 0 1px ${glow(outline, 35)}`,
+            }}
+          >
+            {card.tierLabel}
+          </div>
+          {card.psaGrade && (
+            <div
+              title="Graded slab - Gem MT 10"
+              className={`psa-grade-chip shrink-0 rounded-full font-terminal font-bold uppercase tracking-wide ${
+                large ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[9px]"
+              }`}
+            >
+              Gem MT 10
+            </div>
+          )}
         </div>
       </div>
 
@@ -390,6 +402,7 @@ export function CardVisual({
             <div className={`absolute inset-0 overflow-hidden pointer-events-none fx-${card.backgroundEffect}`} />
           )}
           {card.holoSheen && <div className="holo-sheen-layer absolute inset-0 overflow-hidden" />}
+          {card.psaGrade && <div className="psa-slab-sheen absolute inset-0 overflow-hidden pointer-events-none" />}
           {isRogue && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
           <CardFront card={card} outline={outline} icon={icon} isRogue={isRogue} large={large} />
         </div>
@@ -402,6 +415,7 @@ export function CardVisual({
           style={faceStyle}
         >
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.07] via-transparent to-transparent" />
+          {card.psaGrade && <div className="psa-slab-sheen absolute inset-0 overflow-hidden pointer-events-none" />}
           {isRogue && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
           <CardBack card={card} large={large} />
         </div>

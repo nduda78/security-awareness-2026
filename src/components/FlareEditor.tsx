@@ -33,6 +33,7 @@ export function FlareEditor({
     nameSuffix: string;
     secretBackText: string;
     holoSheen: boolean;
+    psaGrade: boolean;
     expiresAt: string;
   };
 }) {
@@ -48,6 +49,7 @@ export function FlareEditor({
   const [nameSuffix, setNameSuffix] = useState(initial.nameSuffix);
   const [secretBackText, setSecretBackText] = useState(initial.secretBackText);
   const [holoSheen, setHoloSheen] = useState(initial.holoSheen);
+  const [psaGrade, setPsaGrade] = useState(initial.psaGrade);
   const [expiresAt, setExpiresAt] = useState(initial.expiresAt);
 
   const previewCard = useMemo(
@@ -65,6 +67,7 @@ export function FlareEditor({
         nameSuffix,
         secretBackText,
         holoSheen,
+        psaGrade,
         expiresAt: parseEasternInputValue(expiresAt),
       }),
     [
@@ -82,6 +85,7 @@ export function FlareEditor({
       nameSuffix,
       secretBackText,
       holoSheen,
+      psaGrade,
       expiresAt,
     ]
   );
@@ -234,6 +238,20 @@ export function FlareEditor({
         <p className="-mt-3 text-[11px] text-brand-sand/35">
           A rainbow glint that follows the cursor across the badge on hover - independent of (and stacks with) any
           background effect above.
+        </p>
+        <label className="flex items-center gap-2 font-terminal text-xs uppercase text-brand-sand/45">
+          <input
+            type="checkbox"
+            name="psaGrade"
+            checked={psaGrade}
+            onChange={(e) => setPsaGrade(e.target.checked)}
+            className="accent-brand-cyan"
+          />
+          Graded slab (PSA-style)
+        </label>
+        <p className="-mt-3 text-[11px] text-brand-sand/35">
+          A holographic foil sheen sweeps across the badge and a &quot;Gem MT 10&quot; grading chip appears next to
+          the tier badge - independent of (and stacks with) everything else above.
         </p>
         <div>
           <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">

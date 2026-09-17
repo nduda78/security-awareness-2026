@@ -124,6 +124,7 @@ export default async function AdminFlarePage({
                 nameSuffix: selected.flare?.nameSuffix ?? "",
                 secretBackText: selected.flare?.secretBackText ?? "",
                 holoSheen: selected.flare?.holoSheen ?? false,
+                psaGrade: selected.flare?.psaGrade ?? false,
                 expiresAt: selected.flare?.expiresAt ? toEasternInputValue(selected.flare.expiresAt) : "",
               }}
             />

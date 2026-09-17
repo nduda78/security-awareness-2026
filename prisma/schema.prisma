@@ -250,6 +250,11 @@ model BadgeFlare {
   /// independent of backgroundEffect so it can be combined with any of
   /// them (or none).
   holoSheen        Boolean   @default(false)
+  /// "Graded slab" cosmetic treatment - see src/components/BadgeCard.tsx's
+  /// CardVisual/CardFront (foil sheen sweep + a Gem MT 10 grading chip).
+  /// A simple on/off flag, independent of backgroundEffect/borderStyle/
+  /// holoSheen so it can be combined with any of them (or none).
+  psaGrade         Boolean   @default(false)
   expiresAt        DateTime?
   updatedAt        DateTime  @updatedAt
 

@@ -41,6 +41,8 @@ export interface ClientAgentCard {
   secretBackText: string | null;
   /// Cursor-tracking holographic sheen overlay - see CardVisual.
   holoSheen: boolean;
+  /// "Graded slab" treatment (foil sheen + Gem MT 10 chip) - see CardVisual/CardFront.
+  psaGrade: boolean;
 }
 
 // --- Challenges page (ChallengesBoard) ---
@@ -121,6 +123,7 @@ export function applyFlareToCard(
       renderedName: base.displayName,
       secretBackText: null,
       holoSheen: false,
+      psaGrade: false,
     };
   }
   return {
@@ -138,6 +141,7 @@ export function applyFlareToCard(
     renderedName: resolved.nameSuffix ? `${base.displayName} ${resolved.nameSuffix}` : base.displayName,
     secretBackText: resolved.secretBackText,
     holoSheen: resolved.holoSheen,
+    psaGrade: resolved.psaGrade,
   };
 }
 
@@ -175,5 +179,6 @@ export function toClientCard(card: AgentCard, rankInTier: number, totalInTier: n
     photoUrl: card.photoUrl,
     secretBackText: card.flare?.secretBackText ?? null,
     holoSheen: card.flare?.holoSheen ?? false,
+    psaGrade: card.flare?.psaGrade ?? false,
   };
 }

@@ -33,6 +33,7 @@ export function SelfFlareEditor({
     motto: string | null;
     codenameOverride: string | null;
     holoSheen: boolean;
+    psaGrade: boolean;
   };
   initial: {
     backgroundEffect: string;
@@ -68,6 +69,7 @@ export function SelfFlareEditor({
         ribbonText,
         nameSuffix,
         holoSheen: passthrough.holoSheen,
+        psaGrade: passthrough.psaGrade,
         expiresAt: null,
       }),
     [

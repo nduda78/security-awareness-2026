@@ -1165,3 +1165,45 @@ html.site-compromised .site-logo {
 .animate-shake {
   animation: connections-shake 0.4s ease-in-out;
 }
+
+/* "Graded slab" badge flare capability (PSA-style) - see BadgeCard.tsx's
+   CardVisual/CardFront. Two independent pieces: a diagonal holographic
+   foil sheen sweeping across the face (mimics the plastic slab's own
+   light-catching glare, distinct from the cursor-tracking .holo-sheen-
+   layer and any chosen .fx- background effect - stacks with both), and
+   a small "Gem MT 10" grading chip next to the tier badge (mimics a
+   graded card's slab label showing its grade). */
+@keyframes psa-foil-sweep {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 200% 200%;
+  }
+}
+.psa-slab-sheen {
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 3%,
+    var(--brand-cyan) 6%,
+    rgba(255, 255, 255, 0) 10%,
+    var(--brand-sand) 16%,
+    rgba(255, 255, 255, 0) 20%,
+    var(--brand-purple) 26%,
+    rgba(255, 255, 255, 0) 30%
+  );
+  background-size: 220% 220%;
+  animation: psa-foil-sweep 6s linear infinite;
+  mix-blend-mode: overlay;
+  opacity: 0.4;
+}
+.psa-grade-chip {
+  background: linear-gradient(120deg, #eef6ff, var(--brand-cyan) 30%, #ffe9fb 55%, var(--brand-light-green) 80%, #eef6ff);
+  background-size: 220% 220%;
+  animation: psa-foil-sweep 7s linear infinite;
+  color: #0b2540;
+  box-shadow:
+    inset 0 0 0 1px rgba(11, 37, 64, 0.35),
+    0 2px 6px -2px rgba(0, 0, 0, 0.5);
+}
