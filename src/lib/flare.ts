@@ -57,11 +57,53 @@ const CSS_NAMED_COLORS = new Set([
   "deeppink",
 ]);
 
-export type BackgroundEffect = "holo" | "crt" | "gradient-sweep" | "starfield";
-export const BACKGROUND_EFFECTS: BackgroundEffect[] = ["holo", "crt", "gradient-sweep", "starfield"];
+export type BackgroundEffect =
+  | "holo"
+  | "crt"
+  | "gradient-sweep"
+  | "starfield"
+  | "matrix"
+  | "smoke"
+  | "confetti"
+  | "circuit"
+  | "aurora"
+  | "fireflies"
+  | "lightning";
+export const BACKGROUND_EFFECTS: BackgroundEffect[] = [
+  "holo",
+  "crt",
+  "gradient-sweep",
+  "starfield",
+  "matrix",
+  "smoke",
+  "confetti",
+  "circuit",
+  "aurora",
+  "fireflies",
+  "lightning",
+];
 
-export type BorderStyle = "pulse" | "shimmer" | "marching-ants";
-export const BORDER_STYLES: BorderStyle[] = ["pulse", "shimmer", "marching-ants"];
+export type BorderStyle =
+  | "pulse"
+  | "shimmer"
+  | "marching-ants"
+  | "neon"
+  | "glitch"
+  | "foil"
+  | "pulse-glitch"
+  | "rainbow"
+  | "ember";
+export const BORDER_STYLES: BorderStyle[] = [
+  "pulse",
+  "shimmer",
+  "marching-ants",
+  "neon",
+  "glitch",
+  "foil",
+  "pulse-glitch",
+  "rainbow",
+  "ember",
+];
 
 export type IconKey = "crown" | "flame" | "trophy" | "lightning" | "skull" | "shield" | "lock" | "file";
 export const ICONS: IconKey[] = ["crown", "flame", "trophy", "lightning", "skull", "shield", "lock", "file"];
@@ -126,8 +168,15 @@ export function resolveIcon(raw: string | null | undefined, warnings: FlareWarni
   return null;
 }
 
+export interface AchievementEntry {
+  text: string;
+  icon: IconKey;
+}
+
+export const DEFAULT_ACHIEVEMENT_ICON: IconKey = "trophy";
+
 export interface ResolvedFlare {
-  achievements: string[];
+  achievements: AchievementEntry[];
   outlineColor: string | null;
   backgroundColor: string | null;
   backgroundEffect: BackgroundEffect | null;
@@ -137,13 +186,30 @@ export interface ResolvedFlare {
   borderStyle: BorderStyle | null;
   ribbonText: string | null;
   ribbonRecognized: boolean;
-  pinned: boolean;
   nameSuffix: string | null;
+  /// Freeform admin note stashed on the badge back, for later challenge
+  /// use - no validation, any text goes through as-is.
+  secretBackText: string | null;
+  /// Cursor-tracking holographic sheen overlay on the front face - a
+  /// simple on/off capability (see CardVisual), independent of
+  /// backgroundEffect so it can be combined with any of them (or none).
+  holoSheen: boolean;
+  /// "Graded slab" treatment (foil sheen sweep + a Gem MT 10 grading chip
+  /// on the front face - see CardVisual/CardFront) - another simple
+  /// on/off capability, independent of backgroundEffect/borderStyle/
+  /// holoSheen so it can be combined with any of them (or none).
+  psaGrade: boolean;
+  /// The ultimate override - see resolveFlare below. When true, every
+  /// other field above (except achievements/secretBackText) has already
+  /// been forced to a fixed "compromised" package by resolveFlare -
+  /// BadgeCard just needs this flag to also drive the watermark/flicker/
+  /// ribbon-styling branches that aren't plain data fields.
+  process420: boolean;
   warnings: FlareWarning[];
 }
 
 export interface RawFlareInput {
-  achievements?: string[] | null;
+  achievements?: AchievementEntry[] | null;
   outlineColor?: string | null;
   backgroundColor?: string | null;
   backgroundEffect?: string | null;
@@ -152,10 +218,22 @@ export interface RawFlareInput {
   iconOverride?: string | null;
   borderStyle?: string | null;
   ribbonText?: string | null;
-  pinned?: boolean | null;
   nameSuffix?: string | null;
+  secretBackText?: string | null;
+  holoSheen?: boolean | null;
+  psaGrade?: boolean | null;
+  process420?: boolean | null;
   expiresAt?: Date | null;
 }
+
+// The fixed "you've become him" cosmetic package applied whenever
+// process420 is set - see resolveFlare. Deliberately not admin-editable
+// text (unlike every other flare field) - this is a single all-or-
+// nothing legendary reward, not something to hand-tune per grant.
+const PROCESS_420_OUTLINE_COLOR = "#e5484d";
+const PROCESS_420_CODENAME = "PROCESS_420";
+const PROCESS_420_MOTTO = "you didn't beat me. you just closed the tab.";
+const PROCESS_420_RIBBON = "PROCESS 420";
 
 /**
  * Resolves a raw BadgeFlare row into safe render values. If expiresAt is in
@@ -167,10 +245,37 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
 
   const warnings: FlareWarning[] = [];
 
+  // Achievements and secretBackText are real records (earned trophies, a
+  // stashed game-master note), not cosmetic flare - they pass through
+  // identically whether or not the Process 420 override is active.
+  const achievements = (raw.achievements ?? []).filter((a) => !!a?.text?.trim());
+  const secretBackText = raw.secretBackText?.trim() || null;
+
+  if (raw.process420) {
+    return {
+      achievements,
+      outlineColor: PROCESS_420_OUTLINE_COLOR,
+      backgroundColor: null,
+      backgroundEffect: null,
+      codenameOverride: PROCESS_420_CODENAME,
+      motto: PROCESS_420_MOTTO,
+      iconOverride: "skull",
+      borderStyle: null,
+      ribbonText: PROCESS_420_RIBBON,
+      ribbonRecognized: false,
+      nameSuffix: null,
+      secretBackText,
+      holoSheen: false,
+      psaGrade: false,
+      process420: true,
+      warnings,
+    };
+  }
+
   const ribbonText = raw.ribbonText?.trim() || null;
 
   return {
-    achievements: (raw.achievements ?? []).filter((a) => !!a && !!a.trim()),
+    achievements,
     outlineColor: resolveColor(raw.outlineColor, "outlineColor", warnings),
     backgroundColor: resolveColor(raw.backgroundColor, "backgroundColor", warnings),
     backgroundEffect: resolveBackgroundEffect(raw.backgroundEffect, warnings),
@@ -180,10 +285,78 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
     borderStyle: resolveBorderStyle(raw.borderStyle, warnings),
     ribbonText,
     ribbonRecognized: ribbonText ? RECOGNIZED_RIBBONS.has(ribbonText.toLowerCase()) : false,
-    pinned: !!raw.pinned,
     nameSuffix: raw.nameSuffix?.trim() || null,
+    secretBackText,
+    holoSheen: !!raw.holoSheen,
+    psaGrade: !!raw.psaGrade,
+    process420: false,
     warnings,
   };
+}
+
+// Achievements textarea line syntax: plain text, or an optional recognized
+// icon-key prefix ("crown: October Champion") to override the default
+// trophy icon for just that one entry. Anything that doesn't match a known
+// icon key is treated as plain text (never rejected/warned - this is a
+// cosmetic freeform field, not something that should block a save).
+export function parseAchievementLine(line: string): AchievementEntry {
+  const trimmed = line.trim();
+  const match = trimmed.match(/^([a-z-]+):\s*(.+)$/i);
+  if (match) {
+    const iconKey = match[1].toLowerCase();
+    if (ICONS.includes(iconKey as IconKey)) {
+      return { text: match[2].trim(), icon: iconKey as IconKey };
+    }
+  }
+  return { text: trimmed, icon: DEFAULT_ACHIEVEMENT_ICON };
+}
+
+export function parseAchievementsInput(raw: string): AchievementEntry[] {
+  return raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map(parseAchievementLine);
+}
+
+/** Reverse of parseAchievementsInput, for repopulating the editor textarea. */
+export function formatAchievementsForInput(entries: AchievementEntry[]): string {
+  return entries.map((e) => (e.icon !== DEFAULT_ACHIEVEMENT_ICON ? `${e.icon}: ${e.text}` : e.text)).join("\n");
+}
+
+// BadgeFlare.achievements is stored as a JSON-encoded string column (SQLite
+// has no native scalar-array type Prisma can map to, unlike the old Postgres
+// String[] column). These two helpers are the only place that (de)serializes
+// it, so every call site crosses the DB boundary the same safe way.
+// Tolerates the legacy shape (a plain JSON array of strings, from before
+// per-achievement icons existed) by normalizing each string entry to the
+// default icon - existing real data written before this feature keeps
+// rendering exactly as it did.
+export function parseAchievements(raw: string | null | undefined): AchievementEntry[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const entries: AchievementEntry[] = [];
+    for (const item of parsed) {
+      if (typeof item === "string") {
+        const text = item.trim();
+        if (text) entries.push({ text, icon: DEFAULT_ACHIEVEMENT_ICON });
+      } else if (item && typeof item === "object" && typeof item.text === "string") {
+        const text = item.text.trim();
+        if (!text) continue;
+        const iconRaw = typeof item.icon === "string" ? item.icon.toLowerCase() : "";
+        entries.push({ text, icon: ICONS.includes(iconRaw as IconKey) ? (iconRaw as IconKey) : DEFAULT_ACHIEVEMENT_ICON });
+      }
+    }
+    return entries;
+  } catch {
+    return [];
+  }
+}
+
+export function serializeAchievements(achievements: AchievementEntry[]): string {
+  return JSON.stringify(achievements ?? []);
 }
 
 /** Logs flare warnings server-side (build/request time) without throwing. */

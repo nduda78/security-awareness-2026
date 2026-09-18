@@ -3,7 +3,6 @@ import crypto from "crypto";
 
 const AGENT_COOKIE = "agent_session";
 const ADMIN_COOKIE = "admin_session";
-const ROGUE_COOKIE = "rogue_unlocked";
 
 function secret() {
   return process.env.AGENT_SESSION_SECRET || "dev-secret";
@@ -26,9 +25,17 @@ function unsign(signed: string): string | null {
 }
 
 export interface AgentIdentity {
+  /// The stable identity slug (see schema comment on Employee.email - no
+  /// longer a real email address as of the name+PIN auth migration).
   email: string;
   displayName: string;
 }
+
+// "Remain signed in until sign out" - a real password-gated account isn't
+// meaningfully safer with a short expiry, so this is long enough to never
+// practically expire on its own (~10 years) rather than silently bouncing
+// someone back to /identify after some arbitrary number of months.
+export const AGENT_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 10;
 
 /** Reads + verifies the employee identity cookie. Returns null if absent/invalid. */
 export async function getAgentIdentity(): Promise<AgentIdentity | null> {
@@ -55,11 +62,25 @@ export function encodeAgentCookie(identity: AgentIdentity): string {
 
 export const AGENT_COOKIE_NAME = AGENT_COOKIE;
 
+/**
+ * True if either the legacy passphrase-gated admin_session cookie is
+ * valid, OR the currently signed-in employee (agent_session) has been
+ * flagged isAdmin=true - flagged admins skip the passphrase entirely.
+ */
 export async function isAdminSession(): Promise<boolean> {
   const store = await cookies();
   const raw = store.get(ADMIN_COOKIE)?.value;
-  if (!raw) return false;
-  return unsign(raw) === "ok";
+  if (raw && unsign(raw) === "ok") return true;
+
+  const identity = await getAgentIdentity();
+  if (!identity) return false;
+
+  const { prisma } = await import("./prisma");
+  const employee = await prisma.employee.findUnique({
+    where: { email: identity.email },
+    select: { isAdmin: true },
+  });
+  return !!employee?.isAdmin;
 }
 
 export function encodeAdminCookie(): string {
@@ -68,15 +89,26 @@ export function encodeAdminCookie(): string {
 
 export const ADMIN_COOKIE_NAME = ADMIN_COOKIE;
 
-export async function isRogueUnlocked(): Promise<boolean> {
+// Short-lived marker set right after a CORRECT PIN check for an identity
+// that also has an extraPasswordHash - proves "the PIN step already
+// passed" so the second step (verifyVaultPasswordAction in identify.ts)
+// only needs the extra password, without re-asking for the PIN or
+// trusting a client-suppliable email. Signed the same way as the other
+// cookies here so it can't be forged or edited client-side; a short
+// 10-minute expiry means walking away mid-flow just requires starting
+// over, not a lingering half-authenticated state.
+const PENDING_VAULT_COOKIE = "pending_vault";
+export const PENDING_VAULT_COOKIE_NAME = PENDING_VAULT_COOKIE;
+export const PENDING_VAULT_MAX_AGE = 60 * 10;
+
+export function encodePendingVaultCookie(email: string): string {
+  return sign(email);
+}
+
+/** The identity slug pending a vault-password check, or null if there isn't one (expired, never set, or tampered with). */
+export async function getPendingVaultEmail(): Promise<string | null> {
   const store = await cookies();
-  const raw = store.get(ROGUE_COOKIE)?.value;
-  if (!raw) return false;
-  return unsign(raw) === "ok";
+  const raw = store.get(PENDING_VAULT_COOKIE)?.value;
+  if (!raw) return null;
+  return unsign(raw);
 }
-
-export function encodeRogueCookie(): string {
-  return sign("ok");
-}
-
-export const ROGUE_COOKIE_NAME = ROGUE_COOKIE;

@@ -8,6 +8,7 @@
   --brand-light-green: #6aba48;
   --brand-yellow: #ffc02a;
   --brand-red: #e5484d;
+  --brand-cyan: #2ad8ff; /* bright accent for badge-flare reward callouts — purple was too low-contrast */
 
   --background: var(--brand-dark-green);
   --foreground: var(--brand-sand);
@@ -23,23 +24,202 @@
   --color-brand-light-green: var(--brand-light-green);
   --color-brand-yellow: var(--brand-yellow);
   --color-brand-red: var(--brand-red);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand-cyan: var(--brand-cyan);
+  --font-sans: var(--font-sans-raw);
+  --font-display: var(--font-display-raw);
+  --font-mono: var(--font-mono-raw);
+  --font-script: var(--font-script-raw);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: radial-gradient(circle at 20% -10%, var(--brand-medium-green) 0%, var(--brand-dark-green) 55%);
+  background: var(--brand-dark-green);
   color: var(--foreground);
   font-family: var(--font-sans);
   min-height: 100vh;
 }
 
-.font-terminal {
-  font-family: var(--font-mono);
-  letter-spacing: 0.04em;
+/* --- Modern glowing mesh background, replaces the flat radial gradient --- */
+.grid-glow {
+  position: relative;
+  isolation: isolate;
+}
+.grid-glow::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(650px circle at 10% -10%, rgba(106, 186, 72, 0.16), transparent 60%),
+    radial-gradient(600px circle at 90% 0%, rgba(94, 50, 78, 0.22), transparent 60%),
+    radial-gradient(800px circle at 50% 110%, rgba(255, 192, 42, 0.08), transparent 55%),
+    linear-gradient(180deg, var(--brand-dark-green) 0%, #051d15 45%, var(--brand-dark-green) 100%);
+}
+.grid-glow::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(241, 232, 214, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(241, 232, 214, 0.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(1200px circle at 50% 0%, black 0%, transparent 75%);
 }
 
-/* Scanline overlay used across "classified terminal" surfaces */
+.font-terminal {
+  font-family: var(--font-mono);
+  letter-spacing: 0.03em;
+}
+.font-display {
+  font-family: var(--font-display);
+}
+.font-script {
+  font-family: var(--font-script), cursive;
+}
+
+.gradient-text {
+  background: linear-gradient(100deg, var(--brand-light-green) 0%, var(--brand-yellow) 55%, var(--brand-sand) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --- Reusable modern surfaces --- */
+.glass-panel {
+  background: linear-gradient(160deg, rgba(241, 232, 214, 0.06), rgba(241, 232, 214, 0.02));
+  border: 1px solid rgba(241, 232, 214, 0.1);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
+.surface-card {
+  background: rgba(241, 232, 214, 0.04);
+  border: 1px solid rgba(241, 232, 214, 0.08);
+  border-radius: 1rem;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.surface-card:hover {
+  border-color: rgba(241, 232, 214, 0.18);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, var(--brand-light-green), #4f9c33);
+  color: #04150e;
+  box-shadow: 0 6px 20px -6px rgba(106, 186, 72, 0.55);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(241, 232, 214, 0.06);
+  border: 1px solid rgba(241, 232, 214, 0.16);
+  color: var(--brand-sand);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.btn-secondary:hover {
+  background: rgba(241, 232, 214, 0.1);
+  border-color: rgba(241, 232, 214, 0.28);
+}
+
+.input-modern {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(241, 232, 214, 0.14);
+  background: rgba(4, 32, 23, 0.55);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.875rem;
+  color: var(--brand-sand);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input-modern::placeholder {
+  color: rgba(241, 232, 214, 0.35);
+}
+.input-modern:focus {
+  outline: none;
+  border-color: var(--brand-light-green);
+  box-shadow: 0 0 0 3px rgba(106, 186, 72, 0.18);
+}
+/* .input-modern's padding shorthand otherwise clobbers Tailwind's pl-9
+   utility — same specificity, later in the cascade wins. */
+.input-modern.input-with-icon {
+  padding-left: 2.5rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(241, 232, 214, 0.16);
+  color: rgba(241, 232, 214, 0.65);
+  background: rgba(241, 232, 214, 0.03);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.pill:hover {
+  color: var(--brand-sand);
+  border-color: rgba(241, 232, 214, 0.3);
+}
+.pill-active {
+  background: linear-gradient(135deg, rgba(255, 192, 42, 0.22), rgba(255, 192, 42, 0.08));
+  border-color: var(--brand-yellow);
+  color: var(--brand-yellow);
+}
+
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--brand-light-green);
+}
+
+/* Scanline overlay — used sparingly now, just for badge/terminal flourishes */
+.scanlines {
+  position: relative;
+}
 .scanlines::before {
   content: "";
   position: absolute;
@@ -47,8 +227,8 @@ body {
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.025) 0px,
-    rgba(255, 255, 255, 0.025) 1px,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
     transparent 1px,
     transparent 3px
   );
@@ -230,6 +410,163 @@ body.chaos-mode {
   }
 }
 
+/* Falling green code rain — classic hacker/matrix vibe. */
+.fx-matrix {
+  background:
+    repeating-linear-gradient(90deg, rgba(57, 255, 20, 0.4) 0px, rgba(57, 255, 20, 0.4) 2px, transparent 2px, transparent 16px),
+    repeating-linear-gradient(0deg, rgba(57, 255, 20, 0.55) 0px, rgba(57, 255, 20, 0.55) 3px, transparent 3px, transparent 20px);
+  background-size: 100% 100%, 100% 40px;
+  mix-blend-mode: screen;
+  opacity: 0.32;
+  animation: matrix-fall 1.1s linear infinite;
+}
+@keyframes matrix-fall {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 0 0, 0 40px;
+  }
+}
+
+/* Drifting cannabis haze — soft blurred smoke clouds. */
+.fx-smoke {
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.3), transparent 45%),
+    radial-gradient(circle at 72% 62%, rgba(255, 255, 255, 0.2), transparent 50%),
+    radial-gradient(circle at 40% 85%, rgba(255, 255, 255, 0.16), transparent 55%);
+  filter: blur(7px);
+  opacity: 0.5;
+  animation: smoke-drift 8s ease-in-out infinite alternate;
+}
+@keyframes smoke-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(4%, -3%) scale(1.1);
+  }
+}
+
+/* Scattered confetti dots, slowly falling — celebratory. */
+.fx-confetti {
+  background-image:
+    radial-gradient(circle, #ff6ad5 2px, transparent 2.5px),
+    radial-gradient(circle, #94d0ff 2px, transparent 2.5px),
+    radial-gradient(circle, #ffd166 2px, transparent 2.5px),
+    radial-gradient(circle, #6aba48 2px, transparent 2.5px);
+  background-size: 42px 42px, 58px 58px, 36px 36px, 50px 50px;
+  background-position: 0 0, 15px 25px, 30px 5px, 8px 35px;
+  opacity: 0.55;
+  animation: confetti-drift 5s linear infinite;
+}
+@keyframes confetti-drift {
+  0% {
+    background-position: 0 0, 15px 25px, 30px 5px, 8px 35px;
+  }
+  100% {
+    background-position: 0 42px, 15px 83px, 30px 41px, 8px 85px;
+  }
+}
+
+/* Pulsing circuit-board grid — security/tech themed. */
+.fx-circuit {
+  background-image:
+    linear-gradient(rgba(106, 186, 72, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(106, 186, 72, 0.4) 1px, transparent 1px);
+  background-size: 16px 16px;
+  opacity: 0.3;
+  animation: circuit-pulse 3s ease-in-out infinite;
+}
+@keyframes circuit-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+
+/* Flowing aurora bands. */
+.fx-aurora {
+  background: linear-gradient(
+    100deg,
+    rgba(106, 186, 72, 0.55),
+    rgba(148, 208, 255, 0.45),
+    rgba(94, 50, 78, 0.55),
+    rgba(106, 186, 72, 0.55)
+  );
+  background-size: 250% 250%;
+  filter: blur(4px);
+  opacity: 0.55;
+  animation: aurora-flow 7s ease-in-out infinite;
+}
+@keyframes aurora-flow {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Softly drifting glowing dots, each on its own random-feeling offset -
+   distinct from starfield's static twinkling grid, these actually wander. */
+.fx-fireflies {
+  background-image:
+    radial-gradient(circle, rgba(255, 244, 168, 0.9) 1.5px, transparent 2.5px),
+    radial-gradient(circle, rgba(255, 244, 168, 0.7) 1.5px, transparent 2.5px),
+    radial-gradient(circle, rgba(255, 244, 168, 0.8) 1.5px, transparent 2.5px),
+    radial-gradient(circle, rgba(255, 244, 168, 0.6) 1.5px, transparent 2.5px);
+  background-size: 70px 70px, 90px 90px, 55px 55px, 80px 80px;
+  background-position: 10px 15px, 45px 60px, 25px 40px, 65px 10px;
+  filter: blur(0.4px);
+  opacity: 0.6;
+  animation: fireflies-drift 6s ease-in-out infinite alternate;
+}
+@keyframes fireflies-drift {
+  0% {
+    background-position: 10px 15px, 45px 60px, 25px 40px, 65px 10px;
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    background-position: 22px 28px, 30px 45px, 40px 20px, 48px 32px;
+    opacity: 0.4;
+  }
+}
+
+/* Occasional dramatic white flash across a dark stormy backdrop. */
+.fx-lightning {
+  background: linear-gradient(160deg, rgba(20, 24, 40, 0.6), rgba(8, 10, 20, 0.75));
+  opacity: 0.55;
+  animation: lightning-flash 4.5s infinite;
+}
+@keyframes lightning-flash {
+  0%,
+  91%,
+  100% {
+    box-shadow: inset 0 0 0 100vmax transparent;
+  }
+  92% {
+    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 0.55);
+  }
+  93% {
+    box-shadow: inset 0 0 0 100vmax transparent;
+  }
+  94% {
+    box-shadow: inset 0 0 0 100vmax rgba(255, 255, 255, 0.35);
+  }
+  95%,
+  99% {
+    box-shadow: inset 0 0 0 100vmax transparent;
+  }
+}
+
 /* --- Border styles --- */
 @keyframes border-pulse {
   0%,
@@ -267,14 +604,228 @@ body.chaos-mode {
   pointer-events: none;
 }
 
-@keyframes marching-ants {
-  to {
-    background-position: 40px 0, 40px 40px, 0 40px, 0 0;
-  }
-}
+/* Actually-moving dashed border (the old version only set a static
+   border-style: dashed with a keyframe that referenced a
+   background-position no element ever set, so nothing animated). Real
+   "marching ants" needs a separate painted layer, since a native CSS
+   border can't animate its own dash offset - so the border itself is
+   made transparent (kept for consistent layout sizing across border
+   styles) and a ::after overlay draws four edge-hugging gradient
+   strips, each tiled and slid along its own edge in the same rotational
+   direction to read as ants marching around the perimeter. Uses the
+   --pulse-color custom property (already set on the badge's outer
+   wrapper for the pulse border style) so the ants match the badge's own
+   outline color instead of a hardcoded one. */
 .border-fx-marching-ants {
   border-style: dashed !important;
-  animation: marching-ants 1.5s linear infinite;
+  border-width: 3px !important;
+  border-color: transparent !important;
+}
+.border-fx-marching-ants::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: linear-gradient(90deg, var(--pulse-color, var(--brand-light-green)) 50%, transparent 50%),
+    linear-gradient(90deg, var(--pulse-color, var(--brand-light-green)) 50%, transparent 50%),
+    linear-gradient(0deg, var(--pulse-color, var(--brand-light-green)) 50%, transparent 50%),
+    linear-gradient(0deg, var(--pulse-color, var(--brand-light-green)) 50%, transparent 50%);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: 18px 3px, 18px 3px, 3px 18px, 3px 18px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  animation: marching-ants-move 0.7s linear infinite;
+}
+@keyframes marching-ants-move {
+  to {
+    background-position: 18px 0, -18px 100%, 0 -18px, 100% 18px;
+  }
+}
+
+/* Glowing neon sign pulse. */
+@keyframes neon-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px 2px rgba(0, 255, 255, 0.6), 0 0 18px 6px rgba(255, 0, 255, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(0, 255, 255, 0.9), 0 0 32px 10px rgba(255, 0, 255, 0.55);
+  }
+}
+.border-fx-neon {
+  animation: neon-glow 1.8s ease-in-out infinite;
+}
+
+/* RGB-split glitch jitter — fits the untrustworthy ROGUE vibe too. */
+@keyframes glitch-jitter {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-1px, 1px);
+  }
+  40% {
+    transform: translate(1px, -1px);
+  }
+  60% {
+    transform: translate(-1px, -1px);
+  }
+  80% {
+    transform: translate(1px, 1px);
+  }
+}
+.border-fx-glitch {
+  position: relative;
+  animation: glitch-jitter 0.4s steps(2) infinite;
+}
+.border-fx-glitch::before,
+.border-fx-glitch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  pointer-events: none;
+}
+.border-fx-glitch::before {
+  border-color: rgba(255, 0, 80, 0.6);
+  transform: translate(2px, 0);
+  mix-blend-mode: screen;
+}
+.border-fx-glitch::after {
+  border-color: rgba(0, 255, 255, 0.6);
+  transform: translate(-2px, 0);
+  mix-blend-mode: screen;
+}
+
+/* Both at once: the neon pulse glow plus the RGB-split glitch jitter. */
+.border-fx-pulse-glitch {
+  position: relative;
+  animation: border-pulse 2.4s ease-in-out infinite, glitch-jitter 0.4s steps(2) infinite;
+}
+.border-fx-pulse-glitch::before,
+.border-fx-pulse-glitch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  pointer-events: none;
+}
+.border-fx-pulse-glitch::before {
+  border-color: rgba(255, 0, 80, 0.6);
+  transform: translate(2px, 0);
+  mix-blend-mode: screen;
+}
+.border-fx-pulse-glitch::after {
+  border-color: rgba(0, 255, 255, 0.6);
+  transform: translate(-2px, 0);
+  mix-blend-mode: screen;
+}
+
+/* Shimmering gold foil sweep — prestige/VIP feel. */
+@keyframes foil-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+.border-fx-foil {
+  position: relative;
+}
+.border-fx-foil::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 215, 0, 0.9) 35%,
+    rgba(255, 255, 255, 0.9) 45%,
+    rgba(255, 215, 0, 0.9) 55%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  animation: foil-shift 2.5s linear infinite;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Full-spectrum rotating ring - same gradient-border-with-mask technique
+   as marching-ants (a native CSS border can't do a smooth color sweep),
+   but conic instead of dashed, and deliberately ignores the badge's own
+   outline color for a fixed rainbow palette. */
+.border-fx-rainbow {
+  border-color: transparent !important;
+  position: relative;
+}
+.border-fx-rainbow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 3px;
+  background: conic-gradient(from 0deg, #ff004c, #ff7b00, #ffe600, #00ff6a, #00d4ff, #7b2fff, #ff004c);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: rainbow-spin 3s linear infinite;
+}
+@keyframes rainbow-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Irregular warm flicker, like firelight - fixed ember palette (same
+   ignore-the-outline-color idea as rainbow), using staggered opacity/blur
+   steps rather than a smooth sine wave so it reads as flickering, not
+   breathing. */
+.border-fx-ember {
+  border-color: #ff7b1a !important;
+  animation: ember-flicker 1.8s steps(1) infinite;
+}
+@keyframes ember-flicker {
+  0% {
+    border-color: #ff7b1a;
+    box-shadow: 0 0 8px 1px rgba(255, 123, 26, 0.55);
+  }
+  20% {
+    border-color: #ffae42;
+    box-shadow: 0 0 14px 3px rgba(255, 174, 66, 0.7);
+  }
+  35% {
+    border-color: #e8480c;
+    box-shadow: 0 0 6px 1px rgba(232, 72, 12, 0.45);
+  }
+  55% {
+    border-color: #ff9d33;
+    box-shadow: 0 0 16px 4px rgba(255, 157, 51, 0.75);
+  }
+  70% {
+    border-color: #ff7b1a;
+    box-shadow: 0 0 8px 1px rgba(255, 123, 26, 0.5);
+  }
+  85% {
+    border-color: #ffcf7a;
+    box-shadow: 0 0 12px 2px rgba(255, 207, 122, 0.65);
+  }
+  100% {
+    border-color: #ff7b1a;
+    box-shadow: 0 0 8px 1px rgba(255, 123, 26, 0.55);
+  }
+}
+
+/* --- Realistic ID card security print texture --- */
+.badge-security-pattern {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 6px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 6px);
 }
 
 /* --- XP progress ring --- */
@@ -285,6 +836,374 @@ body.chaos-mode {
 /* --- Card tilt --- */
 .tilt-card {
   transform-style: preserve-3d;
-  transition: transform 0.15s ease-out;
-  will-change: transform;
+  transition: transform 0.15s ease-out, box-shadow 0.2s ease;
+}
+.tilt-card:hover {
+  box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.55);
+}
+
+/* Cursor-tracking holographic sheen (badge flare capability, independent
+   of backgroundEffect - see BadgeCard.tsx's CardVisual, which drives
+   --mx/--my off real mouse position). A bright radial glint plus a
+   rotating rainbow ring, both centered on the cursor, blended with
+   overlay so it reads as a reflective foil catching the light rather
+   than a flat colored wash. Defaults to a centered glint when the
+   cursor hasn't moved yet (or tilt/tracking is disabled, e.g. the admin
+   editor's static preview). */
+.holo-sheen-layer {
+  pointer-events: none;
+  background:
+    radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.7), transparent 42%),
+    conic-gradient(
+      from 120deg at var(--mx, 50%) var(--my, 50%),
+      #ff6ad5,
+      #ffd166,
+      #94d0ff,
+      #6aba48,
+      #ad8cff,
+      #ff6ad5
+    );
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+/* --- 3D card flip (real two-sided rotation, not a content swap) --- */
+.flip-scene {
+  perspective: 1800px;
+}
+.flip-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.7s cubic-bezier(0.34, 1.15, 0.64, 1);
+  transform-style: preserve-3d;
+}
+.flip-card.is-flipped {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-face-back {
+  transform: rotateY(180deg);
+}
+
+
+/* --- Badge spotlight modal --- */
+@keyframes spotlight-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.spotlight-backdrop {
+  animation: spotlight-backdrop-in 0.22s ease-out both;
+}
+@keyframes spotlight-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.82) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.spotlight-card-in {
+  animation: spotlight-card-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Fade-in-up utility for page content */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in-up {
+  animation: fade-in-up 0.5s ease both;
+}
+
+/* ==========================================================================
+   Site-wide "compromised" theme (admin toggle, /admin/settings).
+   Cosmetic only - "a virus took over the app". Applied via a .site-compromised
+   class on <html>, set server-side from the AppSetting DB row so there's no
+   flash of the normal theme, plus VirusOverlay.tsx for the periodic JS pulse.
+   ========================================================================== */
+
+/* Corrupted palette: the calm brand green shifts to a sickly, alarm-red
+   near-black. Overriding the CSS variables means every component that
+   already uses var(--brand-*) repaints automatically - no per-component
+   changes needed anywhere else in the app. */
+html.site-compromised {
+  --brand-dark-green: #170305;
+  --brand-medium-green: #2b0a0a;
+  --brand-light-green: #ff3b3b;
+  --brand-yellow: #ff9d1f;
+  --brand-red: #ff0044;
+  --brand-cyan: #ff2ad8;
+  --brand-sand: #e8e0d6;
+}
+
+html.site-compromised body {
+  padding-top: 28px; /* room for the fixed breach ticker above the sticky nav */
+}
+
+/* CRT scanlines + subtle static, fixed over the whole viewport */
+.virus-scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 0, 68, 0.05) 0px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0px, transparent 1px, transparent 5px);
+  mix-blend-mode: overlay;
+  animation: virus-static 8s steps(8) infinite;
+}
+@keyframes virus-static {
+  0%,
+  100% {
+    background-position: 0 0, 0 0;
+  }
+  50% {
+    background-position: 0 3px, 4px 0;
+  }
+}
+
+/* Fixed marquee ticker above the nav */
+.virus-ticker {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  height: 28px;
+  overflow: hidden;
+  background: linear-gradient(90deg, #3a0008, #170305, #3a0008);
+  border-bottom: 1px solid rgba(255, 0, 68, 0.5);
+}
+.virus-ticker span {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #ff3b3b;
+  line-height: 28px;
+  animation: virus-ticker-scroll 16s linear infinite;
+}
+@keyframes virus-ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Headings/wordmark get a permanent (slow, readable) RGB-split glitch */
+html.site-compromised h1,
+html.site-compromised h2,
+html.site-compromised .site-wordmark {
+  animation: glitch-rgb 3.6s infinite;
+}
+
+/* Periodic brief full-page glitch pulse, toggled on/off by VirusOverlay.tsx.
+   Deliberately much softer + shorter than the process420 chaos-shake
+   easter egg - this runs indefinitely in the background while someone is
+   using the site, so it can't be as intense as a one-off 3s gag. */
+@keyframes glitch-pulse-kf {
+  0% {
+    transform: translate(0, 0);
+    filter: hue-rotate(0deg) contrast(1);
+  }
+  30% {
+    transform: translate(-2px, 1px);
+    filter: hue-rotate(25deg) contrast(1.15);
+  }
+  60% {
+    transform: translate(2px, -1px);
+    filter: hue-rotate(-20deg) contrast(1.1);
+  }
+  100% {
+    transform: translate(0, 0);
+    filter: hue-rotate(0deg) contrast(1);
+  }
+}
+html.glitch-pulse body {
+  animation: glitch-pulse-kf 0.18s linear;
+}
+
+html.site-compromised .site-logo {
+  filter: hue-rotate(140deg) saturate(2.2) contrast(1.15);
+  animation: virus-logo-jitter 5s infinite;
+}
+@keyframes virus-logo-jitter {
+  0%,
+  92%,
+  100% {
+    transform: translate(0, 0) skewX(0deg);
+    opacity: 1;
+  }
+  93% {
+    transform: translate(-2px, 1px) skewX(-3deg);
+    opacity: 0.7;
+  }
+  95% {
+    transform: translate(2px, -1px) skewX(2deg);
+    opacity: 1;
+  }
+  97% {
+    transform: translate(0, 1px) skewX(0deg);
+    opacity: 0.85;
+  }
+}
+
+/* --- Print stylesheet (Rules page "Save as PDF") ---
+   Only meaningfully exercised on /rules (the only page with a print
+   button), but scoped generically by component class rather than a
+   page-specific selector, so it doesn't silently break if a print
+   button is ever added elsewhere. Re-themes the whole dark-mode site to
+   a clean light/dark-text printable look and strips every bit of site
+   chrome and decorative effects that only make sense on a glowing dark
+   screen (grid-glow background, blur/backdrop-filter, box-shadow glows,
+   the gradient-clipped heading text, virus overlay, nav/footer). */
+@media print {
+  .print\:hidden,
+  header.sticky,
+  footer,
+  .grid-glow::before,
+  .grid-glow::after {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  * {
+    color: #111111;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+  }
+
+  .surface-card,
+  .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid #d4d4d4 !important;
+  }
+
+  .gradient-text {
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+  }
+
+  .section-eyebrow {
+    color: #555555 !important;
+  }
+
+  .pill,
+  .pill-active {
+    border: 1px solid #999999 !important;
+    background: none !important;
+    color: #111111 !important;
+  }
+
+  a {
+    color: #1a4fbd !important;
+    text-decoration: underline;
+  }
+
+  /* Page-break hygiene: never split a rule section's heading from its
+     own body text across a page boundary. */
+  .surface-card,
+  .glass-panel {
+    break-inside: avoid;
+  }
+}
+
+/* Wrong-guess tile shake for the CONNECTIONS challenge type (ConnectionsBoard.tsx) - a single quick shake, not the looping "chaos" glitch effect used elsewhere for the compromised theme. */
+@keyframes connections-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+.animate-shake {
+  animation: connections-shake 0.4s ease-in-out;
+}
+
+/* "Graded slab" badge flare capability (PSA-style) - see BadgeCard.tsx's
+   CardVisual/CardFront. Two independent pieces: a diagonal holographic
+   foil sheen sweeping across the face (mimics the plastic slab's own
+   light-catching glare, distinct from the cursor-tracking .holo-sheen-
+   layer and any chosen .fx- background effect - stacks with both), and
+   a small "Gem MT 10" grading chip next to the tier badge (mimics a
+   graded card's slab label showing its grade). */
+@keyframes psa-foil-sweep {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 200% 200%;
+  }
+}
+.psa-slab-sheen {
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 3%,
+    var(--brand-cyan) 6%,
+    rgba(255, 255, 255, 0) 10%,
+    var(--brand-sand) 16%,
+    rgba(255, 255, 255, 0) 20%,
+    var(--brand-purple) 26%,
+    rgba(255, 255, 255, 0) 30%
+  );
+  background-size: 220% 220%;
+  animation: psa-foil-sweep 6s linear infinite;
+  mix-blend-mode: overlay;
+  opacity: 0.4;
+}
+.psa-grade-chip {
+  background: linear-gradient(120deg, #eef6ff, var(--brand-cyan) 30%, #ffe9fb 55%, var(--brand-light-green) 80%, #eef6ff);
+  background-size: 220% 220%;
+  animation: psa-foil-sweep 7s linear infinite;
+  color: #0b2540;
+  box-shadow:
+    inset 0 0 0 1px rgba(11, 37, 64, 0.35),
+    0 2px 6px -2px rgba(0, 0, 0, 0.5);
 }

@@ -58,6 +58,19 @@ export function Icon({
           <path d="M8 11V8a4 4 0 118 0v3" />
         </svg>
       );
+    case "search":
+      return (
+        <svg {...common}>
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.2-3.2" strokeLinecap="round" />
+        </svg>
+      );
+    case "chat":
+      return (
+        <svg {...common}>
+          <path d="M4 5h16v11H9l-4 4V5z" strokeLinejoin="round" />
+        </svg>
+      );
     case "file":
     default:
       return (

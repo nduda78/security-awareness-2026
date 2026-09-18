@@ -6,7 +6,13 @@ import { NextRequest, NextResponse } from "next/server";
 // avoids bouncing every request through a page render before redirecting.
 const AGENT_COOKIE = "agent_session";
 
-const PUBLIC_PREFIXES = ["/identify", "/admin", "/_next", "/favicon", "/api"];
+// /brand holds static logo assets — not sensitive, and Next's internal
+// image-optimizer fetch for <Image> doesn't carry the browser's cookies,
+// so gating it breaks logo rendering even for signed-in visitors. Deliberately
+// NOT using a generic "has a file extension" bypass here: employee identity
+// slugs (e.g. /profile/nick-duda) could coincidentally contain a dot-ish
+// pattern and slip through an extension-based gate unauthenticated.
+const PUBLIC_PREFIXES = ["/identify", "/admin", "/_next", "/favicon", "/api", "/brand"];
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;

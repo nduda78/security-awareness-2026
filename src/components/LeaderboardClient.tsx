@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BadgeCard } from "./BadgeCard";
 import { Icon } from "./Icon";
 import type { ClientAgentCard } from "@/lib/client-types";
-import { unlockRogueAction } from "@/lib/actions/rogue";
 
 export interface ClientTierSection {
   tierKey: string;
@@ -19,23 +18,34 @@ export interface ClientTierSection {
 type FilterKey = "ALL" | "ROGUE" | "TOP_SECRET" | "SECRET" | "UNCLASSIFIED" | "WINNERS";
 type SortKey = "XP_DESC" | "XP_ASC" | "NAME_ASC" | "CLOSEST";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "ALL", label: "All" },
-  { key: "ROGUE", label: "Rogue" },
-  { key: "TOP_SECRET", label: "Top Secret" },
-  { key: "SECRET", label: "Secret" },
-  { key: "UNCLASSIFIED", label: "Unclassified" },
-  { key: "WINNERS", label: "🏆 Winners" },
+const FILTERS: { key: FilterKey; label: string; corrupted: string }[] = [
+  { key: "ALL", label: "All", corrupted: "ALL_NODES" },
+  { key: "ROGUE", label: "Rogue", corrupted: "R0GUE" },
+  { key: "TOP_SECRET", label: "Top Secret", corrupted: "T0P_SECRET" },
+  { key: "SECRET", label: "Secret", corrupted: "S3CRET" },
+  { key: "UNCLASSIFIED", label: "Unclassified", corrupted: "UNCL4SSIFIED" },
+  { key: "WINNERS", label: "🏆 Winners", corrupted: "🏆 W1NNERS" },
 ];
 
+const SORT_LABELS: Record<SortKey, { label: string; corrupted: string }> = {
+  XP_DESC: { label: "XP: High to Low", corrupted: "THREAT LEVEL: HIGH → LOW" },
+  XP_ASC: { label: "XP: Low to High", corrupted: "THREAT LEVEL: LOW → HIGH" },
+  NAME_ASC: { label: "Name A-Z", corrupted: "ALPHA SWEEP" },
+  CLOSEST: { label: "Closest to leveling up", corrupted: "NEAREST BREACH POINT" },
+};
+
+// compromised is text-only reflavoring for the site-wide "compromised"
+// theme - filter/sort *behavior* is untouched (still keyed the same),
+// and tier names shown per-section (section.tierLabel) are deliberately
+// left alone here since they're the same strings shown right on each
+// agent's badge (see BadgeCard) - this only touches page chrome around
+// the badges, never the badges themselves.
 export function LeaderboardClient({
   sections,
-  rogueUnlocked,
-  rogueError,
+  compromised = false,
 }: {
   sections: ClientTierSection[];
-  rogueUnlocked: boolean;
-  rogueError?: boolean;
+  compromised?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterKey>("ALL");
@@ -66,6 +76,23 @@ export function LeaderboardClient({
 
   const allMembers = useMemo(() => sections.flatMap((s) => s.members), [sections]);
 
+  // ROGUE is a hidden-easter-egg tier (see rules page) - only worth
+  // showing as a filter option at all when someone actually visible on
+  // the board right now has it. Doesn't touch matchesFilter/state, just
+  // whether the button itself renders.
+  const hasVisibleRogue = useMemo(() => allMembers.some((m) => m.tierKey === "ROGUE"), [allMembers]);
+  const visibleFilters = useMemo(
+    () => FILTERS.filter((f) => f.key !== "ROGUE" || hasVisibleRogue),
+    [hasVisibleRogue]
+  );
+
+  // If the ROGUE filter was active and rogue members disappear (e.g. the
+  // easter-egg account gets hidden), fall back to ALL rather than leaving
+  // the list stuck showing nothing with no visible button to escape it.
+  useEffect(() => {
+    if (filter === "ROGUE" && !hasVisibleRogue) setFilter("ALL");
+  }, [filter, hasVisibleRogue]);
+
   function matchesFilter(card: ClientAgentCard, f: FilterKey): boolean {
     if (f === "ALL") return true;
     if (f === "WINNERS") return card.achievements.length > 0;
@@ -91,9 +118,19 @@ export function LeaderboardClient({
     }
   }
 
+  function matchesQuery(card: ClientAgentCard, q: string): boolean {
+    if (!q) return true;
+    const needle = q.toLowerCase();
+    return (
+      card.displayName.toLowerCase().includes(needle) ||
+      card.codename.toLowerCase().includes(needle) ||
+      card.agentId.toLowerCase().includes(needle)
+    );
+  }
+
   function isDimmed(card: ClientAgentCard): boolean {
     if (!matchesFilter(card, filter)) return true;
-    if (query.trim() && !card.displayName.toLowerCase().includes(query.trim().toLowerCase())) return true;
+    if (query.trim() && !matchesQuery(card, query.trim())) return true;
     return false;
   }
 
@@ -101,7 +138,7 @@ export function LeaderboardClient({
     if (e.key !== "Enter") return;
     const q = query.trim().toLowerCase();
     if (!q) return;
-    const match = allMembers.find((m) => m.displayName.toLowerCase().includes(q));
+    const match = allMembers.find((m) => matchesQuery(m, q));
     if (match) {
       const el = document.getElementById(`badge-${match.email.replace(/[^a-z0-9]/gi, "-")}`);
       if (el) {
@@ -119,66 +156,81 @@ export function LeaderboardClient({
 
   return (
     <div className={chaos ? "glitch-text" : ""}>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <input
-          ref={searchRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleSearchKeyDown}
-          placeholder="Find your badge..."
-          className="w-full rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 font-terminal text-sm placeholder:text-brand-sand/40 sm:max-w-xs"
-        />
+      <div className="glass-panel mb-6 flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-sm md:max-w-md">
+          <Icon
+            name="search"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-sand/35"
+          />
+          <input
+            ref={searchRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder={compromised ? "root@breach:~$ locate --target ..." : "Find your badge, codename, or agent ID..."}
+            className="input-modern input-with-icon w-full"
+          />
+        </div>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
-          className="rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 font-terminal text-sm"
+          className="input-modern font-terminal text-xs uppercase tracking-wide"
         >
-          <option value="XP_DESC">XP: High to Low</option>
-          <option value="XP_ASC">XP: Low to High</option>
-          <option value="NAME_ASC">Name A-Z</option>
-          <option value="CLOSEST">Closest to leveling up</option>
+          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+            <option key={key} value={key}>
+              {compromised ? SORT_LABELS[key].corrupted : SORT_LABELS[key].label}
+            </option>
+          ))}
         </select>
       </div>
 
       <div className="mb-8 flex flex-wrap gap-2">
-        {FILTERS.filter((f) => f.key !== "ROGUE" || rogueUnlocked).map((f) => (
+        {visibleFilters.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`rounded-full border px-3 py-1 font-terminal text-xs uppercase transition ${
-              filter === f.key
-                ? "border-brand-yellow bg-brand-yellow/20 text-brand-yellow"
-                : "border-brand-sand/20 text-brand-sand/60 hover:text-brand-sand"
-            }`}
+            className={`pill ${filter === f.key ? "pill-active" : ""}`}
           >
-            {f.label}
+            {compromised ? f.corrupted : f.label}
           </button>
         ))}
       </div>
-
-      {!rogueUnlocked && <RogueUnlockPanel error={rogueError} />}
 
       {sections.map((section) => {
         const visibleMembers = sortMembers(section.members, sort);
         return (
           <section key={section.tierKey} className="mb-10">
+            <div className="mb-5 flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{ background: `${section.tierColor}1a`, border: `1px solid ${section.tierColor}55` }}
+              >
+                <Icon name={section.tierIcon} className="h-5 w-5" style={{ color: section.tierColor } as React.CSSProperties} />
+              </div>
+              <div>
+                <h2
+                  className="font-display text-lg font-semibold uppercase tracking-wide leading-tight"
+                  style={{ color: section.tierColor }}
+                >
+                  {section.tierLabel}
+                </h2>
+                <span className="font-terminal text-[11px] text-brand-sand/45">
+                  {section.minXp}
+                  {section.maxXp !== null ? `–${section.maxXp}` : "+"} XP · {section.members.length}{" "}
+                  {compromised ? "compromised node" : "agent"}
+                  {section.members.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <div className="h-px flex-1 bg-gradient-to-r from-brand-sand/15 to-transparent" />
+            </div>
+
             {section.tierKey === "ROGUE" && (
-              <div className="glitch-text rogue-flicker mb-4 rounded border border-brand-red/50 bg-brand-red/10 px-4 py-2 font-terminal text-xs uppercase tracking-wide text-brand-red">
+              <div className="glitch-text rogue-flicker mb-5 rounded-xl border border-brand-red/40 bg-brand-red/10 px-4 py-3 font-terminal text-xs uppercase tracking-wide text-brand-red">
                 ⚠ THIS CLEARANCE TIER WAS NOT ISSUED BY DUTCHIE SECURITY. ORIGIN UNTRACEABLE.
               </div>
             )}
-            <div className="mb-4 flex items-center gap-3 border-b border-brand-sand/15 pb-2">
-              <Icon name={section.tierIcon} className="h-6 w-6" style={{ color: section.tierColor } as React.CSSProperties} />
-              <h2 className="font-terminal text-lg uppercase tracking-wider" style={{ color: section.tierColor }}>
-                {section.tierLabel}
-              </h2>
-              <span className="font-terminal text-xs text-brand-sand/50">
-                {section.minXp}
-                {section.maxXp !== null ? `–${section.maxXp}` : "+"} XP · {section.members.length} agent
-                {section.members.length === 1 ? "" : "s"}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
               {visibleMembers.map((card) => (
                 <BadgeCard key={card.email} card={card} dimmed={isDimmed(card)} />
               ))}
@@ -187,41 +239,5 @@ export function LeaderboardClient({
         );
       })}
     </div>
-  );
-}
-
-function RogueUnlockPanel({ error }: { error?: boolean }) {
-  const [open, setOpen] = useState(false);
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="mb-10 font-terminal text-[11px] uppercase text-brand-sand/30 hover:text-brand-sand/60"
-      >
-        ⋯
-      </button>
-    );
-  }
-  return (
-    <form
-      action={unlockRogueAction}
-      className="mb-10 rounded-md border border-brand-sand/10 bg-black/20 p-4"
-    >
-      <input type="hidden" name="next" value="/leaderboard" />
-      <label className="mb-2 block font-terminal text-xs uppercase text-brand-sand/50">
-        Restricted access code
-      </label>
-      <div className="flex gap-2">
-        <input
-          type="password"
-          name="passphrase"
-          className="flex-1 rounded-md border border-brand-sand/20 bg-black/30 px-3 py-2 text-sm"
-        />
-        <button className="rounded-md bg-brand-purple px-4 py-2 font-terminal text-xs uppercase text-brand-sand">
-          Submit
-        </button>
-      </div>
-      {error && <div className="mt-2 text-xs text-brand-red">Access denied.</div>}
-    </form>
   );
 }

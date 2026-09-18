@@ -1,13 +1,23 @@
 import { prisma } from "./prisma";
 import { computeClearanceIssuedDates, computeProgress, effectiveTier, TierKey, TIERS } from "./tiers";
-import { computeFlavorProfile, resolveUniqueCodenames } from "./identity";
-import { resolveFlare, logFlareWarnings, ResolvedFlare } from "./flare";
+import { computeFlavorProfile, resolveUniqueCodenames, resolveUniqueFunFacts } from "./identity";
+import { resolveFlare, logFlareWarnings, parseAchievements, ResolvedFlare, RawFlareInput } from "./flare";
+import type { BadgeFlare } from "@prisma/client";
+
+// BadgeFlare.achievements is a JSON-encoded string column (see flare.ts) -
+// this is the one place that crosses back from the raw Prisma row into the
+// AchievementEntry[] shape resolveFlare expects.
+function rawFlareInput(flare: BadgeFlare | null): RawFlareInput | null {
+  if (!flare) return null;
+  return { ...flare, achievements: parseAchievements(flare.achievements) };
+}
 
 export interface AgentCard {
   email: string;
   displayName: string; // real name, for search/sort — never affected by nameSuffix
   renderedName: string; // displayName + nameSuffix (if any)
   rogueOverride: boolean;
+  isHidden: boolean;
   xp: number;
   tier: (typeof TIERS)[number];
   progress: ReturnType<typeof computeProgress>;
@@ -18,6 +28,7 @@ export interface AgentCard {
   barcode: string;
   challengesCompleted: number;
   flare: ResolvedFlare | null;
+  photoUrl: string | null;
 }
 
 /**
@@ -36,19 +47,28 @@ export async function buildAgentRoster(): Promise<AgentCard[]> {
       },
     },
   });
+  const photoUpdatedAtByEmail = new Map(
+    (
+      await prisma.employee.findMany({
+        where: { photoUpdatedAt: { not: null } },
+        select: { email: true, photoUpdatedAt: true },
+      })
+    ).map((e) => [e.email, e.photoUpdatedAt as Date])
+  );
 
   // Stable order for codename collision resolution: sort by email so
   // results don't reshuffle just because someone's XP changed.
   const emailsInStableOrder = employees.map((e) => e.email).sort();
   const overrides = new Map<string, string>();
   for (const e of employees) {
-    const flare = resolveFlare(e.flare, new Date());
+    const flare = resolveFlare(rawFlareInput(e.flare), new Date());
     if (flare?.codenameOverride) overrides.set(e.email, flare.codenameOverride);
   }
   const codenames = resolveUniqueCodenames(emailsInStableOrder, overrides);
+  const funFacts = resolveUniqueFunFacts(emailsInStableOrder);
 
   const cards: AgentCard[] = employees.map((e) => {
-    const flare = resolveFlare(e.flare, new Date());
+    const flare = resolveFlare(rawFlareInput(e.flare), new Date());
     if (flare) logFlareWarnings(e.email, flare.warnings);
 
     const xp = e.submissions.reduce((sum, s) => sum + s.xpAwarded, 0);
@@ -76,20 +96,46 @@ export async function buildAgentRoster(): Promise<AgentCard[]> {
       displayName,
       renderedName,
       rogueOverride: e.rogueOverride,
+      isHidden: e.isHidden,
       xp,
       tier,
       progress,
       clearanceIssued,
       codename,
       agentId: flavor.agentId,
-      funFact: flavor.funFact,
+      funFact: funFacts.get(e.email) ?? "",
       barcode: flavor.barcode,
       challengesCompleted: e.submissions.length,
       flare,
+      photoUrl: photoUpdatedAtByEmail.has(e.email)
+        ? `/api/photo/${encodeURIComponent(e.email)}?v=${photoUpdatedAtByEmail.get(e.email)!.getTime()}`
+        : null,
     };
   });
 
   return cards;
+}
+
+/**
+ * Cheap lookup of just what's needed to evaluate clearance-gated visibility
+ * for a single viewer (the Challenges pages) — avoids building the entire
+ * roster (codenames, flare, fun facts, etc.) just to check one person's XP.
+ */
+export async function getViewerClearanceInfo(
+  email: string
+): Promise<{ xp: number; rogueOverride: boolean } | null> {
+  const employee = await prisma.employee.findUnique({
+    where: { email },
+    select: {
+      rogueOverride: true,
+      submissions: { where: { status: "CORRECT" }, select: { xpAwarded: true } },
+    },
+  });
+  if (!employee) return null;
+  return {
+    xp: employee.submissions.reduce((sum, s) => sum + s.xpAwarded, 0),
+    rogueOverride: employee.rogueOverride,
+  };
 }
 
 export interface TierSection {
@@ -97,7 +143,7 @@ export interface TierSection {
   members: AgentCard[];
 }
 
-/** Groups + sorts the roster per BUILD_PROMPT.md rules: ROGUE -> TOP_SECRET -> SECRET -> UNCLASSIFIED, pinned first, then XP desc, name asc. Empty tiers omitted. */
+/** Groups + sorts the roster per BUILD_PROMPT.md rules: ROGUE -> TOP_SECRET -> SECRET -> UNCLASSIFIED, then XP desc, name asc. Empty tiers omitted. */
 export function groupByTier(cards: AgentCard[]): TierSection[] {
   const byKey = new Map<string, AgentCard[]>();
   for (const c of cards) {
@@ -111,9 +157,6 @@ export function groupByTier(cards: AgentCard[]): TierSection[] {
     const members = byKey.get(tier.key);
     if (!members || members.length === 0) continue;
     members.sort((a, b) => {
-      const aPinned = a.flare?.pinned ?? false;
-      const bPinned = b.flare?.pinned ?? false;
-      if (aPinned !== bPinned) return aPinned ? -1 : 1;
       if (b.xp !== a.xp) return b.xp - a.xp;
       return a.displayName.localeCompare(b.displayName);
     });
@@ -136,9 +179,6 @@ export function overallRank(cards: AgentCard[], email: string): { rank: number; 
 export function rankWithinTier(cards: AgentCard[], card: AgentCard): { rank: number; total: number } {
   const tierMembers = cards.filter((c) => c.tier.key === card.tier.key);
   tierMembers.sort((a, b) => {
-    const aPinned = a.flare?.pinned ?? false;
-    const bPinned = b.flare?.pinned ?? false;
-    if (aPinned !== bPinned) return aPinned ? -1 : 1;
     if (b.xp !== a.xp) return b.xp - a.xp;
     return a.displayName.localeCompare(b.displayName);
   });

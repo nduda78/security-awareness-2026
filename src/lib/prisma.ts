@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
-// Standard Next.js dev-mode singleton to avoid exhausting Postgres connections
-// on hot-reload.
+// Standard Next.js dev-mode singleton to avoid opening a new SQLite
+// connection handle on every hot-reload.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 export const prisma =

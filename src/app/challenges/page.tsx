@@ -1,70 +1,86 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
-import { Icon } from "@/components/Icon";
+import { getViewerClearanceInfo } from "@/lib/leaderboard";
+import { groupChallengesForViewer } from "@/lib/challengeSections";
+import { ChallengesBoard } from "@/components/ChallengesBoard";
+import type { ClientChallengeSection } from "@/lib/client-types";
+import { announceJustOpenedChallenges } from "@/lib/challengeDrops";
 
 export const dynamic = "force-dynamic";
 
 export default async function ChallengesPage() {
   const identity = await getAgentIdentity();
   const now = new Date();
+  await announceJustOpenedChallenges();
 
-  const challenges = await prisma.challenge.findMany({
-    where: { isActive: true },
+  const allChallenges = await prisma.challenge.findMany({
+    // Scheduled-for-the-future challenges are a deliberate surprise - kept
+    // entirely off the public list until their opens-at time (see the
+    // matching notFound() on the detail page for direct-URL access too).
+    // A challenge that's already open and later closes stays listed, just
+    // marked "Not currently open" - it was never meant to be secret.
+    where: { isActive: true, hiddenFromList: false, OR: [{ opensAt: null }, { opensAt: { lte: now } }] },
     orderBy: { createdAt: "asc" },
     include: {
-      submissions: identity
-        ? { where: { employee: { email: identity.email } } }
-        : false,
+      submissions: identity ? { where: { employee: { email: identity.email } } } : false,
     },
   });
 
+  const viewer = identity ? await getViewerClearanceInfo(identity.email) : null;
+  const grouped = viewer ? groupChallengesForViewer(allChallenges, viewer) : [];
+
+  const sections: ClientChallengeSection[] = grouped.map((section) => ({
+    key: section.tier?.key ?? "INFO",
+    label: section.tier?.shortLabel ?? "Info",
+    color: section.tier?.color ?? "var(--brand-cyan)",
+    icon: section.tier?.icon ?? "file",
+    challenges: section.challenges.map((c) => {
+      const isOpen = (!c.opensAt || c.opensAt <= now) && (!c.closesAt || c.closesAt >= now);
+      const mine = "submissions" in c ? (c.submissions as { status: string; xpAwarded: number; attempts: number }[]) : [];
+      const status = mine.length > 0 ? mine[0] : null;
+      const isFreeText = c.answerType === "FREE_TEXT_REVIEW";
+      const attemptsUsed = status?.attempts ?? 0;
+      const attemptsRemaining = c.maxAttempts === null ? null : Math.max(0, c.maxAttempts - attemptsUsed);
+      const outOfAttempts =
+        !isFreeText && status?.status === "INCORRECT" && c.maxAttempts !== null && attemptsUsed >= c.maxAttempts;
+      return {
+        id: c.id,
+        slug: c.slug,
+        title: c.title,
+        description: c.description,
+        rewardMode: c.rewardMode,
+        answerType: c.answerType,
+        xpValue: c.xpValue,
+        isOpen,
+        status: (status?.status as "CORRECT" | "PENDING_REVIEW" | "INCORRECT" | undefined) ?? null,
+        xpAwarded: status?.xpAwarded ?? 0,
+        completed: status?.status === "CORRECT",
+        attemptsRemaining: isFreeText ? null : attemptsRemaining,
+        outOfAttempts: !!outOfAttempts,
+        reward: {
+          rewardBackgroundEffect: c.rewardBackgroundEffect,
+          rewardBorderStyle: c.rewardBorderStyle,
+          rewardIcon: c.rewardIcon,
+          rewardRibbonText: c.rewardRibbonText,
+          rewardNameSuffix: c.rewardNameSuffix,
+          rewardOutlineColorPicker: c.rewardOutlineColorPicker,
+          rewardBackgroundColorPicker: c.rewardBackgroundColorPicker,
+          rewardPrize: c.rewardPrize,
+        },
+        unlockTeaser: {
+          hasAudio: !!c.unlockAudio,
+          unlockText: c.unlockText,
+          unlockLinkUrl: c.unlockLinkUrl,
+          hasImage: !!c.unlockImage,
+          hasVideo: !!c.unlockVideo,
+        },
+      };
+    }),
+  }));
+
   return (
-    <div>
-      <div className="mb-6">
-        <div className="font-terminal text-xs uppercase tracking-widest text-brand-light-green">
-          Active Missions
-        </div>
-        <h2 className="text-2xl font-bold">Challenges</h2>
-      </div>
-
-      {challenges.length === 0 && (
-        <p className="text-brand-sand/60">No challenges are live yet. Check back soon, agent.</p>
-      )}
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {challenges.map((c) => {
-          const isOpen = (!c.opensAt || c.opensAt <= now) && (!c.closesAt || c.closesAt >= now);
-          const mine = "submissions" in c ? (c.submissions as { status: string; xpAwarded: number }[]) : [];
-          const completed = mine.length > 0;
-          const status = completed ? mine[0] : null;
-
-          return (
-            <Link
-              key={c.id}
-              href={`/challenges/${c.slug}`}
-              className={`block rounded-xl border p-4 transition hover:border-brand-yellow ${
-                completed ? "border-brand-light-green/40 bg-brand-light-green/5" : "border-brand-sand/15 bg-black/20"
-              }`}
-            >
-              <div className="mb-1 flex items-center justify-between">
-                <h3 className="font-semibold">{c.title}</h3>
-                <span className="font-terminal text-xs text-brand-yellow">+{c.xpValue} XP</span>
-              </div>
-              <p className="mb-2 line-clamp-2 text-sm text-brand-sand/60">{c.description}</p>
-              {!isOpen && <div className="font-terminal text-xs text-brand-sand/40">Not currently open</div>}
-              {completed && status && (
-                <div className="flex items-center gap-1 font-terminal text-xs text-brand-light-green">
-                  <Icon name="shield" className="h-3 w-3" />
-                  {status.status === "CORRECT" && `Completed · +${status.xpAwarded} XP`}
-                  {status.status === "PENDING_REVIEW" && "Submitted · pending review"}
-                  {status.status === "INCORRECT" && "Attempted"}
-                </div>
-              )}
-            </Link>
-          );
-        })}
-      </div>
+    <div className="fade-in-up">
+      <ChallengesBoard sections={sections} />
     </div>
   );
 }

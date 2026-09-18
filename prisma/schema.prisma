@@ -1,50 +1,207 @@
 // Prisma schema for Dutchie Security Awareness Month 2026
+//
+// SQLite, not Postgres. Postgres ran as a separately-installed system
+// service on this VAPE pod's own disk with no persistent volume - a pod
+// crash/restart wiped it out entirely once already (see db-backups/ history).
+// SQLite is a single file with no service to lose; combined with the
+// periodic backup practice in scripts/backup-db.ts, this survives a pod
+// wipe with a simple restore instead of a full reinstall + migrate + reseed.
+//
+// SQLite has no native enum or scalar-array type support in Prisma, so the
+// four enums and the one `String[]` field below are modeled as plain
+// String columns (JSON-encoded where the value is itself a list). Valid
+// values are documented in comments and enforced in application code
+// (src/lib/tiers.ts, src/lib/flare.ts) exactly the same way the equivalent
+// Flux/SQLite port already does.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum AnswerType {
-  EXACT
-  CASE_INSENSITIVE
-  MULTIPLE_CHOICE
-  FREE_TEXT_REVIEW
-}
-
-enum SubmissionStatus {
-  CORRECT
-  INCORRECT
-  PENDING_REVIEW
-}
-
 model Employee {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  displayName   String
-  rogueOverride Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id             String    @id @default(cuid())
+  /// The stable identity key used everywhere in the app (profile URLs, photo
+  /// routes, deterministic flavor hashing, leaderboard grouping). Despite
+  /// the field name (kept to avoid a large mechanical rename across the
+  /// codebase), this no longer holds a real email address as of the
+  /// name+PIN auth migration - it holds a lowercase, hyphenated slug
+  /// derived from the employee's full name (see slugifyName in
+  /// src/lib/auth.ts), e.g. "nick-duda". Collisions on a shared name get a
+  /// numbered suffix ("nick-duda-2").
+  email          String    @unique
+  displayName    String
+  /// bcrypt hash of the employee's 4-digit PIN. Null means a legacy row
+  /// migrated from the old email-cookie identity model that hasn't been
+  /// "claimed" (had a PIN set) yet - see claimOrRegisterAction in
+  /// src/lib/actions/identify.ts.
+  pinHash        String?
+  /// Optional second factor beyond the PIN, bcrypt-hashed same as pinHash.
+  /// Null (the default for every real agent) means PIN-only login, same
+  /// as always. When set, correctly guessing the PIN alone is NOT enough
+  /// to sign in as this identity - loginAction routes to a second "vault
+  /// password" step instead (see identify.ts/session.ts's pending-vault
+  /// cookie) before actually establishing the session. Generic on
+  /// purpose (not hardcoded to one account) even though only one agent
+  /// uses it today.
+  extraPasswordHash String?
+  rogueOverride  Boolean   @default(false)
+  /// Grants full /admin panel access with no passphrase needed - see
+  /// isAdminSession() in src/lib/session.ts. "nick-duda" is a permanent
+  /// admin, hardcoded and un-removable in toggleAdminAction (see admin.ts).
+  isAdmin        Boolean   @default(false)
+  /// When true, this agent is completely omitted from the public
+  /// Leaderboard (and excluded from everyone else's rank calculations,
+  /// so a prop/placeholder agent with fabricated XP can't skew real
+  /// agents' ranks) - added so admins can build a "prop" agent badge
+  /// (custom flare, fake stats, etc.) and control exactly when it goes
+  /// live. Still fully visible/editable everywhere in /admin, and still
+  /// reachable by direct profile URL if you know the slug.
+  isHidden       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  photo          Bytes?
+  photoMimeType  String?
+  photoUpdatedAt DateTime?
+  /// Last time this employee opened the Chat Room - compared against
+  /// ChatMessage.createdAt to compute the unread-@mention indicator in
+  /// Nav.tsx. Null means never opened it.
+  lastChatReadAt DateTime?
+  /// Presence heartbeat, refreshed every poll tick while the Chat Room is
+  /// open (see ChatRoomClient.tsx) - drives the "online now" strip.
+  /// Distinct from lastChatReadAt, which only tracks unread mentions.
+  chatActiveAt   DateTime?
+  /// Debounced "currently typing" heartbeat, refreshed while composing in
+  /// the Chat Room and cleared on send/blur. Drives the typing indicator.
+  typingAt       DateTime?
+  /// Marks the single synthetic "Security System" account used to author
+  /// automated chat announcements (new challenge drops, tier-ups) so they
+  /// render through the exact same message pipeline as a real agent's
+  /// post, just visually distinguished in ChatRoomClient.tsx. Never a real
+  /// login - no pinHash is ever set, and it's always isHidden so it can
+  /// never appear on the Leaderboard.
+  isSystemAccount Boolean  @default(false)
 
-  submissions Submission[]
-  flare       BadgeFlare?
+  submissions   Submission[]
+  flare         BadgeFlare?
+  chatMessages  ChatMessage[]
+  chatReactions ChatReaction[]
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  employeeId String
+  /// Raw text as typed, with @mentions embedded as "@<employee-slug>"
+  /// (e.g. "@nick-duda") rather than display names, since slugs are
+  /// unique and hyphen-safe (no ambiguity from spaces in real names) - see
+  /// src/lib/chat.ts for parsing/rendering. Rendered client-side into a
+  /// styled mention chip showing the real display name.
+  body       String
+  createdAt  DateTime @default(now())
+
+  employee  Employee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  reactions ChatReaction[]
+
+  @@index([createdAt])
+}
+
+/// One emoji reaction from one employee on one message. The unique
+/// constraint is what makes "toggleReactionAction" a toggle - clicking the
+/// same emoji you already left removes it instead of stacking duplicates.
+model ChatReaction {
+  id         String   @id @default(cuid())
+  messageId  String
+  employeeId String
+  emoji      String
+  createdAt  DateTime @default(now())
+
+  message  ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  employee Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, employeeId, emoji])
+  @@index([messageId])
 }
 
 model Challenge {
-  id            String     @id @default(cuid())
-  slug          String     @unique
-  title         String
-  description   String
-  answerType    AnswerType
+  id  String @id @default(cuid())
+  slug String @unique
+  title String
+  description String
+  /// One of: EXACT | CASE_INSENSITIVE | CONTAINS | REGEX | MULTIPLE_CHOICE | FREE_TEXT_REVIEW | CONNECTIONS
+  answerType    String
   correctAnswer String? // null for FREE_TEXT_REVIEW
-  choices       Json? // string[] for MULTIPLE_CHOICE
+  /// JSON-encoded string[] for MULTIPLE_CHOICE (SQLite has no native Json type in this Prisma version)
+  choices       String?
   xpValue       Int
+  /// One of: XP | UNLOCK
+  rewardMode    String @default("XP")
+  /// Caps how many times an employee may (re)submit an answer before it's
+  /// permanently locked as failed (see Submission.attempts). Null means
+  /// unlimited attempts. Ignored for FREE_TEXT_REVIEW, which is always
+  /// one-shot (locked after the Security team's first review decision)
+  /// regardless of this value.
+  maxAttempts   Int?
+
+  // Optional image shown alongside the question itself — e.g. a phishing
+  // screenshot to inspect before picking a multiple-choice answer. Usable
+  // on any challenge, regardless of rewardMode.
+  questionImage         Bytes?
+  questionImageMimeType String?
+
+  // Unlock-mode reveal content (only meaningful when rewardMode = UNLOCK).
+  // Any subset may be set — whatever's populated renders on a correct answer.
+  unlockAudio         Bytes?
+  unlockAudioMimeType String?
+  unlockText          String?
+  unlockLinkUrl       String?
+  unlockLinkLabel     String?
+  /// Optional outbound webhook (e.g. a Tines webhook), POSTed once the
+  /// first time an agent actually completes this specific challenge (a
+  /// submission grades/reviews CORRECT) - see lib/webhooks.ts. Never
+  /// fired again on retries/re-views of an already-completed challenge.
+  webhookUrl          String?
+  unlockImage         Bytes?
+  unlockImageMimeType String?
+  unlockVideo         Bytes?
+  unlockVideoMimeType String?
+
+  // Advertised badge-flare reward — mirrors the same fields on BadgeFlare (see flare.ts for the
+  // validated value sets). Granted by hand via /admin/flare once someone actually completes the
+  // challenge; these just describe what's on offer.
+  rewardBackgroundEffect String?
+  rewardBorderStyle      String?
+  rewardIcon             String?
+  rewardRibbonText       String?
+  rewardNameSuffix       String?
+  // These two aren't a specific color value to unlock — they grant the
+  // *capability* to use the free-color picker for that field at all.
+  // Once unlocked, the employee can set literally any resolvable color of
+  // their own choosing (see selfFlare.ts), not a pre-set option.
+  rewardOutlineColorPicker    Boolean @default(false)
+  rewardBackgroundColorPicker Boolean @default(false)
+  rewardPrize            String? // freeform other prize, e.g. "Company hoodie", "Extra PTO day"
+  /// One of: UNCLASSIFIED | SECRET | TOP_SECRET | ROGUE
+  minClearance  String @default("UNCLASSIFIED")
   isActive      Boolean    @default(true)
+  /// Excludes this challenge from the public /challenges list and from the
+  /// Chat Room "new challenge dropped" announcement/webhook, while leaving
+  /// it fully answerable at its direct URL for anyone with clearance - for
+  /// a challenge an admin wants to distribute out-of-band (e.g. a link
+  /// buried in a Google Doc) rather than surfaced on the platform itself.
+  hiddenFromList Boolean   @default(false)
   opensAt       DateTime?
   closesAt      DateTime?
+  /// Set the moment this challenge's "New challenge dropped" Chat Room
+  /// announcement actually posts (see announceJustOpenedChallenges in
+  /// lib/challengeDrops.ts) - null means not announced yet. Deliberately
+  /// NOT set at creation time even for an immediately-open challenge, so
+  /// one mechanism handles every case (immediate, opens-at-scheduled, or
+  /// isActive flipped on later) without ever announcing a scheduled
+  /// "surprise" challenge's title/link before its opens-at time arrives.
+  dropAnnouncedAt DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -52,13 +209,19 @@ model Challenge {
 }
 
 model Submission {
-  id           String           @id @default(cuid())
+  id           String   @id @default(cuid())
   employeeId   String
   challengeId  String
   answerRaw    String
-  status       SubmissionStatus
-  xpAwarded    Int              @default(0)
-  submittedAt  DateTime         @default(now())
+  /// One of: CORRECT | INCORRECT | PENDING_REVIEW | IN_PROGRESS (IN_PROGRESS is only ever written by the CONNECTIONS answer type - see lib/connections.ts - for a multi-guess game that hasn't been won or locked out yet)
+  status       String
+  xpAwarded    Int      @default(0)
+  /// How many times this employee has submitted an answer to this
+  /// challenge so far (starts at 1 on the first submission, incremented
+  /// on each retry). Compared against Challenge.maxAttempts to decide
+  /// whether another retry is still allowed.
+  attempts     Int      @default(1)
+  submittedAt  DateTime @default(now())
   reviewedBy   String?
   reviewedAt   DateTime?
 
@@ -72,7 +235,8 @@ model Submission {
 
 model BadgeFlare {
   employeeId       String    @id
-  achievements     String[]  @default([])
+  /// JSON-encoded string[] (SQLite has no native scalar-array type)
+  achievements     String    @default("[]")
   outlineColor     String?
   backgroundColor  String?
   backgroundEffect String?
@@ -81,12 +245,43 @@ model BadgeFlare {
   iconOverride     String?
   borderStyle      String?
   ribbonText       String?
-  pinned           Boolean   @default(false)
   nameSuffix       String?
+  /// Freeform text admins (game masters) can stash on the back of an
+  /// agent's badge - not shown anywhere else, purely a hiding spot for a
+  /// clue/code word to be used in a later challenge. No validation - any
+  /// text is fine.
+  secretBackText   String?
+  /// Cursor-tracking holographic sheen overlay capability - see
+  /// src/components/BadgeCard.tsx's CardVisual. A simple on/off flag,
+  /// independent of backgroundEffect so it can be combined with any of
+  /// them (or none).
+  holoSheen        Boolean   @default(false)
+  /// "Graded slab" cosmetic treatment - see src/components/BadgeCard.tsx's
+  /// CardVisual/CardFront (foil sheen sweep + a Gem MT 10 grading chip).
+  /// A simple on/off flag, independent of backgroundEffect/borderStyle/
+  /// holoSheen so it can be combined with any of them (or none).
+  psaGrade         Boolean   @default(false)
+  /// "You beat the villain, now you ARE him" ultimate override flag - see
+  /// src/lib/flare.ts's resolveFlare, which short-circuits EVERY other
+  /// cosmetic flare field (colors, background, border, icon, ribbon,
+  /// suffix, motto, codename, holoSheen, psaGrade) into a single fixed
+  /// "compromised" look when this is set, regardless of whatever else is
+  /// filled in below. Achievements and secretBackText are real records,
+  /// not cosmetic flare, so they still pass through normally.
+  process420       Boolean   @default(false)
   expiresAt        DateTime?
   updatedAt        DateTime  @updatedAt
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+/// Generic singleton key-value settings row(s) - currently just the one
+/// site-wide "compromised/virus" cosmetic theme toggle (see
+/// src/lib/settings.ts), but kept generic in case more admin-wide toggles
+/// show up later rather than adding a new column per toggle.
+model AppSetting {
+  key   String @id
+  value String
 }
 
 model AdminAudit {

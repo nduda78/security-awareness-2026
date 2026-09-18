@@ -79,32 +79,43 @@ export interface FlavorProfile {
   barcode: string;
 }
 
+// Short one-liners on purpose — these render on the badge itself (a fixed-
+// size card), not in a scrollable panel, so anything long gets clipped.
+// Kept well under ~50 characters so they reliably fit on one line.
 const FUN_FACT_TEMPLATES = [
-  "Reports seeing phishing emails in their sleep now.",
-  "Has never once clicked 'Reply All' by accident. Allegedly.",
-  "Keeps a sticky note with their password on it. (This is a joke. Please don't.)",
-  "Once mistook a security drill for an actual apocalypse.",
-  "Changed their password to 'Password1!' and immediately regretted it.",
-  "Reported a phishing email so fast the sender got suspicious.",
-  "Believes the office plant is a corporate spy. Not wrong to be cautious.",
-  "Has 47 browser tabs open, 12 of which are security training modules.",
-  "Once high-fived IT Security in the elevator. Unprompted.",
-  "Uses a password manager and isn't afraid to say so.",
-  "Suspects the coffee machine has been compromised.",
-  "Locks their screen even for a 10-second bathroom break. A true professional.",
-  "Once diffused a phishing attempt with nothing but vibes and skepticism.",
-  "Has a 'zero trust' policy that extends to the office vending machine.",
-  "Refuses to plug in a mystery USB stick, no matter how good the donuts look.",
+  "Never skips MFA, ever.",
+  "Caught a phish before their coffee.",
+  "Locks screen for a quick break.",
+  "Guards passwords like a vault.",
+  "Zero trust, even the snack drawer.",
+  "Encrypts laptops, no exceptions.",
+  "Rotates passwords like a menu.",
+  "Shares neither logins nor bongs.",
+  "Knows indica from incidents.",
+  "Password manager, not a dealer.",
+  "Suspects the vape cart got hacked.",
+  "Praised IT for catching a phish.",
+  "Diffused a phish with pure vibes.",
+  "Suspects the CBD jar is a setup.",
+  "API keys: secret like strains.",
+  "Mistook a drill for a DEA raid.",
+  "Locks devices like sealing a jar.",
+  "Changed password after one scare.",
+  "Never shares passwords or grinders.",
+  "Scans every link, like a CoA test.",
+  "Zero trust, full encryption.",
+  "MFA beats any budtender's advice.",
+  "Keeps devices locked like a vault.",
+  "Spots a scam from a mile away.",
+  "Spots phish faster than 4/20 lines.",
 ];
 
-export function computeFlavorProfile(email: string): Omit<FlavorProfile, "codename"> {
+export function computeFlavorProfile(email: string): Omit<FlavorProfile, "codename" | "funFact"> {
   const key = email.trim().toLowerCase();
   const h = fnv1a(key);
 
   const agentNum = (h % 9000) + 1000; // 1000-9999
   const agentId = `AGT-${agentNum}`;
-
-  const funFact = FUN_FACT_TEMPLATES[seededInt(key, FUN_FACT_TEMPLATES.length, "fact")];
 
   // Simple deterministic pseudo-barcode: a run of bar widths encoded as a
   // string of block characters, purely decorative.
@@ -115,7 +126,51 @@ export function computeFlavorProfile(email: string): Omit<FlavorProfile, "codena
     barcode += ["▏", "▎", "▌", "▉"][v];
   }
 
-  return { agentId, funFact, barcode };
+  return { agentId, barcode };
+}
+
+/**
+ * Given a list of employee emails (already in a STABLE order — e.g. sorted
+ * by email), returns a Map<email, funFact> guaranteed to have no duplicate
+ * fun facts, using the same deterministic collision-resolution approach as
+ * resolveUniqueCodenames: each email retries the pool with a different salt
+ * on collision, and falls back to the first free slot if the whole pool of
+ * candidates it tried is exhausted (only possible if headcount exceeds the
+ * template pool size).
+ */
+export function resolveUniqueFunFacts(emailsInStableOrder: string[]): Map<string, string> {
+  const result = new Map<string, string>();
+  const takenIndexes = new Set<number>();
+
+  for (const email of emailsInStableOrder) {
+    const key = email.trim().toLowerCase();
+
+    let assignedIndex: number | null = null;
+    for (let attempt = 0; attempt < FUN_FACT_TEMPLATES.length; attempt++) {
+      const idx = seededInt(key, FUN_FACT_TEMPLATES.length, `fact-${attempt}`);
+      if (!takenIndexes.has(idx)) {
+        assignedIndex = idx;
+        break;
+      }
+    }
+
+    if (assignedIndex === null) {
+      // Pool fully exhausted for this key's attempts (more participants than
+      // templates) — deterministic fallback to the first still-free slot.
+      assignedIndex = FUN_FACT_TEMPLATES.findIndex((_, i) => !takenIndexes.has(i));
+    }
+    if (assignedIndex === -1 || assignedIndex === null) {
+      // Truly out of unique facts (headcount > pool size) — reuse
+      // deterministically rather than crash. Duplicates are then
+      // unavoidable, but every earlier participant still got a unique one.
+      assignedIndex = seededInt(key, FUN_FACT_TEMPLATES.length, "fact-fallback");
+    }
+
+    takenIndexes.add(assignedIndex);
+    result.set(email, FUN_FACT_TEMPLATES[assignedIndex]);
+  }
+
+  return result;
 }
 
 function baseCodename(email: string, attempt: number): string {

@@ -1,47 +1,38 @@
-import Link from "next/link";
-import { getAgentIdentity } from "@/lib/session";
-import { signOutAction } from "@/lib/actions/identify";
+import { getAgentIdentity, isAdminSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
+import { mentionsSlug } from "@/lib/chat";
+import { NavChrome } from "./NavChrome";
 
-const LINKS = [
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/challenges", label: "Challenges" },
-  { href: "/rules", label: "Rules" },
-  { href: "/profile", label: "My Profile" },
-];
+/**
+ * True if the signed-in employee has an unread @mention waiting in the
+ * Chat Room - i.e. any message created after their lastChatReadAt that
+ * mentions their slug. The DB `contains` filter is just a coarse
+ * pre-filter to keep the row count small; mentionsSlug() does the real
+ * word-boundary check in JS afterward (a plain substring match could
+ * false-positive on "@nick-duda" matching a mention of "@nick-duda-2").
+ */
+async function hasUnreadMention(email: string): Promise<boolean> {
+  const employee = await prisma.employee.findUnique({ where: { email }, select: { lastChatReadAt: true } });
+  if (!employee) return false;
+  const since = employee.lastChatReadAt ?? new Date(0);
+  const candidates = await prisma.chatMessage.findMany({
+    where: { createdAt: { gt: since }, body: { contains: `@${email}` } },
+    select: { body: true },
+    take: 200,
+  });
+  return candidates.some((c) => mentionsSlug(c.body, email));
+}
 
+// Nav stays an async Server Component just for its data fetching
+// (identity, admin session, unread-mention check) - the actual chrome/
+// text rendering (including the compromised-theme label swap) lives in
+// NavChrome.tsx, a client component that reacts to useCompromisedRoute()
+// rather than a plain server-computed boolean, so it can also flip on
+// while a specific viewer is on a route that forces the theme (e.g.
+// Security Connections #3), not just the global admin toggle.
 export async function Nav() {
   const identity = await getAgentIdentity();
-  return (
-    <header className="scanlines relative border-b border-brand-sand/15 bg-black/30">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="font-terminal text-xs uppercase tracking-widest text-brand-light-green">
-            Dutchie Security // Clearance Program
-          </div>
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-            2026 DUTCHIE CYBERSECURITY AWARENESS MONTH
-          </h1>
-        </div>
-        <nav className="flex flex-wrap items-center gap-4">
-          {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="font-terminal text-xs uppercase tracking-wide text-brand-sand/70 hover:text-brand-yellow"
-            >
-              {l.label}
-            </Link>
-          ))}
-          {identity && (
-            <form action={signOutAction} className="flex items-center gap-2">
-              <span className="font-terminal text-xs text-brand-sand/40">{identity.displayName}</span>
-              <button className="font-terminal text-xs uppercase text-brand-sand/40 hover:text-brand-red">
-                sign out
-              </button>
-            </form>
-          )}
-        </nav>
-      </div>
-    </header>
-  );
+  const isAdmin = await isAdminSession();
+  const unreadMention = identity ? await hasUnreadMention(identity.email) : false;
+  return <NavChrome identity={identity} isAdmin={isAdmin} unreadMention={unreadMention} />;
 }
