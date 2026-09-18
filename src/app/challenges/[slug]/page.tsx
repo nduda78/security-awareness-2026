@@ -10,6 +10,7 @@ import { Linkify } from "@/components/Linkify";
 import { ConnectionsBoard } from "@/components/ConnectionsBoard";
 import { parseConnectionsGroups, parseConnectionsProgress } from "@/lib/connections";
 import { SecurdleBoard } from "@/components/SecurdleBoard";
+import { ZoomableImage } from "@/components/ZoomableImage";
 import { computeLetterStatuses, parseSecurdleProgress } from "@/lib/securdle";
 
 export const dynamic = "force-dynamic";
@@ -184,10 +185,8 @@ export default async function ChallengeDetailPage({
       </p>
 
       {challenge.questionImage && (
-        // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
-        <img
+        <ZoomableImage
           src={`/api/challenge-asset/${challenge.id}/question-image`}
-          alt=""
           className="surface-card mb-6 w-full rounded-2xl object-contain"
         />
       )}
@@ -326,10 +325,8 @@ function UnlockedContent({
       )}
 
       {challenge.unlockImage && (
-        // eslint-disable-next-line @next/next/no-img-element -- own dynamic bytea-backed route, not a static asset Next/Image can optimize meaningfully
-        <img
+        <ZoomableImage
           src={`/api/challenge-asset/${challenge.id}/unlock-image`}
-          alt=""
           className="w-full rounded-xl object-contain"
         />
       )}
