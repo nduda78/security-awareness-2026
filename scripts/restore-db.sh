@@ -13,7 +13,9 @@ OUT_DIR="db-backups"
 
 DUMP_FILE="${1:-}"
 if [ -z "$DUMP_FILE" ]; then
-  DUMP_FILE=$(ls -1t "$OUT_DIR"/security_awareness_2026-sqlite-*.sql 2>/dev/null | head -n 1)
+  # Newest of either format — .sql.gz is current, plain .sql is legacy
+  # (pre-compression) but still restorable.
+  DUMP_FILE=$(ls -1t "$OUT_DIR"/security_awareness_2026-sqlite-*.sql "$OUT_DIR"/security_awareness_2026-sqlite-*.sql.gz 2>/dev/null | head -n 1)
 fi
 
 if [ -z "$DUMP_FILE" ] || [ ! -f "$DUMP_FILE" ]; then
@@ -29,5 +31,8 @@ if [ -f "$DB_PATH" ]; then
   echo "Existing DB moved aside to $SAFETY"
 fi
 
-sqlite3 "$DB_PATH" < "$DUMP_FILE"
+case "$DUMP_FILE" in
+  *.gz) gunzip -c "$DUMP_FILE" | sqlite3 "$DB_PATH" ;;
+  *)    sqlite3 "$DB_PATH" < "$DUMP_FILE" ;;
+esac
 echo "Restored $DB_PATH from $DUMP_FILE"
