@@ -199,6 +199,12 @@ export interface ResolvedFlare {
   /// on/off capability, independent of backgroundEffect/borderStyle/
   /// holoSheen so it can be combined with any of them (or none).
   psaGrade: boolean;
+  /// The ultimate override - see resolveFlare below. When true, every
+  /// other field above (except achievements/secretBackText) has already
+  /// been forced to a fixed "compromised" package by resolveFlare -
+  /// BadgeCard just needs this flag to also drive the watermark/flicker/
+  /// ribbon-styling branches that aren't plain data fields.
+  process420: boolean;
   warnings: FlareWarning[];
 }
 
@@ -216,8 +222,18 @@ export interface RawFlareInput {
   secretBackText?: string | null;
   holoSheen?: boolean | null;
   psaGrade?: boolean | null;
+  process420?: boolean | null;
   expiresAt?: Date | null;
 }
+
+// The fixed "you've become him" cosmetic package applied whenever
+// process420 is set - see resolveFlare. Deliberately not admin-editable
+// text (unlike every other flare field) - this is a single all-or-
+// nothing legendary reward, not something to hand-tune per grant.
+const PROCESS_420_OUTLINE_COLOR = "#e5484d";
+const PROCESS_420_CODENAME = "PROCESS_420";
+const PROCESS_420_MOTTO = "you didn't beat me. you just closed the tab.";
+const PROCESS_420_RIBBON = "PROCESS 420";
 
 /**
  * Resolves a raw BadgeFlare row into safe render values. If expiresAt is in
@@ -229,10 +245,37 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
 
   const warnings: FlareWarning[] = [];
 
+  // Achievements and secretBackText are real records (earned trophies, a
+  // stashed game-master note), not cosmetic flare - they pass through
+  // identically whether or not the Process 420 override is active.
+  const achievements = (raw.achievements ?? []).filter((a) => !!a?.text?.trim());
+  const secretBackText = raw.secretBackText?.trim() || null;
+
+  if (raw.process420) {
+    return {
+      achievements,
+      outlineColor: PROCESS_420_OUTLINE_COLOR,
+      backgroundColor: null,
+      backgroundEffect: null,
+      codenameOverride: PROCESS_420_CODENAME,
+      motto: PROCESS_420_MOTTO,
+      iconOverride: "skull",
+      borderStyle: null,
+      ribbonText: PROCESS_420_RIBBON,
+      ribbonRecognized: false,
+      nameSuffix: null,
+      secretBackText,
+      holoSheen: false,
+      psaGrade: false,
+      process420: true,
+      warnings,
+    };
+  }
+
   const ribbonText = raw.ribbonText?.trim() || null;
 
   return {
-    achievements: (raw.achievements ?? []).filter((a) => !!a?.text?.trim()),
+    achievements,
     outlineColor: resolveColor(raw.outlineColor, "outlineColor", warnings),
     backgroundColor: resolveColor(raw.backgroundColor, "backgroundColor", warnings),
     backgroundEffect: resolveBackgroundEffect(raw.backgroundEffect, warnings),
@@ -243,9 +286,10 @@ export function resolveFlare(raw: RawFlareInput | null | undefined, now: Date = 
     ribbonText,
     ribbonRecognized: ribbonText ? RECOGNIZED_RIBBONS.has(ribbonText.toLowerCase()) : false,
     nameSuffix: raw.nameSuffix?.trim() || null,
-    secretBackText: raw.secretBackText?.trim() || null,
+    secretBackText,
     holoSheen: !!raw.holoSheen,
     psaGrade: !!raw.psaGrade,
+    process420: false,
     warnings,
   };
 }

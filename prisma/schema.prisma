@@ -255,6 +255,14 @@ model BadgeFlare {
   /// A simple on/off flag, independent of backgroundEffect/borderStyle/
   /// holoSheen so it can be combined with any of them (or none).
   psaGrade         Boolean   @default(false)
+  /// "You beat the villain, now you ARE him" ultimate override flag - see
+  /// src/lib/flare.ts's resolveFlare, which short-circuits EVERY other
+  /// cosmetic flare field (colors, background, border, icon, ribbon,
+  /// suffix, motto, codename, holoSheen, psaGrade) into a single fixed
+  /// "compromised" look when this is set, regardless of whatever else is
+  /// filled in below. Achievements and secretBackText are real records,
+  /// not cosmetic flare, so they still pass through normally.
+  process420       Boolean   @default(false)
   expiresAt        DateTime?
   updatedAt        DateTime  @updatedAt
 

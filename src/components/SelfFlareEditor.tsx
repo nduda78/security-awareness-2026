@@ -34,6 +34,7 @@ export function SelfFlareEditor({
     codenameOverride: string | null;
     holoSheen: boolean;
     psaGrade: boolean;
+    process420: boolean;
   };
   initial: {
     backgroundEffect: string;
@@ -70,6 +71,7 @@ export function SelfFlareEditor({
         nameSuffix,
         holoSheen: passthrough.holoSheen,
         psaGrade: passthrough.psaGrade,
+        process420: passthrough.process420,
         expiresAt: null,
       }),
     [
@@ -102,6 +104,12 @@ export function SelfFlareEditor({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
       <div className="lg:sticky lg:top-24 lg:self-start">
+        {passthrough.process420 && (
+          <div className="mb-3 rounded-xl border border-brand-red/40 bg-brand-red/10 p-3 text-center font-terminal text-[11px] uppercase tracking-wide text-brand-red">
+            Process 420 override active — the Security team has locked your badge to this look. Anything you
+            change below is saved but won&apos;t show until the override is lifted.
+          </div>
+        )}
         <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Live preview — front</div>
         <BadgeCard card={previewCard} showProfileLink={false} />
 

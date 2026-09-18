@@ -125,6 +125,7 @@ export default async function AdminFlarePage({
                 secretBackText: selected.flare?.secretBackText ?? "",
                 holoSheen: selected.flare?.holoSheen ?? false,
                 psaGrade: selected.flare?.psaGrade ?? false,
+                process420: selected.flare?.process420 ?? false,
                 expiresAt: selected.flare?.expiresAt ? toEasternInputValue(selected.flare.expiresAt) : "",
               }}
             />

@@ -43,6 +43,8 @@ export interface ClientAgentCard {
   holoSheen: boolean;
   /// "Graded slab" treatment (foil sheen + Gem MT 10 chip) - see CardVisual/CardFront.
   psaGrade: boolean;
+  /// Ultimate override flag - every other cosmetic field above has already been forced by resolveFlare; this just drives BadgeCard's watermark/flicker/ribbon-styling branches.
+  process420: boolean;
 }
 
 // --- Challenges page (ChallengesBoard) ---
@@ -124,6 +126,7 @@ export function applyFlareToCard(
       secretBackText: null,
       holoSheen: false,
       psaGrade: false,
+      process420: false,
     };
   }
   return {
@@ -142,6 +145,7 @@ export function applyFlareToCard(
     secretBackText: resolved.secretBackText,
     holoSheen: resolved.holoSheen,
     psaGrade: resolved.psaGrade,
+    process420: resolved.process420,
   };
 }
 
@@ -180,5 +184,6 @@ export function toClientCard(card: AgentCard, rankInTier: number, totalInTier: n
     secretBackText: card.flare?.secretBackText ?? null,
     holoSheen: card.flare?.holoSheen ?? false,
     psaGrade: card.flare?.psaGrade ?? false,
+    process420: card.flare?.process420 ?? false,
   };
 }

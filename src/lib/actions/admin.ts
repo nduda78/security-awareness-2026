@@ -437,6 +437,7 @@ export async function upsertFlareAction(formData: FormData) {
     secretBackText: String(formData.get("secretBackText") ?? "").trim() || null,
     holoSheen: formData.get("holoSheen") === "on",
     psaGrade: formData.get("psaGrade") === "on",
+    process420: formData.get("process420") === "on",
     expiresAt: parseEasternInputValue(expiresAtRaw),
   };
 

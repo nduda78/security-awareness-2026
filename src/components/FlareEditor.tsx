@@ -34,6 +34,7 @@ export function FlareEditor({
     secretBackText: string;
     holoSheen: boolean;
     psaGrade: boolean;
+    process420: boolean;
     expiresAt: string;
   };
 }) {
@@ -50,6 +51,7 @@ export function FlareEditor({
   const [secretBackText, setSecretBackText] = useState(initial.secretBackText);
   const [holoSheen, setHoloSheen] = useState(initial.holoSheen);
   const [psaGrade, setPsaGrade] = useState(initial.psaGrade);
+  const [process420, setProcess420] = useState(initial.process420);
   const [expiresAt, setExpiresAt] = useState(initial.expiresAt);
 
   const previewCard = useMemo(
@@ -68,6 +70,7 @@ export function FlareEditor({
         secretBackText,
         holoSheen,
         psaGrade,
+        process420,
         expiresAt: parseEasternInputValue(expiresAt),
       }),
     [
@@ -86,6 +89,7 @@ export function FlareEditor({
       secretBackText,
       holoSheen,
       psaGrade,
+      process420,
       expiresAt,
     ]
   );
@@ -95,6 +99,11 @@ export function FlareEditor({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
       <div className="lg:sticky lg:top-24 lg:self-start">
+        {process420 && (
+          <div className="mb-3 rounded-xl border border-brand-red/40 bg-brand-red/10 p-3 text-center font-terminal text-[11px] uppercase tracking-wide text-brand-red">
+            Process 420 override active — every other flare field below is ignored
+          </div>
+        )}
         <div className="mb-2 font-terminal text-xs uppercase text-brand-sand/45">Live preview — front</div>
         <BadgeCard card={previewCard} />
         <p className="mb-6 mt-3 text-center text-xs text-brand-sand/35">
@@ -223,6 +232,26 @@ export function FlareEditor({
           <p className="mt-1 text-[11px] text-brand-sand/35">
             Shows only on this agent&apos;s badge back, in a &quot;Classified Note&quot; box. Not shown anywhere
             else in the app - safe to stash a hint or code word here for a challenge you&apos;ll run later.
+          </p>
+        </div>
+        <div className="rounded-xl border border-brand-red/30 bg-brand-red/[0.06] p-3">
+          <label className="flex items-center gap-2 font-terminal text-xs uppercase text-brand-red">
+            <input
+              type="checkbox"
+              name="process420"
+              checked={process420}
+              onChange={(e) => setProcess420(e.target.checked)}
+              className="accent-brand-red"
+            />
+            Process 420 (ultimate override)
+          </label>
+          <p className="mt-1.5 text-[11px] text-brand-sand/40">
+            &quot;You beat the villain, now you ARE him.&quot; When enabled, this completely overrides every
+            other flare field on this page (colors, background, border, icon, ribbon, suffix, motto, codename,
+            holo sheen, graded slab) with a single fixed compromised look - red outline, skull icon, glitching
+            watermarked card, forced codename &quot;PROCESS_420&quot;. Achievements and the secret back text
+            still work normally. Meant as a one-time legendary reward, not something to combine with anything
+            else below.
           </p>
         </div>
         <label className="flex items-center gap-2 font-terminal text-xs uppercase text-brand-sand/45">

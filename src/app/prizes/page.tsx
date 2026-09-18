@@ -77,6 +77,7 @@ export default async function PrizesPage() {
       f.iconOverride ||
       f.holoSheen ||
       f.psaGrade ||
+      f.process420 ||
       f.outlineColor ||
       f.backgroundColor;
 
@@ -116,32 +117,40 @@ export default async function PrizesPage() {
         });
       }
 
-      if (f.ribbonText) {
-        pushFlareEntry(f.ribbonText, "Ribbon Text", (r) => r.rewardRibbonText === f.ribbonText);
-      }
-      if (f.nameSuffix) {
-        pushFlareEntry(f.nameSuffix, "Name Suffix", (r) => r.rewardNameSuffix === f.nameSuffix);
-      }
-      if (f.borderStyle) {
-        pushFlareEntry(titleCase(f.borderStyle), "Border Style", (r) => r.rewardBorderStyle === f.borderStyle);
-      }
-      if (f.backgroundEffect) {
-        pushFlareEntry(titleCase(f.backgroundEffect), "Background Effect", (r) => r.rewardBackgroundEffect === f.backgroundEffect);
-      }
-      if (f.iconOverride) {
-        pushFlareEntry(titleCase(f.iconOverride), "Badge Icon", (r) => r.rewardIcon === f.iconOverride);
-      }
-      if (f.holoSheen) {
-        pushFlareEntry("Holographic Cursor Sheen", "Holo Sheen", () => false);
-      }
-      if (f.psaGrade) {
-        pushFlareEntry("Graded Slab (Gem MT 10)", "Graded Slab", () => false);
-      }
-      if (f.outlineColor) {
-        pushFlareEntry("Custom Outline Color", "Outline Color", (r) => r.rewardOutlineColorPicker);
-      }
-      if (f.backgroundColor) {
-        pushFlareEntry("Custom Background Color", "Background Color", (r) => r.rewardBackgroundColorPicker);
+      if (f.process420) {
+        // The override supersedes every other flare field's raw stored
+        // value (they no longer actually render), so this is the ONLY
+        // flare entry listed for this person - not one prize among
+        // several, since the others aren't really "on" anymore.
+        pushFlareEntry("PROCESS 420 (Ultimate Override)", "Process 420", () => false);
+      } else {
+        if (f.ribbonText) {
+          pushFlareEntry(f.ribbonText, "Ribbon Text", (r) => r.rewardRibbonText === f.ribbonText);
+        }
+        if (f.nameSuffix) {
+          pushFlareEntry(f.nameSuffix, "Name Suffix", (r) => r.rewardNameSuffix === f.nameSuffix);
+        }
+        if (f.borderStyle) {
+          pushFlareEntry(titleCase(f.borderStyle), "Border Style", (r) => r.rewardBorderStyle === f.borderStyle);
+        }
+        if (f.backgroundEffect) {
+          pushFlareEntry(titleCase(f.backgroundEffect), "Background Effect", (r) => r.rewardBackgroundEffect === f.backgroundEffect);
+        }
+        if (f.iconOverride) {
+          pushFlareEntry(titleCase(f.iconOverride), "Badge Icon", (r) => r.rewardIcon === f.iconOverride);
+        }
+        if (f.holoSheen) {
+          pushFlareEntry("Holographic Cursor Sheen", "Holo Sheen", () => false);
+        }
+        if (f.psaGrade) {
+          pushFlareEntry("Graded Slab (Gem MT 10)", "Graded Slab", () => false);
+        }
+        if (f.outlineColor) {
+          pushFlareEntry("Custom Outline Color", "Outline Color", (r) => r.rewardOutlineColorPicker);
+        }
+        if (f.backgroundColor) {
+          pushFlareEntry("Custom Background Color", "Background Color", (r) => r.rewardBackgroundColorPicker);
+        }
       }
     }
 

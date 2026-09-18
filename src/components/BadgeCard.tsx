@@ -67,7 +67,13 @@ function CardFront({
               title={card.ribbonText}
               className={`inline-block max-w-full truncate rounded-full font-terminal font-semibold uppercase shadow-lg ${
                 large ? "px-4 py-1.5 text-xs" : "px-2.5 py-1 text-[9px]"
-              } ${card.ribbonRecognized ? "bg-brand-yellow/90 text-brand-dark-green" : "bg-brand-purple/85 text-brand-sand"}`}
+              } ${
+                card.process420
+                  ? "glitch-text bg-black/70 text-brand-red ring-1 ring-brand-red/60"
+                  : card.ribbonRecognized
+                    ? "bg-brand-yellow/90 text-brand-dark-green"
+                    : "bg-brand-purple/85 text-brand-sand"
+              }`}
             >
               {card.ribbonText}
             </div>
@@ -141,11 +147,15 @@ function CardFront({
             <div
               className={`truncate font-display font-semibold leading-tight text-brand-sand ${
                 large ? "text-[34px]" : "text-[19px]"
-              } ${isRogue ? "glitch-text" : ""}`}
+              } ${isRogue || card.process420 ? "glitch-text" : ""}`}
             >
               {card.renderedName}
             </div>
-            <div className={`truncate italic text-brand-sand/60 ${large ? "mt-1 text-lg" : "text-[12px]"}`}>
+            <div
+              className={`truncate italic text-brand-sand/60 ${large ? "mt-1 text-lg" : "text-[12px]"} ${
+                card.process420 ? "text-brand-red/80" : ""
+              }`}
+            >
               &ldquo;{card.codename}&rdquo;
             </div>
             {card.clearanceIssuedLabel && (
@@ -362,11 +372,17 @@ export function CardVisual({
     el.style.setProperty("--my", "50%");
   }
 
+  // Process 420's override forces its own fixed red/black gradient
+  // instead of the normal outline-tinted default - a plain outline-
+  // colored wash still reads as "green card with a red ring", not the
+  // fully compromised look this reward is meant to convey.
   const faceStyle: React.CSSProperties = {
     borderColor: glow(outline, 45),
-    background: card.backgroundColor
-      ? card.backgroundColor
-      : `linear-gradient(155deg, ${glow(outline, 16)}, rgba(4,32,23,0.9) 55%, rgba(4,32,23,0.96))`,
+    background: card.process420
+      ? "linear-gradient(155deg, rgba(229,72,77,0.28), rgba(8,2,2,0.92) 55%, rgba(4,1,1,0.97))"
+      : card.backgroundColor
+        ? card.backgroundColor
+        : `linear-gradient(155deg, ${glow(outline, 16)}, rgba(4,32,23,0.9) 55%, rgba(4,32,23,0.96))`,
     boxShadow: `0 20px 50px -18px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 46px -14px ${glow(outline, 40)}`,
   };
 
@@ -389,7 +405,7 @@ export function CardVisual({
         <div
           ref={frontFaceRef}
           className={`flip-face overflow-hidden rounded-[1.4rem] border backdrop-blur-xl ${
-            isRogue ? "rogue-flicker" : ""
+            isRogue || card.process420 ? "rogue-flicker" : ""
           } ${card.borderStyle ? `border-fx-${card.borderStyle}` : ""}`}
           style={faceStyle}
         >
@@ -403,20 +419,20 @@ export function CardVisual({
           )}
           {card.holoSheen && <div className="holo-sheen-layer absolute inset-0 overflow-hidden" />}
           {card.psaGrade && <div className="psa-slab-sheen absolute inset-0 overflow-hidden pointer-events-none" />}
-          {isRogue && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
+          {(isRogue || card.process420) && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
           <CardFront card={card} outline={outline} icon={icon} isRogue={isRogue} large={large} />
         </div>
 
         {/* back face */}
         <div
           className={`flip-face flip-face-back overflow-hidden rounded-[1.4rem] border backdrop-blur-xl ${
-            isRogue ? "rogue-flicker" : ""
+            isRogue || card.process420 ? "rogue-flicker" : ""
           }`}
           style={faceStyle}
         >
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.07] via-transparent to-transparent" />
           {card.psaGrade && <div className="psa-slab-sheen absolute inset-0 overflow-hidden pointer-events-none" />}
-          {isRogue && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
+          {(isRogue || card.process420) && <div className="process420-watermark overflow-hidden">PROCESS_420</div>}
           <CardBack card={card} large={large} />
         </div>
       </div>
