@@ -59,7 +59,7 @@ export default async function ChallengeDetailPage({
     );
   }
 
-  const existing = identity
+  let existing = identity
     ? await prisma.submission.findFirst({
         where: { challengeId: challenge.id, employee: { email: identity.email } },
       })
@@ -70,6 +70,32 @@ export default async function ChallengeDetailPage({
     challenge.isActive &&
     (!challenge.opensAt || challenge.opensAt <= now) &&
     (!challenge.closesAt || challenge.closesAt >= now);
+
+  // INFO is pure reference material - no answer form, no XP/flare reward
+  // possible at all (see the admin form's NotIntel-gated sections). There's
+  // nothing to "submit", but a view still counts as completing it: the
+  // moment anyone with clearance loads this page while it's open, a
+  // CORRECT/0-XP submission is created for them (if one doesn't already
+  // exist) so it shows as done on the Challenges list/profile like any
+  // other solved challenge. identity is guaranteed non-null here - the
+  // !cleared branch above already returned for an anonymous visitor.
+  // upsert (rather than create) makes this safely idempotent against a
+  // concurrent duplicate render hitting the same employeeId_challengeId
+  // unique constraint, same reasoning as every other "mutate during a GET
+  // render" spot in this app (see announceJustOpenedChallenges).
+  const isIntel = challenge.answerType === "INTEL_ONLY";
+  if (isIntel && isOpen && !existing && identity) {
+    const employee = await prisma.employee.upsert({
+      where: { email: identity.email },
+      update: {},
+      create: { email: identity.email, displayName: identity.displayName },
+    });
+    existing = await prisma.submission.upsert({
+      where: { employeeId_challengeId: { employeeId: employee.id, challengeId: challenge.id } },
+      create: { employeeId: employee.id, challengeId: challenge.id, answerRaw: "", status: "CORRECT", xpAwarded: 0 },
+      update: {},
+    });
+  }
 
   const choices: string[] | null = challenge.choices ? JSON.parse(challenge.choices) : null;
   const isUnlock = challenge.rewardMode === "UNLOCK";
@@ -155,31 +181,33 @@ export default async function ChallengeDetailPage({
       <div className="section-eyebrow mb-2">Mission Briefing</div>
       <h1 className="mb-4 font-display text-2xl font-semibold sm:text-3xl">{challenge.title}</h1>
 
-      <div className="surface-card mb-6 p-4">
-        <div className="mb-2.5 font-terminal text-xs uppercase text-brand-cyan/70">
-          {isUnlock ? "Unlocks" : "Rewards"}
+      {!isIntel && (
+        <div className="surface-card mb-6 p-4">
+          <div className="mb-2.5 font-terminal text-xs uppercase text-brand-cyan/70">
+            {isUnlock ? "Unlocks" : "Rewards"}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {isUnlock ? (
+              <UnlockTeaserPills
+                challenge={{
+                  hasAudio: !!challenge.unlockAudio,
+                  unlockText: challenge.unlockText,
+                  unlockLinkUrl: challenge.unlockLinkUrl,
+                  hasImage: !!challenge.unlockImage,
+                  hasVideo: !!challenge.unlockVideo,
+                }}
+              />
+            ) : (
+              <>
+                <span className="pill !cursor-default !border-brand-yellow/30 !text-brand-yellow">
+                  +{challenge.xpValue} XP
+                </span>
+                <ChallengeRewardDetails reward={challenge} />
+              </>
+            )}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {isUnlock ? (
-            <UnlockTeaserPills
-              challenge={{
-                hasAudio: !!challenge.unlockAudio,
-                unlockText: challenge.unlockText,
-                unlockLinkUrl: challenge.unlockLinkUrl,
-                hasImage: !!challenge.unlockImage,
-                hasVideo: !!challenge.unlockVideo,
-              }}
-            />
-          ) : (
-            <>
-              <span className="pill !cursor-default !border-brand-yellow/30 !text-brand-yellow">
-                +{challenge.xpValue} XP
-              </span>
-              <ChallengeRewardDetails reward={challenge} />
-            </>
-          )}
-        </div>
-      </div>
+      )}
 
       <p className="surface-card mb-6 whitespace-pre-wrap p-5 text-brand-sand/75">
         <Linkify text={challenge.description} />
@@ -194,6 +222,13 @@ export default async function ChallengeDetailPage({
 
       {!isOpen && (
         <div className="surface-card p-4 text-sm text-brand-sand/60">This mission isn&apos;t currently open.</div>
+      )}
+
+      {isOpen && isIntel && (
+        <div className="rounded-xl border border-brand-cyan/30 bg-brand-cyan/10 p-4 text-sm text-brand-cyan">
+          <Icon name="lock" className="mr-1.5 inline h-4 w-4" />
+          Filed for reference — nothing to submit here.
+        </div>
       )}
 
       {isOpen && isConnections && (
@@ -245,7 +280,7 @@ export default async function ChallengeDetailPage({
         />
       )}
 
-      {!isConnections && !isSecurdle && isOpen && existing?.status === "CORRECT" && (
+      {!isConnections && !isSecurdle && !isIntel && isOpen && existing?.status === "CORRECT" && (
         isUnlock ? (
           <UnlockedContent challenge={challenge} />
         ) : (
@@ -264,13 +299,13 @@ export default async function ChallengeDetailPage({
         )
       )}
 
-      {!isConnections && !isSecurdle && isOpen && existing?.status === "PENDING_REVIEW" && (
+      {!isConnections && !isSecurdle && !isIntel && isOpen && existing?.status === "PENDING_REVIEW" && (
         <div className="rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 p-4 text-sm text-brand-yellow">
           Submitted — pending Security team review.
         </div>
       )}
 
-      {!isConnections && !isSecurdle && isOpen && outOfAttempts && (
+      {!isConnections && !isSecurdle && !isIntel && isOpen && outOfAttempts && (
         <div className="rounded-xl border border-brand-red/40 bg-brand-red/10 p-4 text-sm font-medium text-brand-red">
           <Icon name="skull" className="mr-1.5 inline h-4 w-4" />
           Out of attempts — you used all {challenge.maxAttempts} {challenge.maxAttempts === 1 ? "try" : "tries"}{" "}
@@ -278,7 +313,7 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {!isConnections && !isSecurdle && isOpen && canRetryNow && (
+      {!isConnections && !isSecurdle && !isIntel && isOpen && canRetryNow && (
         <div className="space-y-4">
           {existing?.status === "INCORRECT" && (
             <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-3 text-sm text-brand-red">
@@ -296,9 +331,9 @@ export default async function ChallengeDetailPage({
         </div>
       )}
 
-      {!isConnections && !isSecurdle && isOpen && isFreeText && !existing && answerForm}
+      {!isConnections && !isSecurdle && !isIntel && isOpen && isFreeText && !existing && answerForm}
 
-      {!isConnections && !isSecurdle && isOpen && isFreeText && existing?.status === "INCORRECT" && (
+      {!isConnections && !isSecurdle && !isIntel && isOpen && isFreeText && existing?.status === "INCORRECT" && (
         <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-4 text-sm text-brand-red">
           Your submission wasn&apos;t approved by the Security team. This challenge is now closed for you.
         </div>

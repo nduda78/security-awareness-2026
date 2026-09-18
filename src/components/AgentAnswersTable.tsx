@@ -103,7 +103,9 @@ export function AgentAnswersTable({ rows }: { rows: AnswerRow[] }) {
                       ? summarizeConnectionsSubmission(r.status, r.answerRaw)
                       : r.answerType === "SECURDLE"
                         ? summarizeSecurdleSubmission(r.status, r.answerRaw, r.correctAnswer ?? "")
-                        : r.answerRaw}
+                        : r.answerType === "INTEL_ONLY"
+                          ? "Viewed"
+                          : r.answerRaw}
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5 font-terminal text-[11px] text-brand-sand/40">

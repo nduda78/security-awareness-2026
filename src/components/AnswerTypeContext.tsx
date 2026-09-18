@@ -33,6 +33,7 @@ export function AnswerTypeSelect() {
       <option value="FREE_TEXT_REVIEW">Free text (manual review)</option>
       <option value="CONNECTIONS">Security Connections (word-grouping game)</option>
       <option value="SECURDLE">Securdle (Wordle-style word game)</option>
+      <option value="INTEL_ONLY">Intel only (no answer, no reward)</option>
     </select>
   );
 }
@@ -48,5 +49,19 @@ export function ConnectionsOnly({ children }: { children: ReactNode }) {
 export function SecurdleOnly({ children }: { children: ReactNode }) {
   const ctx = useContext(AnswerTypeContext);
   if (ctx?.type !== "SECURDLE") return null;
+  return <>{children}</>;
+}
+
+/** Renders children only while Answer type is INFO - unmounts (not just visually hides) otherwise. */
+export function IntelOnly({ children }: { children: ReactNode }) {
+  const ctx = useContext(AnswerTypeContext);
+  if (ctx?.type !== "INTEL_ONLY") return null;
+  return <>{children}</>;
+}
+
+/** Renders children for every Answer type EXCEPT INTEL_ONLY - the mirror of IntelOnly, for reward-related fields that make no sense on a no-reward intel-only page. */
+export function NotIntel({ children }: { children: ReactNode }) {
+  const ctx = useContext(AnswerTypeContext);
+  if (ctx?.type === "INTEL_ONLY") return null;
   return <>{children}</>;
 }

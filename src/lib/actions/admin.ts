@@ -154,7 +154,9 @@ export async function upsertChallengeAction(formData: FormData) {
     | "REGEX"
     | "MULTIPLE_CHOICE"
     | "FREE_TEXT_REVIEW"
-    | "CONNECTIONS";
+    | "CONNECTIONS"
+    | "SECURDLE"
+    | "INTEL_ONLY";
   const correctAnswer = String(formData.get("correctAnswer") ?? "").trim() || null;
   const choicesRaw = String(formData.get("choices") ?? "");
   const xpValue = parseInt(String(formData.get("xpValue") ?? "0"), 10) || 0;
@@ -205,7 +207,7 @@ export async function upsertChallengeAction(formData: FormData) {
     description,
     answerType,
     correctAnswer:
-      answerType === "FREE_TEXT_REVIEW"
+      answerType === "FREE_TEXT_REVIEW" || answerType === "INTEL_ONLY"
         ? null
         : answerType === "CONNECTIONS"
           ? JSON.stringify(connectionsResult!.groups)

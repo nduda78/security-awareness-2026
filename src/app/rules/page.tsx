@@ -274,6 +274,25 @@ export default async function RulesPage() {
               )}
             </span>
           </li>
+          <li className="flex gap-2.5">
+            <Icon name="file" className="mt-0.5 h-4 w-4 shrink-0 text-brand-sand/60" />
+            <span>
+              {compromised ? (
+                <>
+                  <strong className="text-brand-sand">Unverified intercepts</strong> carry no XP.EXE payload at
+                  all — there is nothing to answer, nothing to submit, no ledger entry beyond the fact that you
+                  opened it. Merely rendering the content to your screen is logged as sufficient.
+                </>
+              ) : (
+                <>
+                  <strong className="text-brand-sand">Intel briefs</strong> aren&apos;t really a challenge at
+                  all — there&apos;s nothing to answer or submit, and no XP or badge flare attached. They&apos;re
+                  just reference material for personnel with the right clearance to read. Simply opening one
+                  while it&apos;s live marks it as seen.
+                </>
+              )}
+            </span>
+          </li>
         </ul>
       </Section>
 

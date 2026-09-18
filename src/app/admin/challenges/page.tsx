@@ -8,7 +8,7 @@ import { BACKGROUND_EFFECTS, BORDER_STYLES, ICONS } from "@/lib/flare";
 import { AssetUploader } from "@/components/AssetUploader";
 import { ChallengeFileField } from "@/components/ChallengeFileField";
 import { RewardModeProvider, RewardModeSelect, UnlockOnly, XpOnly } from "@/components/RewardModeContext";
-import { AnswerTypeProvider, AnswerTypeSelect, ConnectionsOnly, SecurdleOnly } from "@/components/AnswerTypeContext";
+import { AnswerTypeProvider, AnswerTypeSelect, ConnectionsOnly, SecurdleOnly, IntelOnly, NotIntel } from "@/components/AnswerTypeContext";
 import { TIERS } from "@/lib/tiers";
 import { Icon } from "@/components/Icon";
 import type { IconKey } from "@/lib/flare";
@@ -169,10 +169,19 @@ function ChallengeForm({
       {challenge && <input type="hidden" name="id" value={challenge.id} />}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Slug (URL-safe)" name="slug" defaultValue={challenge?.slug} required />
-        <div>
-          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Reward mode</label>
-          <RewardModeSelect />
-        </div>
+        <NotIntel>
+          <div>
+            <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Reward mode</label>
+            <RewardModeSelect />
+          </div>
+        </NotIntel>
+        <IntelOnly>
+          <div className="rounded-lg border border-brand-cyan/25 bg-brand-cyan/[0.04] p-3 text-[11px] text-brand-sand/45">
+            Intel-only challenges have no reward mode, XP, or badge flare — they&apos;re reference material only.
+            Anyone with clearance who views this page (while it&apos;s open) is automatically marked as having
+            seen it, with 0 XP.
+          </div>
+        </IntelOnly>
       </div>
       <div>
         <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
@@ -191,7 +200,9 @@ function ChallengeForm({
         </p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="XP value (ignored for Unlock mode)" name="xpValue" type="number" defaultValue={String(challenge?.xpValue ?? 50)} required />
+        <NotIntel>
+          <Field label="XP value (ignored for Unlock mode)" name="xpValue" type="number" defaultValue={String(challenge?.xpValue ?? 50)} required />
+        </NotIntel>
         {challenge ? (
           <AssetUploader
             challengeId={challenge.id}
@@ -284,6 +295,7 @@ function ChallengeForm({
       </div>
       </UnlockOnly>
 
+      <NotIntel>
       <XpOnly>
       <div className="rounded-lg border border-brand-yellow/25 bg-brand-yellow/[0.04] p-3">
         <div className="mb-3 font-terminal text-xs uppercase text-brand-yellow">
@@ -351,7 +363,9 @@ function ChallengeForm({
         </div>
       </div>
       </XpOnly>
+      </NotIntel>
 
+      <NotIntel>
       <div className="rounded-lg border border-brand-purple/25 bg-brand-purple/[0.04] p-3">
         <div className="mb-3 font-terminal text-xs uppercase text-brand-purple">Badge flare reward</div>
         <p className="mb-3 text-[11px] text-brand-sand/35">
@@ -416,6 +430,7 @@ function ChallengeForm({
           />
         </div>
       </div>
+      </NotIntel>
       <Field label="Title" name="title" defaultValue={challenge?.title} required />
       <div>
         <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Description</label>
@@ -430,6 +445,7 @@ function ChallengeForm({
             field is a JS regex pattern (no slashes/flags) tested case-insensitively against the submitted answer.
             Security Connections ignores Correct answer/Choices below entirely — configure its 4 groups further down.
             Securdle uses Correct answer as the target word - its length sets the board width automatically.
+            Intel only has no answer form at all - just the description/media above, auto-marked as viewed.
           </p>
         </div>
         <div>
@@ -449,8 +465,14 @@ function ChallengeForm({
               that&apos;s it.
             </p>
           </SecurdleOnly>
+          <IntelOnly>
+            <p className="mt-1 text-[11px] text-brand-sand/35">
+              Ignored for Intel only — there&apos;s nothing to submit or grade, so no correct answer is needed.
+            </p>
+          </IntelOnly>
         </div>
       </div>
+      <NotIntel>
       <div>
         <Field
           label="Max attempts (blank = unlimited)"
@@ -467,6 +489,7 @@ function ChallengeForm({
           guesses regardless of what's set here.
         </p>
       </div>
+      </NotIntel>
       <div>
         <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
           Choices (multiple choice only, one per line)
