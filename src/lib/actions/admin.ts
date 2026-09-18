@@ -184,6 +184,7 @@ export async function upsertChallengeAction(formData: FormData) {
   const rewardBackgroundColorPicker = formData.get("rewardBackgroundColorPicker") === "on";
   const rewardPrize = String(formData.get("rewardPrize") ?? "").trim() || null;
   const isActive = formData.get("isActive") === "on";
+  const hiddenFromList = formData.get("hiddenFromList") === "on";
   const opensAtRaw = String(formData.get("opensAt") ?? "");
   const closesAtRaw = String(formData.get("closesAt") ?? "");
 
@@ -232,6 +233,7 @@ export async function upsertChallengeAction(formData: FormData) {
     rewardBackgroundColorPicker,
     rewardPrize,
     isActive,
+    hiddenFromList,
     // The datetime-local inputs are labeled "(Eastern Time)" and always
     // show/expect Eastern wall-clock digits (see easternTime.ts) - a plain
     // `new Date(raw)` would instead interpret those same digits as UTC,

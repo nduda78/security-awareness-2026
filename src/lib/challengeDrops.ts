@@ -25,6 +25,13 @@ import { fireChallengePostedWebhook } from "@/lib/webhooks";
  * "challenge_posted" event at this exact same moment - a challenge with a
  * future Opens At fires it then, not at creation time, for the same
  * surprise-preserving reason the chat announcement is deferred.
+ *
+ * A hiddenFromList challenge (see the field's own doc comment in
+ * schema.prisma - meant for a link distributed outside the platform, e.g.
+ * buried in a Google Doc) skips both the chat announcement and the
+ * webhook entirely, same as Manual Bonus grants - broadcasting its title
+ * and a direct link in Chat Room would defeat the entire point of it
+ * being low-profile.
  */
 export async function announceJustOpenedChallenges(): Promise<void> {
   const now = new Date();
@@ -36,6 +43,7 @@ export async function announceJustOpenedChallenges(): Promise<void> {
       // moment it's created/activated) and one whose scheduled opens-at
       // has now passed.
       OR: [{ opensAt: null }, { opensAt: { lte: now } }],
+      hiddenFromList: false,
       NOT: { slug: { startsWith: "manual-bonus-" } },
     },
     select: { id: true, slug: true, title: true, xpValue: true, rewardMode: true, webhookUrl: true },

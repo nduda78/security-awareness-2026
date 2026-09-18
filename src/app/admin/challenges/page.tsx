@@ -151,6 +151,7 @@ function ChallengeForm({
     unlockImageMimeType?: string | null;
     unlockVideoMimeType?: string | null;
     isActive: boolean;
+    hiddenFromList?: boolean;
     opensAt: Date | null;
     closesAt: Date | null;
     webhookUrl?: string | null;
@@ -536,6 +537,22 @@ function ChallengeForm({
         <input type="checkbox" name="isActive" defaultChecked={challenge?.isActive ?? true} className="accent-brand-light-green" />
         Active
       </label>
+      <div className="rounded-lg border border-brand-purple/25 bg-brand-purple/[0.04] p-3">
+        <label className="flex items-center gap-2 text-sm text-brand-sand/70">
+          <input
+            type="checkbox"
+            name="hiddenFromList"
+            defaultChecked={challenge?.hiddenFromList ?? false}
+            className="accent-brand-purple"
+          />
+          Hide from public Challenges list (direct link only)
+        </label>
+        <p className="mt-1.5 text-[11px] text-brand-sand/35">
+          Fully answerable at its direct URL for anyone with clearance — just left off the /challenges
+          list and the Chat Room &quot;new challenge dropped&quot; announcement/webhook. Good for a link
+          you plan to distribute outside the platform, e.g. buried in a Google Doc.
+        </p>
+      </div>
       <button className="btn-primary">Save challenge</button>
       </AnswerTypeProvider>
       </RewardModeProvider>
@@ -667,6 +684,14 @@ function ChallengeRow({ c }: { c: Required<NonNullable<Parameters<typeof Challen
             </span>
           ))}{" "}
           <SchedulePill isActive={c.isActive} opensAt={c.opensAt} closesAt={c.closesAt} />
+          {c.hiddenFromList && (
+            <span
+              className="ml-1 inline-flex items-center gap-1 rounded-full border border-brand-purple/50 bg-brand-purple/20 px-2 py-0.5 font-terminal text-[10px] font-bold uppercase tracking-wide text-brand-purple"
+              title="Not shown on the public /challenges list or announced in Chat Room - direct link only"
+            >
+              🔗 Hidden from list
+            </span>
+          )}
         </span>
         <span className="font-terminal text-xs text-brand-sand/40">/{c.slug}</span>
       </summary>
@@ -722,6 +747,7 @@ export default async function AdminChallengesPage({
       rewardBackgroundColorPicker: true,
       rewardPrize: true,
       isActive: true,
+      hiddenFromList: true,
       opensAt: true,
       closesAt: true,
       webhookUrl: true,

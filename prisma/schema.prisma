@@ -186,6 +186,12 @@ model Challenge {
   /// One of: UNCLASSIFIED | SECRET | TOP_SECRET | ROGUE
   minClearance  String @default("UNCLASSIFIED")
   isActive      Boolean    @default(true)
+  /// Excludes this challenge from the public /challenges list and from the
+  /// Chat Room "new challenge dropped" announcement/webhook, while leaving
+  /// it fully answerable at its direct URL for anyone with clearance - for
+  /// a challenge an admin wants to distribute out-of-band (e.g. a link
+  /// buried in a Google Doc) rather than surfaced on the platform itself.
+  hiddenFromList Boolean   @default(false)
   opensAt       DateTime?
   closesAt      DateTime?
   /// Set the moment this challenge's "New challenge dropped" Chat Room
