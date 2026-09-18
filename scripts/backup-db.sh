@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-# Dumps the live SQLite database to a timestamped SQL text file, both
-# under db-backups/ (git-committed by git-push-backup.sh) and to an S3
-# bucket (see push_to_s3 below). Either one alone is enough to survive a
-# pod wipe - data/*.db itself is gitignored (matches the world-cup-pool
-# convention: never commit the live binary DB file, only periodic dumps) -
-# but keeping both gives a safety net against the other failing (e.g. a
-# dump that grows past GitHub's 100MB hard file-size limit again as more
-# challenge media gets added still lands safely in S3, which has no such
-# limit; a temporary S3/network hiccup still leaves the git copy).
+# Dumps the live SQLite database to a timestamped SQL text file under
+# db-backups/ (kept locally, gitignored - see .gitignore) and uploads it
+# to S3 (see below). S3 is the sole real backup destination as of
+# October 2026: committing these dumps to git grew .git past 800MB and
+# started tripping GitHub's 100MB single-file limit as challenge media
+# assets got bigger; S3 has no such ceiling. data/*.db itself is also
+# gitignored (matches the original world-cup-pool convention: never
+# commit the live binary DB file).
 #
 # Usage: ./scripts/backup-db.sh   (or: npm run db:backup)
 set -euo pipefail
@@ -42,10 +41,11 @@ OUT_FILE="$OUT_DIR/security_awareness_2026-sqlite-$TS.sql.gz"
 sqlite3 "$DB_PATH" .dump | gzip -9 > "$OUT_FILE"
 echo "Backed up $DB_PATH -> $OUT_FILE ($(wc -c < "$OUT_FILE") bytes)"
 
-# Second copy, straight to S3 - independent of the git-committed copy
-# (git-push-backup.sh handles that leg separately). Never fails the whole
-# backup run if S3 is unreachable or the bucket policy changes - the git
-# copy this run already made is still a valid backup on its own.
+# The actual backup - local dump above is scratch space for this upload,
+# not a backup on its own (db-backups/ is gitignored and lives on the
+# same ephemeral pod disk as everything else). Never hard-fails the
+# script if S3 is unreachable or the bucket policy changes, so a
+# transient network blip doesn't count as a failed cron run either.
 if [ -n "$S3_BACKUP_BUCKET" ] && command -v aws >/dev/null 2>&1; then
   if aws s3 cp "$OUT_FILE" "s3://$S3_BACKUP_BUCKET/$S3_BACKUP_PREFIX/$(basename "$OUT_FILE")" --only-show-errors; then
     echo "Also copied to s3://$S3_BACKUP_BUCKET/$S3_BACKUP_PREFIX/$(basename "$OUT_FILE")"

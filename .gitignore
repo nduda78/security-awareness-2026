@@ -28,6 +28,16 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# DB backups (Oct 2026+): committing these to git grew .git to 800+MB and
+# started tripping GitHub's 100MB single-file limit as challenge media
+# assets got bigger. S3 (see scripts/backup-db.sh) is now the sole backup
+# destination going forward - these still get written locally, just never
+# committed. Already-committed history from before this change is left
+# alone (would need a force-push to actually shrink .git, which this repo
+# doesn't allow).
+db-backups/*.sql
+db-backups/*.sql.gz
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
