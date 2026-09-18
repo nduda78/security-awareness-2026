@@ -27,14 +27,13 @@ const KEY_CLASS: Record<LetterStatus | "unknown", string> = {
 export interface SecurdleBoardProps {
   slug: string;
   answerLength: number;
-  /** Every guess already submitted, with their per-letter statuses - computed server-side (the page already has the real answer), so the client never needs to know the answer itself to redisplay past guesses. */
+  /** The current round's guesses so far (0-6 of them), with per-letter statuses - computed server-side (the page already has the real answer), so the client never needs to know the answer itself to redisplay past guesses. Always empty for a legacy pre-retry submission or a fresh round after a loss. */
   initialGuessResults: SecurdleGuessResult[];
-  initialStatus: "IN_PROGRESS" | "CORRECT" | "INCORRECT";
+  /** Only ever CORRECT (won, locked for good) or IN_PROGRESS (still playable, including "just lost a round and about to start a fresh one") - Securdle has no other permanently-locked state anymore. */
+  initialStatus: "IN_PROGRESS" | "CORRECT";
   xpValue: number;
   isUnlock: boolean;
   unlockContent?: React.ReactNode;
-  /** Only set once the game is actually over (win or loss) - never sent while still in progress. */
-  revealedAnswer?: string | null;
 }
 
 export function SecurdleBoard({
@@ -45,11 +44,16 @@ export function SecurdleBoard({
   xpValue,
   isUnlock,
   unlockContent,
-  revealedAnswer,
 }: SecurdleBoardProps) {
   const [results, setResults] = useState<SecurdleGuessResult[]>(initialGuessResults);
-  const [status, setStatus] = useState<"IN_PROGRESS" | "CORRECT" | "INCORRECT">(initialStatus);
-  const [answer, setAnswer] = useState<string | null>(revealedAnswer ?? null);
+  const [status, setStatus] = useState<"IN_PROGRESS" | "CORRECT">(initialStatus);
+  // True for the brief moment between "6th wrong guess submitted" and
+  // the player clicking Try Again - the board still shows all 6 rows
+  // (they earned seeing those), but typing/the keyboard are disabled and
+  // a Try Again button is offered instead. The server has already reset
+  // the stored round to empty by the time this is true, so Try Again is
+  // a purely client-side visual reset - no extra round-trip needed.
+  const [roundLost, setRoundLost] = useState(false);
   const [currentGuess, setCurrentGuess] = useState("");
   // Mirrors currentGuess synchronously - submitGuess reads this instead
   // of the state value directly, since a fast typist (or rapid on-screen
@@ -63,12 +67,13 @@ export function SecurdleBoard({
   const [shake, setShake] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const gameOver = status !== "IN_PROGRESS";
+  const won = status === "CORRECT";
+  const locked = won || roundLost;
   const guessesRemaining = MAX_GUESSES - results.length;
   const keyboardStatuses = useMemo(() => computeKeyboardStatuses(results), [results]);
 
   const submitGuess = useCallback(() => {
-    if (gameOver || isPending) return;
+    if (locked || isPending) return;
     const guess = currentGuessRef.current;
     if (guess.length !== answerLength) {
       setError(`Guess must be exactly ${answerLength} letters.`);
@@ -88,16 +93,25 @@ export function SecurdleBoard({
       setResults((prev) => [...prev, { word: guess, statuses: result.statuses! }]);
       currentGuessRef.current = "";
       setCurrentGuess("");
-      if (result.gameOver) {
-        setStatus(result.won ? "CORRECT" : "INCORRECT");
-        if (result.answer) setAnswer(result.answer);
+      if (result.won) {
+        setStatus("CORRECT");
+      } else if (result.roundLost) {
+        setRoundLost(true);
       }
     });
-  }, [answerLength, gameOver, isPending, slug]);
+  }, [answerLength, locked, isPending, slug]);
+
+  function tryAgain() {
+    setResults([]);
+    setRoundLost(false);
+    setCurrentGuess("");
+    currentGuessRef.current = "";
+    setError(null);
+  }
 
   const handleKey = useCallback(
     (key: string) => {
-      if (gameOver || isPending) return;
+      if (locked || isPending) return;
       if (key === "ENTER") {
         submitGuess();
       } else if (key === "BACKSPACE") {
@@ -110,7 +124,7 @@ export function SecurdleBoard({
         setCurrentGuess(currentGuessRef.current);
       }
     },
-    [answerLength, gameOver, isPending, submitGuess]
+    [answerLength, locked, isPending, submitGuess]
   );
 
   // Real physical keyboard support, in addition to the on-screen keys.
@@ -144,7 +158,11 @@ export function SecurdleBoard({
       <div className="flex flex-wrap items-center justify-between gap-2 font-terminal text-xs text-brand-sand/60">
         <span>{answerLength}-letter word</span>
         <span>
-          {gameOver ? (status === "CORRECT" ? "Solved" : "Out of guesses") : `${guessesRemaining} guess${guessesRemaining === 1 ? "" : "es"} left`}
+          {won
+            ? "Solved"
+            : roundLost
+              ? "Out of guesses this round"
+              : `${guessesRemaining} guess${guessesRemaining === 1 ? "" : "es"} left`}
         </span>
       </div>
 
@@ -154,7 +172,7 @@ export function SecurdleBoard({
       <div className="mx-auto flex flex-col items-center gap-1.5" style={{ width: `min(100%, ${answerLength * 3.2}rem)` }}>
         {Array.from({ length: MAX_GUESSES }).map((_, row) => {
           const submitted = results[row];
-          const isCurrentRow = !submitted && row === results.length && !gameOver;
+          const isCurrentRow = !submitted && row === results.length && !locked;
           const letters = submitted
             ? submitted.word.split("")
             : isCurrentRow
@@ -187,7 +205,7 @@ export function SecurdleBoard({
       {error && <div className="mx-auto max-w-md rounded-xl bg-brand-red/15 p-3 text-center text-sm text-brand-red">{error}</div>}
 
       {/* On-screen keyboard */}
-      {!gameOver && (
+      {!locked && (
         <div className="mx-auto flex max-w-lg flex-col items-center gap-1.5">
           {KEYBOARD_ROWS.map((row, i) => (
             <div key={i} className="flex gap-1.5">
@@ -213,7 +231,7 @@ export function SecurdleBoard({
         </div>
       )}
 
-      {status === "CORRECT" && (
+      {won && (
         <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-center text-sm text-brand-light-green">
           <Icon name="trophy" className="mr-1.5 inline h-4 w-4" />
           {results.length > 0 ? (
@@ -228,12 +246,17 @@ export function SecurdleBoard({
         </div>
       )}
 
-      {status === "CORRECT" && isUnlock && unlockContent}
+      {won && isUnlock && unlockContent}
 
-      {status === "INCORRECT" && (
-        <div className="rounded-xl border border-brand-red/40 bg-brand-red/10 p-4 text-center text-sm font-medium text-brand-red">
+      {roundLost && (
+        <div className="rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 p-4 text-center text-sm text-brand-yellow">
           <Icon name="skull" className="mr-1.5 inline h-4 w-4" />
-          Out of guesses. The answer was <span className="font-bold tracking-wide">{answer}</span>.
+          Out of guesses for this round - the word stays a secret, but you can jump right back in.
+          <div className="mt-3">
+            <button type="button" onClick={tryAgain} className="btn-primary">
+              Try Again
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -89,17 +89,21 @@ export default async function ChallengeDetailPage({
 
   // SECURDLE, likewise, never goes through the generic answer form -
   // it's a real Wordle board with its own dedicated action/state (see
-  // lib/actions/securdle.ts). Historical guesses' colors are computed
-  // HERE, server-side, where the real answer is safely available - the
-  // client component only ever receives the raw answer once the game
-  // has actually ended (win or loss), never mid-game.
+  // lib/actions/securdle.ts). Securdle is meant to be played over and
+  // over until you win: using all 6 guesses without winning resets the
+  // round rather than permanently locking it, and the answer is NEVER
+  // sent to the client - not here, not ever, since there's always
+  // another round coming. A legacy INCORRECT row (from before retries
+  // were supported) is treated exactly like a fresh round - empty guess
+  // history, still playable. Only a genuine win's guesses get computed
+  // and shown (safe, since they already solved it).
   const isSecurdle = challenge.answerType === "SECURDLE";
   const securdleAnswer = isSecurdle ? (challenge.correctAnswer ?? "").trim().toUpperCase() : "";
   const securdleProgress = isSecurdle ? parseSecurdleProgress(existing?.answerRaw) : null;
-  const securdleGuessResults = securdleProgress
-    ? securdleProgress.guesses.map((g) => ({ word: g, statuses: computeLetterStatuses(g, securdleAnswer) }))
-    : [];
-  const securdleGameOver = existing?.status === "CORRECT" || existing?.status === "INCORRECT";
+  const securdleGuessResults =
+    securdleProgress && existing?.status !== "INCORRECT"
+      ? securdleProgress.guesses.map((g) => ({ word: g, statuses: computeLetterStatuses(g, securdleAnswer) }))
+      : [];
 
   // Every non-free-text answer type now supports a configurable attempts
   // cap (Challenge.maxAttempts, null = unlimited) - all derived directly
@@ -213,11 +217,10 @@ export default async function ChallengeDetailPage({
           slug={challenge.slug}
           answerLength={securdleAnswer.length}
           initialGuessResults={securdleGuessResults}
-          initialStatus={(existing?.status as "IN_PROGRESS" | "CORRECT" | "INCORRECT") ?? "IN_PROGRESS"}
+          initialStatus={existing?.status === "CORRECT" ? "CORRECT" : "IN_PROGRESS"}
           xpValue={challenge.xpValue}
           isUnlock={isUnlock}
           unlockContent={isUnlock ? <UnlockedContent challenge={challenge} /> : undefined}
-          revealedAnswer={securdleGameOver ? securdleAnswer : null}
         />
       )}
 

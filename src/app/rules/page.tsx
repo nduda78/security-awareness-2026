@@ -257,17 +257,19 @@ export default async function RulesPage() {
               {compromised ? (
                 <>
                   <strong className="text-brand-sand">Corrupted lexicon probes</strong> hide a scrambled token
-                  behind six blind attempts. Each probe returns a partial match signature — exact position,
-                  present elsewhere, or absent — but the token itself stays encrypted until you land it or burn
-                  your last attempt, at which point it's dumped in the clear regardless.
+                  behind six blind attempts per pass. Each probe returns a partial match signature — exact
+                  position, present elsewhere, or absent — but the token itself never gets dumped in the clear.
+                  Burn all six without a match and the probe silently resets for another pass — same token, clean
+                  slate — for as many passes as it takes.
                 </>
               ) : (
                 <>
                   <strong className="text-brand-sand">Securdle</strong> is a Wordle-style word guess — a hidden
                   word, 6 guesses, letter tiles that turn green (right letter, right spot), yellow (right letter,
-                  wrong spot), or gray (not in the word) after each guess. Guess it in 6 or fewer and you win; run
-                  out of guesses and the answer is revealed either way. Once it's over — win or lose — that's it,
-                  no retry.
+                  wrong spot), or gray (not in the word) after each guess. Guess it in 6 or fewer and you win. Use
+                  all 6 without winning and the round just resets — same word, clean board — so you can keep
+                  trying as many times as it takes. The word itself is never revealed to you either way; the only
+                  way to see it is to guess it. Winning is final — once solved, that&apos;s it.
                 </>
               )}
             </span>

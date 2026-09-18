@@ -373,9 +373,11 @@ function ChallengeForm({
           <SecurdleOnly>
             <p className="mt-1 text-[11px] text-brand-sand/35">
               This is the Securdle target word - any casing is fine, it&apos;s normalized automatically. Word length
-              sets the board width. Always exactly 6 guesses (not configurable), no hints, no dictionary check on
-              guesses (any string of the right length is accepted), and the answer is always revealed on a loss.
-              Once someone wins or uses all 6 guesses, that&apos;s final - no retry.
+              sets the board width. Always exactly 6 guesses per round (not configurable), no hints, no dictionary
+              check on guesses (any string of the right length is accepted). Using all 6 guesses without winning
+              silently resets the round - same word, fresh board - so it can be played over and over until solved.
+              The answer is never shown to the player, on a loss or otherwise. Winning is final - once solved,
+              that&apos;s it.
             </p>
           </SecurdleOnly>
         </div>

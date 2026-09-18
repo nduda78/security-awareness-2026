@@ -6,6 +6,12 @@
 // shared submitAnswerAction (an IN_PROGRESS row must let you keep
 // guessing, where every other type's existing-row check would treat
 // that as "already answered, locked").
+//
+// Securdle is meant to be played over and over until you win: using all
+// 6 guesses without winning silently resets the round (back to 0/6, same
+// word) rather than permanently locking the challenge - and the answer
+// is NEVER sent to the browser, not even on a loss, since there's always
+// another round coming. Winning is still final: once CORRECT, that's it.
 
 import { prisma } from "@/lib/prisma";
 import { getAgentIdentity } from "@/lib/session";
@@ -23,19 +29,18 @@ import {
 import { revalidatePath } from "next/cache";
 
 export interface SecurdleGuessResult {
-  /** false = the guess was rejected outright (bad input, not signed in, challenge closed/misconfigured/already finished) - error explains why. */
+  /** false = the guess was rejected outright (bad input, not signed in, challenge closed/misconfigured/already won) - error explains why. */
   ok: boolean;
   error?: string;
   /** Only present when ok is true - per-letter statuses for the guess just submitted. */
   statuses?: LetterStatus[];
   guessesUsed: number;
   guessesRemaining: number;
-  gameOver: boolean;
   won: boolean;
   xpAwarded?: number;
   unlocked?: boolean;
-  /** Only present once the game has actually ended (win or loss) - never sent while still in progress. */
-  answer?: string;
+  /** True exactly when this guess used up the 6th try without winning - the round resets (server-side, already done by the time this returns) but the answer is never included here. The client shows the just-submitted guess's tiles, then clears back to an empty board for another round. */
+  roundLost?: boolean;
 }
 
 function notOk(error: string, guessesUsed = 0): SecurdleGuessResult {
@@ -44,7 +49,6 @@ function notOk(error: string, guessesUsed = 0): SecurdleGuessResult {
     error,
     guessesUsed,
     guessesRemaining: Math.max(0, MAX_GUESSES - guessesUsed),
-    gameOver: false,
     won: false,
   };
 }
@@ -77,28 +81,19 @@ export async function submitSecurdleGuessAction(slug: string, rawGuess: string):
     where: { employeeId_challengeId: { employeeId: employee.id, challengeId: challenge.id } },
   });
 
-  if (submission && submission.status !== "IN_PROGRESS") {
-    // Already finished (CORRECT or INCORRECT) - no retries, per the
-    // "locked either way" rule (no "allow retry after a loss" option
-    // for this type).
-    const progress = parseSecurdleProgress(submission.answerRaw);
-    return {
-      ok: false,
-      error: "This challenge is already finished.",
-      guessesUsed: progress.guesses.length,
-      guessesRemaining: Math.max(0, MAX_GUESSES - progress.guesses.length),
-      gameOver: true,
-      won: submission.status === "CORRECT",
-      answer,
-    };
+  if (submission && submission.status === "CORRECT") {
+    // Already won - that's the only permanently-final state for this
+    // type. A loss never lands here anymore (see below).
+    return notOk("You've already solved this one.", MAX_GUESSES);
   }
 
-  const progress = submission ? parseSecurdleProgress(submission.answerRaw) : { guesses: [] };
-
-  if (progress.guesses.length >= MAX_GUESSES) {
-    // Defensive - shouldn't be reachable since the 6th guess always
-    // finalizes the submission below, but never allow a 7th write.
-    return notOk("Out of guesses.", progress.guesses.length);
+  // Legacy INCORRECT rows (from before Securdle allowed retries) and any
+  // round that's somehow already sitting at a full 6 guesses both start
+  // this call as a fresh round - the word doesn't change, only the
+  // guess history resets.
+  let progress = submission ? parseSecurdleProgress(submission.answerRaw) : { guesses: [] };
+  if ((submission && submission.status === "INCORRECT") || progress.guesses.length >= MAX_GUESSES) {
+    progress = { guesses: [] };
   }
 
   const guess = rawGuess.trim().toUpperCase();
@@ -110,17 +105,20 @@ export async function submitSecurdleGuessAction(slug: string, rawGuess: string):
       error: `Guess must be exactly ${answer.length} letters.`,
       guessesUsed: progress.guesses.length,
       guessesRemaining: Math.max(0, MAX_GUESSES - progress.guesses.length),
-      gameOver: false,
       won: false,
     };
   }
 
   const statuses = computeLetterStatuses(guess, answer);
   const won = guess === answer;
-  const newGuesses = [...progress.guesses, guess];
-  const outOfGuesses = !won && newGuesses.length >= MAX_GUESSES;
-  const gameOver = won || outOfGuesses;
-  const newStatus = won ? "CORRECT" : outOfGuesses ? "INCORRECT" : "IN_PROGRESS";
+  const attemptedGuesses = [...progress.guesses, guess];
+  const roundLost = !won && attemptedGuesses.length >= MAX_GUESSES;
+  // A lost round resets immediately - the stored progress for next time
+  // is already empty, so the very next guess (whenever they make it)
+  // starts a brand new round at 0/6. status stays IN_PROGRESS regardless
+  // - there's no separate "locked, out of guesses" state anymore.
+  const newGuesses = roundLost ? [] : attemptedGuesses;
+  const newStatus = won ? "CORRECT" : "IN_PROGRESS";
 
   const isUnlock = challenge.rewardMode === "UNLOCK";
   const xpAwarded = won && !isUnlock ? challenge.xpValue : 0;
@@ -154,9 +152,6 @@ export async function submitSecurdleGuessAction(slug: string, rawGuess: string):
   if (won) {
     await handlePossibleTierUp(employee, xpBefore, xpAwarded);
     await fireChallengeCompletedWebhook(challenge, employee, xpAwarded);
-  }
-
-  if (gameOver) {
     revalidatePath("/leaderboard");
     revalidatePath("/profile");
   }
@@ -164,14 +159,11 @@ export async function submitSecurdleGuessAction(slug: string, rawGuess: string):
   return {
     ok: true,
     statuses,
-    guessesUsed: newGuesses.length,
-    guessesRemaining: Math.max(0, MAX_GUESSES - newGuesses.length),
-    gameOver,
+    guessesUsed: attemptedGuesses.length,
+    guessesRemaining: Math.max(0, MAX_GUESSES - attemptedGuesses.length),
     won,
     xpAwarded: won ? xpAwarded : undefined,
     unlocked: won && isUnlock,
-    // Revealed only on the actual moment the game ends - win or loss -
-    // never while still in progress.
-    answer: gameOver ? answer : undefined,
+    roundLost,
   };
 }
