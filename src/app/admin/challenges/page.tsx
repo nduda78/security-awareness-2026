@@ -283,6 +283,74 @@ function ChallengeForm({
       </div>
       </UnlockOnly>
 
+      <XpOnly>
+      <div className="rounded-lg border border-brand-yellow/25 bg-brand-yellow/[0.04] p-3">
+        <div className="mb-3 font-terminal text-xs uppercase text-brand-yellow">
+          Success extras (optional, XP mode only)
+        </div>
+        <p className="mb-3 text-[11px] text-brand-sand/35">
+          Shown alongside the &ldquo;Correct! You earned +X XP&rdquo; message on a correct answer, in any combination -
+          celebrate with better words, or progress the month&apos;s storyline with a video/image/audio reveal.
+          For Security Connections this shows once all 4 groups are solved; for Securdle, once the word is
+          guessed.
+        </p>
+        {challenge ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <AssetUploader
+              challengeId={challenge.id}
+              field="unlockAudio"
+              label="Audio"
+              accept="audio/*"
+              kind="audio"
+              currentUrl={`/api/challenge-asset/${challenge.id}/unlock-audio`}
+              hasCurrent={!!challenge?.unlockAudioMimeType}
+            />
+            <AssetUploader
+              challengeId={challenge.id}
+              field="unlockImage"
+              label="Image"
+              accept="image/*"
+              kind="image"
+              currentUrl={`/api/challenge-asset/${challenge.id}/unlock-image`}
+              hasCurrent={!!challenge?.unlockImageMimeType}
+            />
+            <AssetUploader
+              challengeId={challenge.id}
+              field="unlockVideo"
+              label="Video"
+              accept="video/*"
+              kind="video"
+              currentUrl={`/api/challenge-asset/${challenge.id}/unlock-video`}
+              hasCurrent={!!challenge?.unlockVideoMimeType}
+              hint="MP4, WebM, or MOV — up to 20MB. Uploads immediately with a progress bar, separately from Save."
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <ChallengeFileField label="Audio" name="unlockAudio" removeName="unlockAudioRemove" accept="audio/*" />
+            <ChallengeFileField label="Image" name="unlockImage" removeName="unlockImageRemove" accept="image/*" />
+            <ChallengeFileField
+              label="Video"
+              name="unlockVideo"
+              removeName="unlockVideoRemove"
+              accept="video/*"
+              hint="MP4, WebM, or MOV — up to 20MB. Save the challenge first, then add media via edit for more reliable uploads."
+            />
+          </div>
+        )}
+        <div className="mt-3">
+          <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">Text</label>
+          <textarea
+            name="unlockText"
+            rows={2}
+            defaultValue={challenge?.unlockText ?? ""}
+            className="input-modern w-full"
+            placeholder="Whatever you want to reveal — a clue, an explanation, congratulations text…"
+          />
+        </div>
+      </div>
+      </XpOnly>
+
       <div className="rounded-lg border border-brand-purple/25 bg-brand-purple/[0.04] p-3">
         <div className="mb-3 font-terminal text-xs uppercase text-brand-purple">Badge flare reward</div>
         <p className="mb-3 text-[11px] text-brand-sand/35">
@@ -434,20 +502,6 @@ function ChallengeForm({
               </div>
             ))}
           </div>
-          <XpOnly>
-            <div>
-              <label className="mb-1.5 block font-terminal text-xs uppercase text-brand-sand/45">
-                Completion message (optional)
-              </label>
-              <textarea
-                name="unlockText"
-                rows={4}
-                defaultValue={challenge?.unlockText ?? ""}
-                placeholder="Shown to the player once they solve all 4 groups, in addition to the XP earned."
-                className="input-modern w-full"
-              />
-            </div>
-          </XpOnly>
         </div>
       </ConnectionsOnly>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -25,8 +25,8 @@ export interface ConnectionsBoardProps {
   isUnlock: boolean;
   /** Rendered once the board is fully solved, when isUnlock is true - the page already knows how to build this (same UnlockedContent used by every other UNLOCK challenge). */
   unlockContent?: React.ReactNode;
-  /** Optional flavor text (reuses Challenge.unlockText even in XP mode - see the admin form's "Completion message" field) shown once the board is fully solved, alongside the XP-earned line. Lets a specific Connections challenge have its own custom closing message. */
-  completionMessage?: string | null;
+  /** Optional custom text/image/audio/video (same SuccessExtras used by plain XP challenges and Securdle - see the admin form's "Success extras" section) shown once the board is fully solved, alongside the XP-earned line. */
+  successExtras?: React.ReactNode;
 }
 
 // Purely cosmetic per-solved-group accent so each locked-in group reads as
@@ -45,7 +45,7 @@ export function ConnectionsBoard({
   xpValue,
   isUnlock,
   unlockContent,
-  completionMessage,
+  successExtras,
 }: ConnectionsBoardProps) {
   const [solved, setSolved] = useState<SolvedGroup[]>(initialSolvedGroups);
   const [mistakes, setMistakes] = useState(initialMistakes);
@@ -187,11 +187,7 @@ export function ConnectionsBoard({
         </div>
       )}
 
-      {status === "CORRECT" && !isUnlock && completionMessage && (
-        <div className="surface-card whitespace-pre-wrap border-brand-purple/40 bg-brand-purple/[0.06] p-5 text-brand-sand/85">
-          {completionMessage}
-        </div>
-      )}
+      {status === "CORRECT" && !isUnlock && successExtras}
 
       {status === "CORRECT" && isUnlock && unlockContent}
 

@@ -34,6 +34,8 @@ export interface SecurdleBoardProps {
   xpValue: number;
   isUnlock: boolean;
   unlockContent?: React.ReactNode;
+  /** Optional custom text/image/audio/video shown alongside the XP-earned line once solved (XP mode only - same SuccessExtras used by plain XP challenges and Connections). */
+  successExtras?: React.ReactNode;
 }
 
 export function SecurdleBoard({
@@ -44,6 +46,7 @@ export function SecurdleBoard({
   xpValue,
   isUnlock,
   unlockContent,
+  successExtras,
 }: SecurdleBoardProps) {
   const [results, setResults] = useState<SecurdleGuessResult[]>(initialGuessResults);
   const [status, setStatus] = useState<"IN_PROGRESS" | "CORRECT">(initialStatus);
@@ -247,6 +250,8 @@ export function SecurdleBoard({
       )}
 
       {won && isUnlock && unlockContent}
+
+      {won && !isUnlock && successExtras}
 
       {roundLost && (
         <div className="rounded-xl border border-brand-yellow/40 bg-brand-yellow/10 p-4 text-center text-sm text-brand-yellow">

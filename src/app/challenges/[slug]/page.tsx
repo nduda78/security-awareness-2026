@@ -11,6 +11,7 @@ import { ConnectionsBoard } from "@/components/ConnectionsBoard";
 import { parseConnectionsGroups, parseConnectionsProgress } from "@/lib/connections";
 import { SecurdleBoard } from "@/components/SecurdleBoard";
 import { ZoomableImage } from "@/components/ZoomableImage";
+import { SuccessExtras } from "@/components/SuccessExtras";
 import { computeLetterStatuses, parseSecurdleProgress } from "@/lib/securdle";
 
 export const dynamic = "force-dynamic";
@@ -207,7 +208,17 @@ export default async function ChallengeDetailPage({
           xpValue={challenge.xpValue}
           isUnlock={isUnlock}
           unlockContent={isUnlock ? <UnlockedContent challenge={challenge} /> : undefined}
-          completionMessage={!isUnlock ? challenge.unlockText : undefined}
+          successExtras={
+            !isUnlock ? (
+              <SuccessExtras
+                challengeId={challenge.id}
+                unlockAudio={challenge.unlockAudio}
+                unlockVideo={challenge.unlockVideo}
+                unlockText={challenge.unlockText}
+                unlockImage={challenge.unlockImage}
+              />
+            ) : undefined
+          }
         />
       )}
 
@@ -220,6 +231,17 @@ export default async function ChallengeDetailPage({
           xpValue={challenge.xpValue}
           isUnlock={isUnlock}
           unlockContent={isUnlock ? <UnlockedContent challenge={challenge} /> : undefined}
+          successExtras={
+            !isUnlock ? (
+              <SuccessExtras
+                challengeId={challenge.id}
+                unlockAudio={challenge.unlockAudio}
+                unlockVideo={challenge.unlockVideo}
+                unlockText={challenge.unlockText}
+                unlockImage={challenge.unlockImage}
+              />
+            ) : undefined
+          }
         />
       )}
 
@@ -227,8 +249,17 @@ export default async function ChallengeDetailPage({
         isUnlock ? (
           <UnlockedContent challenge={challenge} />
         ) : (
-          <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
-            Correct! You earned +{existing.xpAwarded} XP.
+          <div className="space-y-4">
+            <div className="rounded-xl border border-brand-light-green/40 bg-brand-light-green/10 p-4 text-sm text-brand-light-green">
+              Correct! You earned +{existing.xpAwarded} XP.
+            </div>
+            <SuccessExtras
+              challengeId={challenge.id}
+              unlockAudio={challenge.unlockAudio}
+              unlockVideo={challenge.unlockVideo}
+              unlockText={challenge.unlockText}
+              unlockImage={challenge.unlockImage}
+            />
           </div>
         )
       )}
@@ -305,31 +336,13 @@ function UnlockedContent({
 
       {!hasAnything && <p className="text-sm text-brand-sand/50">Nice work — nothing else was attached here, though.</p>}
 
-      {challenge.unlockAudio && (
-        <audio controls autoPlay className="w-full" src={`/api/challenge-asset/${challenge.id}/unlock-audio`} />
-      )}
-
-      {challenge.unlockVideo && (
-        <video
-          controls
-          autoPlay
-          className="w-full rounded-xl"
-          src={`/api/challenge-asset/${challenge.id}/unlock-video`}
-        />
-      )}
-
-      {challenge.unlockText && (
-        <p className="whitespace-pre-wrap text-brand-sand/85">
-          <Linkify text={challenge.unlockText} />
-        </p>
-      )}
-
-      {challenge.unlockImage && (
-        <ZoomableImage
-          src={`/api/challenge-asset/${challenge.id}/unlock-image`}
-          className="w-full rounded-xl object-contain"
-        />
-      )}
+      <SuccessExtras
+        challengeId={challenge.id}
+        unlockAudio={challenge.unlockAudio}
+        unlockVideo={challenge.unlockVideo}
+        unlockText={challenge.unlockText}
+        unlockImage={challenge.unlockImage}
+      />
 
       {challenge.unlockLinkUrl && (
         <a
